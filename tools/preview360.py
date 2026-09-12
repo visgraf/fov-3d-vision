@@ -36,6 +36,11 @@ def main():
     ap.add_argument("--spp", type=int, default=64)
     ap.add_argument("--device", default="OPTIX", choices=["OPTIX", "CUDA", "CPU"])
     ap.add_argument("--denoise", action="store_true", help="denoise the Combined pass (previews only)")
+    ap.add_argument("--filter", default="BLACKMAN_HARRIS", choices=["BLACKMAN_HARRIS", "GAUSSIAN", "BOX"],
+                    help="pixel reconstruction filter. BOX with --filter-width 1.0 makes a rendered "
+                         "pixel the plain average over its own footprint, which is what the tier-1 "
+                         "identity check and the sample footprint omega both assume.")
+    ap.add_argument("--filter-width", type=float, default=None, help="default: 1.0 for BOX, else Cycles' own")
     ap.add_argument("--no-backface", action="store_true")
     args = ap.parse_args(script_args())
 
@@ -47,6 +52,7 @@ def main():
     scene = bpy.context.scene
     ensure_cycles(scene)
     backend = setup_device(scene, args.device)
+    bpy.context.view_layer.update()  # rotation_euler does not reach matrix_world until the depsgraph runs
     eye, eye_note = find_eye(scene)
     print(f"[preview360] eye: {eye_note}; device: {backend}")
 
@@ -67,6 +73,8 @@ def main():
     r.use_compositing, r.use_sequencer = False, False
     c = scene.cycles
     c.samples, c.seed = args.spp, 0
+    c.pixel_filter_type = args.filter
+    c.filter_width = args.filter_width if args.filter_width is not None else (1.0 if args.filter == "BOX" else c.filter_width)
     try:
         c.use_denoising = args.denoise
     except (AttributeError, TypeError):
@@ -116,6 +124,7 @@ def main():
         "unit_scale_length": scene.unit_settings.scale_length,
         "width": args.width, "height": args.width // 2, "spp": args.spp,
         "denoise": args.denoise, "device": backend,
+        "pixel_filter": args.filter, "filter_width": round(c.filter_width, 4),
         "render_seconds": round(t_render, 2),
         "backface_seconds": None if t_back is None else round(t_back, 2),
         "equirect_convention": "lon=(u-0.5)*2pi, lat=(0.5-v)*pi, v=0 top; "
