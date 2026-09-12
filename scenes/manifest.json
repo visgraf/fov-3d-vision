@@ -60,6 +60,8 @@
    "blend": "scenes/classroom/classroom_eye.blend",
    "original_blend": "scenes/classroom/classroom.blend",
    "source": "https://download.blender.org/demo/test/classroom.zip",
+   "source_zip_bytes": 70279690,
+   "source_zip_md5": "3adbb7114b514bfc6fc724ce20f86b4e",
    "license": "CC0",
    "authors": {"Christophe Seux": "scene"},
    "eye_position_m": [-0.6, -1.0, 1.2],

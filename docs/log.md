@@ -60,3 +60,32 @@ findings above and both re-run on CPU in the sandbox:
   to width 1.0 for BOX, and records both in `meta.json`. Measured on the synthetic panorama:
   rel_err_median 0.0034 with the default filter, 0.0018 with `--filter BOX`.
 - `preview360.py` calls `view_layer.update()` before reading the eye pose.
+
+## 2026-09-12 — step A1 re-run from scratch, all three tiers reproduce
+
+Ran the full run order in `docs/a1-scene-gathering.md` on the Linux box (Blender 5.2.1, OptiX,
+RTX 4090), with both downloads fetched again rather than reused. Every number in
+`scenes/manifest.json` came back. Nothing in the repository changed as a result, so the manifest
+stands as written.
+
+Measured, tier by tier:
+- Calib room: `report.json` identical to the previous run **field for field**, and
+  `calib_room.targets.json` byte-identical. Render 1.7 s.
+- Workshop HDRI: re-downloaded (339.5 MB), md5 matched the committed `asset.json`, and
+  `fetch_hdris.py` rewrote `asset.json` byte-identically (`git status` clean). column_shift 0,
+  rel_err_median 0.015172, p99 0.228632 against 0.01517 / 0.22863 in the manifest. Box-filter
+  diagnostic: 0.003232 / 0.047311 against 0.0032 / 0.047. Negative control, eye rotated 90°:
+  512 px = W/4. Render 1.4 s at 16 spp.
+- Classroom: zip 70,279,690 bytes, md5 3adbb7114b514bfc6fc724ce20f86b4e — now recorded in the
+  manifest, which previously pinned this file by URL alone. From `renderCam`, backface_fraction
+  0.13598 and depth_min 0.1035 m; renderCam is at y −4.466 against a scene bound at −4.925, so
+  the "0.46 m off the rear wall" in the note is 0.459 m measured. From `EYE` at (−0.6, −1.0, 1.2):
+  hole 0.020788, backface 0.003776, nadir 1.200143 m, zenith 1.696648 m, against 0.02079 / 0.0038 /
+  1.20014 / 1.69665. Render 5.2 s at 64 spp, denoised.
+
+One new thing, and it is the reason `report.json` can be identical while the EXR is not. The
+preview `pano.exr` does **not** come back byte-identical: md5 differs run to run. Rendering the
+same file twice and comparing channel by channel shows why — Depth.Z and Position are bit-identical
+(0 differing pixels), while Combined differs by at most 5.96e-07 and Normal by at most 4.17e-07,
+i.e. float32 accumulation order on the GPU. Every quantity `inspect_preview.py` reports is either
+geometric or a median over the sphere, so none of them moves. Compare reports, not checksums.
