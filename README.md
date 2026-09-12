@@ -34,6 +34,19 @@ blender -b scenes/calib_room/calib_room.blend -P tools/preview360.py -- --out pr
 Expect `hole_fraction` 0, `backface_fraction` 0, nadir and zenith depth 1.60 m (eye at 1.6 m, ceiling 3.2 m).
 `calib_room.targets.json` lists every target with its direction, eccentricity, distance and angular size.
 
+Two images in `reference/` record what this tier looked like when it was built, on CPU:
+
+* **`reference/calib_room_sheet.png`** — the contact sheet. This is the baseline to compare your
+  own `previews/calib_room/sheet.png` against: same room, same ring layout, and a problems panel
+  that is clean greyscale throughout. It is how you tell a rendering-backend problem from a scene
+  problem, since a change of device should leave it structurally unchanged.
+* **`reference/calib_room_center_34deg.png`** — a 34° rectilinear view from `EYE` along the
+  primary gaze, as against the 360° equirect the tools produce. It shows the Siemens-star cards on
+  the 0°, 2.5°, 6° and 12° rings with their eccentricity labels (the 24° and 40° rings fall outside
+  this field, clipped at the corners), which makes the card-size law
+  `alpha(e) = alpha0 * (1 + e / E2t)` visible directly: the cards grow with eccentricity so that a
+  foveation warp with `E2 = E2t` should render every ring about equally sharp.
+
 **Tier 1:**
 ```bash
 python3 tools/fetch_hdris.py list --environment indoor --min-width 16384 --top 30
@@ -94,6 +107,18 @@ rear wall and sees its back side: `backface_fraction` 0.136 from `renderCam` aga
 not that the shot camera is a usable vantage point.
 
 Then fill in `scenes/manifest.json`.
+
+## License
+
+CC0 1.0 Universal — see `LICENSE`. Everything in this repository (the tools, the manifest, and
+the two reference images) is dedicated to the public domain: no attribution required, no
+conditions. CC0 is the most permissive option available, and it is the same terms the external
+assets already carry, so nothing in the pipeline mixes licences.
+
+The assets themselves are not in this repository and keep their own terms, both CC0 as it
+happens: the Poly Haven HDRI (see `scenes/hdri/<slug>/asset.json` for authors) and the Classroom
+demo file by Christophe Seux. Anything you substitute for them is on its own terms — record them
+in `scenes/manifest.json`, which has a `license` field per scene for exactly that.
 
 ## Reading the contact sheet (`sheet.png`)
 
