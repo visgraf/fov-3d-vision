@@ -1,0 +1,79 @@
+{
+ "conventions": {
+  "units": "metres",
+  "head": "fixed; eyes rotate about their own centres",
+  "eye_object": "camera named EYE: local -Z primary gaze, local +Y head up",
+  "equirect_pixel_to_eye_direction": "lon=(u-0.5)*2pi, lat=(0.5-v)*pi, v=0 top; d=(sin lon cos lat, sin lat, -cos lon cos lat)",
+  "depth_pass": "ray distance from the eye centre (Blender 5.2, equirect camera)"
+ },
+ "measured_with": {
+  "blender": "5.2.1 LTS",
+  "device": "OPTIX (NVIDIA GeForce RTX 4090)",
+  "preview_size": [2048, 1024],
+  "date": "2026-09-12",
+  "note": "first run of this pipeline on a GPU; the handover was verified on CPU only"
+ },
+ "scenes": [
+  {
+   "id": "calib_room",
+   "tier": 2,
+   "kind": "calib",
+   "blend": "scenes/calib_room/calib_room.blend",
+   "source": "tools/make_calib_room.py",
+   "license": "own",
+   "eye_position_m": [0.0, 0.0, 1.6],
+   "preview": "previews/calib_room",
+   "checks": {
+    "hole_fraction": 0.0,
+    "backface_fraction": 0.0,
+    "nadir_depth_m": 1.60019,
+    "zenith_depth_m": 1.60019
+   },
+   "status": "ok",
+   "notes": "Closed room, so zero holes and zero back-faces as expected. Nadir and zenith both 1.600 m confirm metric scale (eye 1.6 m, floor 0, ceiling 3.2 m). Contact sheet matches the CPU reference in reference/calib_room_sheet.png structurally, so the OptiX path reproduces the sandbox result. 50 targets in calib_room.targets.json."
+  },
+  {
+   "id": "hdri_workshop",
+   "tier": 1,
+   "kind": "hdri",
+   "blend": "scenes/hdri/workshop/scene.blend",
+   "source": "Poly Haven, see scenes/hdri/workshop/asset.json",
+   "license": "CC0",
+   "authors": {"Dimitrios Savva": "Photography", "Jarod Guest": "Processing"},
+   "hdri_file": "scenes/hdri/workshop/workshop_8k.exr",
+   "hdri_resolution": [8192, 4096],
+   "max_resolution": [24576, 12288],
+   "eye_position_m": [0.0, 0.0, 0.0],
+   "preview": "previews/hdri_workshop",
+   "checks": {
+    "column_shift_px": 0,
+    "rel_err_median": 0.01517,
+    "rel_err_p99": 0.22863
+   },
+   "status": "ok",
+   "notes": "Column shift exactly 0: the render reproduces the source mapping. Negative control confirmed on this machine - a 90 deg mis-rotated eye is reported as 512 px = W/4. hole_fraction is 1.0 by construction (environment at infinity). The 1.5% median error is NOT a mapping error: it is the mismatch between Cycles' default Blackman-Harris reconstruction filter and the exact 4x4 box average inspect_preview.py compares against. Re-rendering with pixel_filter_type=BOX, filter_width=1.0 drops it to 0.0032 (p99 0.047); raising samples 16 -> 512 changes nothing (0.01517 -> 0.01540), which is what rules out sampling noise. Use a box filter for the tier-1 identity check."
+  },
+  {
+   "id": "classroom",
+   "tier": 3,
+   "kind": "mesh",
+   "blend": "scenes/classroom/classroom_eye.blend",
+   "original_blend": "scenes/classroom/classroom.blend",
+   "source": "https://download.blender.org/demo/test/classroom.zip",
+   "license": "CC0",
+   "authors": {"Christophe Seux": "scene"},
+   "eye_position_m": [-0.6, -1.0, 1.2],
+   "eye_yaw_deg": 0.0,
+   "eye_pitch_deg": 0.0,
+   "preview": "previews/classroom",
+   "checks": {
+    "hole_fraction": 0.02079,
+    "backface_fraction": 0.0038,
+    "nadir_depth_m": 1.20014,
+    "zenith_depth_m": 1.69665
+   },
+   "status": "ok",
+   "notes": "Scene '_mainScene' (Cycles, metric, unit scale 1.0); the file also holds dustParticules and volumeLight, both EEVEE, neither used. EYE placed headlessly with tools/place_eye.py and saved beside the original, which stays pristine. nadir 1.200 m equals the chosen eye height exactly, so metric scale is confirmed; zenith puts the ceiling at 2.90 m. Remaining 2.1% holes are the window panes only, escaping to a featureless world background - usable, but a real environment behind the windows would be better for gaze directions that cross them. First look from the file's own shot camera (previews/classroom_shotcam) failed badly: renderCam sits 0.46 m off the rear wall (depth_min 0.10 m) and sees its back side, giving backface_fraction 0.136. Moving the eye into the room cut that to 0.0038, a 36x reduction - the README's 'set dressing built for one shot camera' warning, measured."
+  }
+ ]
+}

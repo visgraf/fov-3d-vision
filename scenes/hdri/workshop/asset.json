@@ -1,0 +1,34 @@
+{
+ "slug": "workshop",
+ "name": "Workshop",
+ "authors": {
+  "Dimitrios Savva": "Photography",
+  "Jarod Guest": "Processing"
+ },
+ "license": "CC0",
+ "source_api": "https://api.polyhaven.com/info/workshop",
+ "file": "workshop_8k.exr",
+ "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/exr/8k/workshop_8k.exr",
+ "md5": "3d39fc51c48153582d5cd16094963cac",
+ "resolution": "8k",
+ "max_resolution": [
+  24576,
+  12288
+ ],
+ "category": "Interiors/Workshops & Garages/Industrial Workshops",
+ "attributes": {
+  "light_type": "artificial",
+  "contrast": "high",
+  "environment": "indoor"
+ },
+ "tags": [
+  "fluorescent",
+  "lamp",
+  "table",
+  "workshop",
+  "machine",
+  "tools",
+  "concrete",
+  "mess"
+ ]
+}

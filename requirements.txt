@@ -1,0 +1,17 @@
+# Host-side dependencies for tools/inspect_preview.py.
+#
+#     python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# The Blender-side scripts (bl_common, preview360, make_calib_room, make_hdri_scene,
+# place_eye) run inside Blender's own Python and need nothing from here.
+# tools/fetch_hdris.py is standard library only.
+#
+# Pinned to the versions that produced the numbers in scenes/manifest.json.
+# inspect_preview.py needs OpenEXR >= 3.3 for the multi-part reader; the rest is
+# pinned for reproducibility rather than because older versions are known to break.
+#
+# Also required, and not installable from here: Blender 5.2.1 LTS on PATH as `blender`.
+
+numpy==2.2.6
+OpenEXR==3.4.15
+pillow==12.3.0
