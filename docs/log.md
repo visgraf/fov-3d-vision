@@ -215,3 +215,30 @@ with a stub `bpy` whose Render Result buffer is live like the real one — norma
 controls, exit codes — but that proves the script's logic, not the Blender API calls
 (`img.depth == 128`, `pixels.foreach_get`, `save_render` under border render). Those are
 what the two `--control` runs and one real run on the workstation must confirm.
+
+## 2026-09-13 — A2 noise floor measured on both scenes; the guard caught a real bug; no reference rendered
+
+All on the workstation (Blender 5.2.1, OptiX, RTX 4090). Step 0 first: `check_noise_floor_stats.py`
+13 checks pass; `--control same-seed` max|A-B| 1.192e-07, rel_rms 5.8e-08, PASSED; `--control
+late-read` guard fired, PASSED; both exit 0. A nonexistent `--blend` prints FAILED and exits 1.
+The assumed API details (depth 128, foreach_get, save_render under border) all held.
+
+First real Classroom run: FAILED at tile 0, 16 spp, seeds (0, 1) identical, rel_rms 4.97e-08.
+Not the late-read bug: the Classroom's scene action keyframes `cycles.seed` (frame 1, value
+144, GENERATOR modifier), and every render re-evaluates the frame, so `c.seed = 1` was
+overwritten before the render; it read back as 1 both times. Calib room has no such key, which
+is why the audit never saw it. Added `bl_common.pin_seed` (removes F-curves and drivers on
+`cycles.seed`, Blender 5.2 layered-action API) and an assertion in `render()` that seed and
+samples still hold after the render. `preview360.py` calls it too; `render_foveated.py` not yet.
+Calib room re-run after the fix reproduces the earlier numbers (worst 0.00956 at 8192 both times).
+
+Noise, worst tile: calib room 0.2662 at 16 spp down to 0.00956 at 8192; Classroom 1.148 down to
+0.0336. 1/sqrt(spp) check medians 1.006 and 1.022, both ok. Timing: call floor 0.060 s / 0.158 s
+median; 9.92 / 10.43 ns per pixel-sample median, ranges 9.41-10.08 / 8.70-10.89, worst fit
+residual 0.117 / 0.077.
+
+spp: calib room 8192 meets 0.01 (measured); Classroom needs ~92,600, rounded to 131072
+(assumed, 1/sqrt extrapolation). One spp for both, so 131072: projected 561 min and 591 min.
+Both over the 90-minute cap, so nothing rendered. At 8192 spp both would project to ~35-37 min.
+The Classroom's worst tile is its darkest (level 0.042 vs 0.568); its brightest tile reaches
+0.0077 at 8192. Full write-up in `docs/a2-reference-and-noise-floor.md`.

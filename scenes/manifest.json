@@ -9,7 +9,10 @@
  "measured_with": {
   "blender": "5.2.1 LTS",
   "device": "OPTIX (NVIDIA GeForce RTX 4090)",
-  "preview_size": [2048, 1024],
+  "preview_size": [
+   2048,
+   1024
+  ],
   "date": "2026-09-12",
   "note": "first run of this pipeline on a GPU; the handover was verified on CPU only"
  },
@@ -21,7 +24,11 @@
    "blend": "scenes/calib_room/calib_room.blend",
    "source": "tools/make_calib_room.py",
    "license": "own",
-   "eye_position_m": [0.0, 0.0, 1.6],
+   "eye_position_m": [
+    0.0,
+    0.0,
+    1.6
+   ],
    "preview": "previews/calib_room",
    "checks": {
     "hole_fraction": 0.0,
@@ -30,7 +37,30 @@
     "zenith_depth_m": 1.60019
    },
    "status": "ok",
-   "notes": "Closed room, so zero holes and zero back-faces as expected. Nadir and zenith both 1.600 m confirm metric scale (eye 1.6 m, floor 0, ceiling 3.2 m). Contact sheet matches the CPU reference in reference/calib_room_sheet.png structurally, so the OptiX path reproduces the sandbox result. 50 targets in calib_room.targets.json."
+   "notes": "Closed room, so zero holes and zero back-faces as expected. Nadir and zenith both 1.600 m confirm metric scale (eye 1.6 m, floor 0, ceiling 3.2 m). Contact sheet matches the CPU reference in reference/calib_room_sheet.png structurally, so the OptiX path reproduces the sandbox result. 50 targets in calib_room.targets.json.",
+   "reference": {
+    "status": "not rendered",
+    "path": null,
+    "width": 7200,
+    "filter": "BOX",
+    "spp": 131072,
+    "spp_how": "assumed: one spp for both mesh scenes, set by the Classroom's 1/sqrt(spp) extrapolation; this scene alone meets the target at 8192 spp (measured)",
+    "render_seconds": null,
+    "projected_minutes_at_spp": 561.5,
+    "rel_rms_worst_at_spp": null,
+    "noise_floor": {
+     "path": "previews/noise/calib_room/noise.json",
+     "date": "2026-09-13",
+     "target_rel_rms": 0.01,
+     "spp_meeting_target": 8192,
+     "spp_how": "measured",
+     "rel_rms_worst_at_8192": 0.00956,
+     "rel_rms_median_at_8192": 0.00618,
+     "ns_per_pixel_sample_median": 9.92,
+     "call_floor_seconds_median": 0.0595,
+     "projected_minutes_at_8192": 35.1
+    }
+   }
   },
   {
    "id": "hdri_workshop",
@@ -39,11 +69,24 @@
    "blend": "scenes/hdri/workshop/scene.blend",
    "source": "Poly Haven, see scenes/hdri/workshop/asset.json",
    "license": "CC0",
-   "authors": {"Dimitrios Savva": "Photography", "Jarod Guest": "Processing"},
+   "authors": {
+    "Dimitrios Savva": "Photography",
+    "Jarod Guest": "Processing"
+   },
    "hdri_file": "scenes/hdri/workshop/workshop_8k.exr",
-   "hdri_resolution": [8192, 4096],
-   "max_resolution": [24576, 12288],
-   "eye_position_m": [0.0, 0.0, 0.0],
+   "hdri_resolution": [
+    8192,
+    4096
+   ],
+   "max_resolution": [
+    24576,
+    12288
+   ],
+   "eye_position_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
    "preview": "previews/hdri_workshop",
    "checks": {
     "column_shift_px": 0,
@@ -63,8 +106,14 @@
    "source_zip_bytes": 70279690,
    "source_zip_md5": "3adbb7114b514bfc6fc724ce20f86b4e",
    "license": "CC0",
-   "authors": {"Christophe Seux": "scene"},
-   "eye_position_m": [-0.6, -1.0, 1.2],
+   "authors": {
+    "Christophe Seux": "scene"
+   },
+   "eye_position_m": [
+    -0.6,
+    -1.0,
+    1.2
+   ],
    "eye_yaw_deg": 0.0,
    "eye_pitch_deg": 0.0,
    "preview": "previews/classroom",
@@ -75,7 +124,31 @@
     "zenith_depth_m": 1.69665
    },
    "status": "ok",
-   "notes": "Scene '_mainScene' (Cycles, metric, unit scale 1.0); the file also holds dustParticules and volumeLight, both EEVEE, neither used. EYE placed headlessly with tools/place_eye.py and saved beside the original, which stays pristine. nadir 1.200 m equals the chosen eye height exactly, so metric scale is confirmed; zenith puts the ceiling at 2.90 m. Remaining 2.1% holes are the window panes only, escaping to a featureless world background - usable, but a real environment behind the windows would be better for gaze directions that cross them. First look from the file's own shot camera (previews/classroom_shotcam) failed badly: renderCam sits 0.46 m off the rear wall (depth_min 0.10 m) and sees its back side, giving backface_fraction 0.136. Moving the eye into the room cut that to 0.0038, a 36x reduction - the README's 'set dressing built for one shot camera' warning, measured."
+   "notes": "Scene '_mainScene' (Cycles, metric, unit scale 1.0); the file also holds dustParticules and volumeLight, both EEVEE, neither used. EYE placed headlessly with tools/place_eye.py and saved beside the original, which stays pristine. nadir 1.200 m equals the chosen eye height exactly, so metric scale is confirmed; zenith puts the ceiling at 2.90 m. Remaining 2.1% holes are the window panes only, escaping to a featureless world background - usable, but a real environment behind the windows would be better for gaze directions that cross them. First look from the file's own shot camera (previews/classroom_shotcam) failed badly: renderCam sits 0.46 m off the rear wall (depth_min 0.10 m) and sees its back side, giving backface_fraction 0.136. Moving the eye into the room cut that to 0.0038, a 36x reduction - the README's 'set dressing built for one shot camera' warning, measured.",
+   "reference": {
+    "status": "not rendered",
+    "path": null,
+    "width": 7200,
+    "filter": "BOX",
+    "spp": 131072,
+    "spp_how": "assumed: 1/sqrt(spp) extrapolation from 8192 (unrounded 92600); no measured spp met the target",
+    "render_seconds": null,
+    "projected_minutes_at_spp": 590.6,
+    "rel_rms_worst_at_spp": null,
+    "noise_floor": {
+     "path": "previews/noise/classroom/noise.json",
+     "date": "2026-09-13",
+     "target_rel_rms": 0.01,
+     "spp_meeting_target": null,
+     "spp_how": "none measured",
+     "rel_rms_worst_at_8192": 0.03362,
+     "rel_rms_median_at_8192": 0.01449,
+     "ns_per_pixel_sample_median": 10.43,
+     "call_floor_seconds_median": 0.1583,
+     "projected_minutes_at_8192": 36.9,
+     "note": "worst tile is the darkest (level 0.042 vs 0.568 for the brightest, which reaches 0.0077 at 8192). Scene action keyframes cycles.seed; tools strip it (bl_common.pin_seed)."
+    }
+   }
   }
  ]
 }

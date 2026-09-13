@@ -115,6 +115,39 @@ def configure_multilayer_exr(scene: bpy.types.Scene) -> None:
     im.use_exr_interleave = True
 
 
+def pin_seed(scene: bpy.types.Scene) -> list[str]:
+    """Remove any animation on `cycles.seed` so a seed set by a script actually takes.
+
+    Blender's Classroom keyframes the scene's `cycles.seed` (one key at frame 1). Every
+    render evaluates the frame, so the keyframe overwrote `c.seed` set a line earlier and two
+    "different seed" renders came back identical (measured 2026-09-13, caught by
+    noise_floor.py's guard). Drivers are removed for the same reason. Returns a description
+    of what was removed, empty if nothing was. Callers that depend on the seed should still
+    check `scene.cycles.seed` after rendering.
+    """
+    removed: list[str] = []
+    ad = scene.animation_data
+    if ad is None:
+        return removed
+    act = ad.action
+    if act is not None:
+        for layer in act.layers:
+            for strip in layer.strips:
+                for cb in strip.channelbags:
+                    for fc in list(cb.fcurves):
+                        if fc.data_path == "cycles.seed":
+                            keys = [(k.co[0], k.co[1]) for k in fc.keyframe_points]
+                            mods = [m.type for m in fc.modifiers]
+                            cb.fcurves.remove(fc)
+                            removed.append(f"fcurve on cycles.seed in action {act.name!r}, "
+                                           f"keys {keys}, modifiers {mods}")
+    for d in list(ad.drivers):
+        if d.data_path == "cycles.seed":
+            ad.drivers.remove(d)
+            removed.append(f"driver on cycles.seed")
+    return removed
+
+
 def node_material(name: str) -> bpy.types.Material:
     mat = bpy.data.materials.new(name)
     if mat.node_tree is None and hasattr(mat, "use_nodes"):  # use_nodes is deprecated in 5.x

@@ -91,8 +91,9 @@ def check_pair_differs(stats: dict, seeds: tuple[int, int]) -> None:
     if stats["rel_rms"] < IDENTICAL_REL_RMS:
         raise RuntimeError(
             f"renders with seeds {seeds} are identical (rel_rms {stats['rel_rms']:.3g}, "
-            f"max|A-B| {stats['max_abs_diff']:.3g}). Either the seeds did not take, or the "
-            f"Render Result buffer was read after the next render - the estimator is invalid")
+            f"max|A-B| {stats['max_abs_diff']:.3g}). Either the seeds did not take (a keyframe "
+            f"or driver on cycles.seed; see pin_seed), or the Render Result buffer was read "
+            f"after the next render - the estimator is invalid")
 
 
 def fit_timing(rows: list[dict], fit_min_spp: int) -> dict:
@@ -252,7 +253,7 @@ def read_rgb(path: str) -> np.ndarray:
 def main():
     import bpy
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from bl_common import ensure_cycles, find_eye, rigid, script_args, setup_device
+    from bl_common import ensure_cycles, find_eye, pin_seed, rigid, script_args, setup_device
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--blend")
@@ -320,6 +321,8 @@ def main():
     im.file_format = "OPEN_EXR"
     im.color_mode, im.color_depth, im.exr_codec = "RGBA", "32", "ZIP"
     r.use_persistent_data = True
+    for what in pin_seed(scene):        # Classroom keyframes cycles.seed; the key would win
+        print(f"[noise] removed {what}", flush=True)
 
     def set_tile(cx: float, cy: float) -> None:
         fx, fy = args.tile_px / width, args.tile_px / height
@@ -334,7 +337,11 @@ def main():
         c.samples, c.seed = spp, seed
         t0 = time.perf_counter()
         bpy.ops.render.render(write_still=False)
-        return time.perf_counter() - t0
+        dt = time.perf_counter() - t0
+        if c.seed != seed or c.samples != spp:   # frame evaluation can overwrite both
+            raise RuntimeError(f"seed/samples did not take: asked ({seed}, {spp}), scene has "
+                               f"({c.seed}, {c.samples}) after the render; is either animated?")
+        return dt
 
     def grab() -> np.ndarray:
         """Save and read the live Render Result NOW, before anything else renders."""

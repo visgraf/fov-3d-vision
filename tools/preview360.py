@@ -25,7 +25,7 @@ import bpy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bl_common import (configure_multilayer_exr, ensure_cycles, eye_record, find_eye,  # noqa: E402
-                       node_material, rigid, script_args, setup_device)
+                       node_material, pin_seed, rigid, script_args, setup_device)
 
 
 def main():
@@ -72,6 +72,8 @@ def main():
     r.film_transparent, r.use_motion_blur, r.use_single_layer = False, False, True
     r.use_compositing, r.use_sequencer = False, False
     c = scene.cycles
+    for what in pin_seed(scene):
+        print(f"[preview360] removed {what}")
     c.samples, c.seed = args.spp, 0
     c.pixel_filter_type = args.filter
     c.filter_width = args.filter_width if args.filter_width is not None else (1.0 if args.filter == "BOX" else c.filter_width)
