@@ -30,7 +30,16 @@ Push to main; revert if wrong.
 - Equirect (u, v) → EYE-frame direction: `lon = (u−0.5)·2π`, `lat = (0.5−v)·π`, v = 0 at the top row.
 - Sample record: origin, direction, value, footprint (solid angle), ray distance,
   fixation id, raster index.
-- Python: plain and typed where it helps. numpy, bpy, OpenEXR. No framework.
+- Python: plain and typed where it helps. No framework.
+- **Two interpreters, and they are not interchangeable.** Scripts run by `blender -b -P`
+  use Blender's bundled Python: bpy, mathutils and numpy, nothing else. Host-side scripts
+  (`inspect_preview.py`, `check_foveated.py`) use `.venv` and may import OpenEXR or PIL.
+  A Blender-side script that imports either is broken on the workstation even if it runs in
+  the Chat sandbox, where one interpreter happens to have both. To read an image back
+  inside Blender, write single-layer EXR and use `bpy.data.images.load` (rows are bottom-up;
+  multilayer cannot be read back this way).
+- `blender -b -P` exits 0 even when the script raised. Any Blender-side tool that produces
+  an artifact must catch its own failure and exit nonzero.
 - Git: forward only. Revert, don't rewrite.
 
 ## Files

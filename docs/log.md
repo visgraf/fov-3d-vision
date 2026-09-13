@@ -110,3 +110,29 @@ needing a converged reference, so no bias from one is smuggled into the measurem
 Smoke test (calib room, 2 tiles of 48 px, CPU): rel_rms 0.1515 / 0.1087 / 0.0733 at 8 / 16 /
 32 spp. Ratios 1.39 and 1.48 against the 1.41 expected for 1/sqrt(spp), so the estimator
 behaves. Fixed cost per render call with persistent data on: 0.023 s.
+
+## 2026-09-12 — noise_floor.py failed on the workstation; sandbox parity rule added
+
+The tool imported OpenEXR, which does not exist in Blender's bundled Python. It ran fine in
+the Chat sandbox because there bpy and OpenEXR sit in one interpreter, so the sandbox is
+structurally blind to this class of bug. Diagnosed by Code against the real environment.
+
+The import was deferred inside a function, so the script got through argument parsing, camera
+setup and a whole tile render before failing — and `blender -b -P` exited 0 regardless, so
+the command reported success while writing no noise.json.
+
+Fixed, each verified rather than assumed:
+- Reads tiles back through `bpy.data.images.load` on single-layer EXR instead of OpenEXR.
+  Checked against the OpenEXR reader on a real 96 px tile: max difference exactly 0.0. The
+  `[::-1]` row flip is load-bearing (without it, 1.33). Multilayer cannot be read this way at
+  all: Blender loads it as type MULTILAYER, size (0,0), no pixels.
+- Failure now exits 1 and prints a FAILED line. Confirmed: exit code 1 on a bad --blend.
+- The scratch tile is removed in a `finally`, so a crash no longer leaves it behind.
+- File I/O moved outside the timer, so the a + b*spp fit measures rendering only.
+- Tile pixel count now measured from the returned array. Border rounding gave 95x96 for a
+  requested 96, so the old `tile_px**2` would have skewed the reference-cost projection.
+
+Re-run after the fix reproduces the earlier rel_rms values exactly (0.15150 / 0.10867 /
+0.07335 at 8 / 16 / 32 spp), which is the check that the new reader changed nothing.
+
+CLAUDE.md now states the two-interpreter rule, since the sandbox cannot catch it.

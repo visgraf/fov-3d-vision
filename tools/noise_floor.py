@@ -28,6 +28,7 @@ import math
 import os
 import sys
 import time
+import traceback
 
 import bpy
 import numpy as np
@@ -37,14 +38,23 @@ from bl_common import (configure_multilayer_exr, ensure_cycles, find_eye, rigid,
                        script_args, setup_device)
 
 
-def read_combined(path: str) -> np.ndarray:
-    import OpenEXR
-    with OpenEXR.File(path) as f:
-        for part in f.parts:
-            for name, ch in part.channels.items():
-                if name.endswith("Combined"):
-                    return np.asarray(ch.pixels)[..., :3]
-    raise KeyError("no Combined channel")
+def read_rgb(path: str) -> np.ndarray:
+    """Read a single-layer EXR back through Blender's own loader.
+
+    This script runs in Blender's bundled Python, which ships numpy but not OpenEXR, so it
+    must not depend on the venv (see CLAUDE.md). Verified against the OpenEXR reader on a
+    real tile: identical to the last bit. img.pixels is bottom-up, hence the [::-1]; and the
+    file must be single-layer, because Blender loads a multilayer EXR as type MULTILAYER
+    with size (0, 0) and no accessible pixels.
+    """
+    img = bpy.data.images.load(path)
+    try:
+        if img.type == "MULTILAYER" or img.size[0] == 0:
+            raise RuntimeError(f"{path} is multilayer; this reader needs single-layer EXR")
+        w, h, n = img.size[0], img.size[1], img.channels
+        return np.array(img.pixels[:], dtype=np.float32).reshape(h, w, n)[::-1, :, :3]
+    finally:
+        bpy.data.images.remove(img)
 
 
 def tile_centres(n: int) -> list[tuple[float, float]]:
@@ -111,7 +121,10 @@ def main():
     vl = bpy.context.view_layer
     vl.use_pass_combined = True
     vl.use_pass_z = vl.use_pass_normal = vl.use_pass_position = False
-    configure_multilayer_exr(scene)
+    im = r.image_settings          # single-layer: only Combined is needed, and read_rgb
+    im.media_type = "IMAGE"        # cannot read multilayer back through bpy
+    im.file_format = "OPEN_EXR"
+    im.color_mode, im.color_depth, im.exr_codec = "RGBA", "32", "ZIP"
     r.use_persistent_data = True
 
     print(f"[noise] {eye_note}; device {backend}; reference {width}x{height} at s0={args.s0} deg; "
@@ -119,39 +132,42 @@ def main():
 
     rows = []
     scratch = os.path.join(out, "_tile.exr")
-    for ti, (cx, cy) in enumerate(tile_centres(args.tiles)):
-        fx, fy = args.tile_px / width, args.tile_px / height
-        r.border_min_x = min(max(cx - fx / 2, 0.0), 1.0 - fx)
-        r.border_min_y = min(max(cy - fy / 2, 0.0), 1.0 - fy)
-        r.border_max_x = r.border_min_x + fx
-        r.border_max_y = r.border_min_y + fy
-        for spp in spp_list:
-            imgs, secs = [], []
-            for seed in (0, 1):
-                c.samples, c.seed = spp, seed
-                r.filepath = scratch
-                t0 = time.time()
-                bpy.ops.render.render(write_still=True)
-                secs.append(time.time() - t0)
-                imgs.append(read_combined(scratch))
-            a, b = imgs
-            mean = 0.5 * (a + b)
-            level = float(mean.mean())
-            diff = a - b
-            sigma = float(np.sqrt((diff ** 2).mean() / 2.0))          # one render's RMS noise
-            per_px = np.abs(diff).mean(-1) / math.sqrt(2.0)
-            rows.append({
-                "tile": ti, "centre": [round(cx, 4), round(cy, 4)], "spp": spp,
-                "level": level, "sigma": sigma,
-                "rel_rms": sigma / max(level, 1e-9),
-                "rel_p99": float(np.percentile(per_px, 99)) / max(level, 1e-9),
-                "seconds": round(float(np.mean(secs)), 3),
-            })
-            print(f"[noise] tile {ti} spp {spp:5d}  rel_rms {rows[-1]['rel_rms']:.5f}  "
-                  f"{rows[-1]['seconds']:.2f}s")
-    if os.path.exists(scratch):
-        os.remove(scratch)
-
+    try:
+        for ti, (cx, cy) in enumerate(tile_centres(args.tiles)):
+            fx, fy = args.tile_px / width, args.tile_px / height
+            r.border_min_x = min(max(cx - fx / 2, 0.0), 1.0 - fx)
+            r.border_min_y = min(max(cy - fy / 2, 0.0), 1.0 - fy)
+            r.border_max_x = r.border_min_x + fx
+            r.border_max_y = r.border_min_y + fy
+            for spp in spp_list:
+                imgs, secs = [], []
+                for seed in (0, 1):
+                    c.samples, c.seed = spp, seed
+                    t0 = time.time()
+                    bpy.ops.render.render(write_still=False)
+                    secs.append(time.time() - t0)   # file I/O deliberately outside the timer
+                    bpy.data.images["Render Result"].save_render(scratch, scene=scene)
+                    imgs.append(read_rgb(scratch))
+                a, b = imgs
+                tile_pixels = a.shape[0] * a.shape[1]   # border rounding: not always tile_px**2
+                mean = 0.5 * (a + b)
+                level = float(mean.mean())
+                diff = a - b
+                sigma = float(np.sqrt((diff ** 2).mean() / 2.0))          # one render's RMS noise
+                per_px = np.abs(diff).mean(-1) / math.sqrt(2.0)
+                rows.append({
+                    "tile": ti, "centre": [round(cx, 4), round(cy, 4)], "spp": spp,
+                    "pixels": tile_pixels,
+                    "level": level, "sigma": sigma,
+                    "rel_rms": sigma / max(level, 1e-9),
+                    "rel_p99": float(np.percentile(per_px, 99)) / max(level, 1e-9),
+                    "seconds": round(float(np.mean(secs)), 3),
+                })
+                print(f"[noise] tile {ti} spp {spp:5d}  rel_rms {rows[-1]['rel_rms']:.5f}  "
+                      f"{rows[-1]['seconds']:.2f}s", flush=True)
+    finally:
+        if os.path.exists(scratch):
+            os.remove(scratch)
     by_spp = {}
     for spp in spp_list:
         sel = [x for x in rows if x["spp"] == spp]
@@ -176,11 +192,12 @@ def main():
     chosen = min(meeting) if meeting else None
     projection = None
     if chosen is not None and per_spp_s is not None:
-        tile_px2 = args.tile_px ** 2
-        seconds_full = per_spp_s * chosen * (width * height) / tile_px2
+        tile_pixels = float(np.median([x["pixels"] for x in rows]))
+        seconds_full = per_spp_s * chosen * (width * height) / tile_pixels
         projection = {
             "spp": chosen,
             "reference_pixels": width * height,
+            "measured_tile_pixels": int(tile_pixels),
             "projected_seconds": round(seconds_full, 1),
             "projected_minutes": round(seconds_full / 60.0, 2),
             "exr_gigabytes_4_passes": round(width * height * 44 / 1e9, 2),
@@ -215,4 +232,18 @@ def main():
               f"{projection['projected_minutes']} min, {projection['exr_gigabytes_4_passes']} GB")
 
 
-main()
+def run():
+    """Blender does not propagate an uncaught exception to the exit code: `blender -b -P`
+    prints the traceback and still exits 0. A tool that fails invisibly is the thing the
+    second hard rule in CLAUDE.md exists to prevent, so failure is made loud here."""
+    try:
+        main()
+    except BaseException:
+        traceback.print_exc()
+        print("[noise] FAILED: no noise.json was written", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
+
+
+run()
