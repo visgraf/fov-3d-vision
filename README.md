@@ -41,7 +41,7 @@ One camera, one centre of projection.
 | | Step | State |
 |---|---|---|
 | A1 | Scene sources: gather and check 3D scenes | **done** — three tiers verified on GPU; `docs/a1-scene-gathering.md` |
-| A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **blocked on a decision** — noise floor measured on both scenes; 1% on the worst tile needs ~131k spp on the Classroom (assumed), ~10 h per reference, so none rendered; `docs/a2-reference-and-noise-floor.md` |
+| A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **done** — both references at 8192 spp, 32.3 / 35.8 min measured; D7 met on the Classroom, 2-5% short on the calib room; `docs/a2-reference-and-noise-floor.md` |
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | |
 | A5 | Integration of the sequence into a spherical representation | |
@@ -72,16 +72,17 @@ and the foveated OSL camera renders on the RTX 4090 through OptiX at 50.8x fewer
 uniform sampling of the same field. Measurements are in `scenes/manifest.json`,
 `docs/a3-foveated-camera.md` and `docs/log.md`.
 
-A2 has its noise floor and needs a decision before the reference renders.
-`tools/noise_floor.py` passed its two controls and its host-side check on the workstation, and
-its guard caught a real problem on first use: the Classroom keyframes the Cycles seed, so a
-seed set by a script did not take (now stripped by `bl_common.pin_seed` and asserted). Measured
-on both mesh scenes: the calibration room meets 1% worst-tile relative noise at 8192 spp
-(35 min projected for the 7200x3600 reference); the Classroom does not reach it within 8192 spp
-and would need about 131k spp by extrapolation, roughly ten hours. Under the one-spp-for-both
-rule that is over the 90-minute cap, so no reference has been rendered. The numbers and the
-options are in `docs/a2-reference-and-noise-floor.md`. Tier 1 needs no reference: the HDRI is
-its own.
+A2 is complete. The noise floor is measured on both mesh scenes with `tools/noise_floor.py`
+(two controls plus a host-side check), and both reference panoramas are rendered at
+7200x3600, 8192 spp, box filter: 32.3 min for the calibration room and 35.8 min for the
+Classroom on the RTX 4090, within 8% of the projection from 128 px tiles. Those times are the
+uniform-cost baseline at s0 = 0.05. The criterion is D7: reference noise at most a third of
+the 1024 spp fixation noise; the Classroom meets it (0.27 / 0.33) and the calibration room is
+2 to 5% over (0.34 / 0.35), recorded rather than resolved. Two things the checks caught on
+the way: the Classroom keyframes the Cycles seed, and the calibration room blend ships with
+adaptive sampling on; the tools now strip the first and force the second off. Numbers in
+`docs/a2-reference-and-noise-floor.md` and `scenes/manifest.json`. Tier 1 needs no reference:
+the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

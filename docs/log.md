@@ -242,3 +242,33 @@ spp: calib room 8192 meets 0.01 (measured); Classroom needs ~92,600, rounded to 
 Both over the 90-minute cap, so nothing rendered. At 8192 spp both would project to ~35-37 min.
 The Classroom's worst tile is its darkest (level 0.042 vs 0.568); its brightest tile reaches
 0.0077 at 8192. Full write-up in `docs/a2-reference-and-noise-floor.md`.
+
+## 2026-09-13 — A2 references rendered at 8192 spp; adaptive sampling caught by the projection
+
+Rule changed (D7): reference noise at most a third of the fixation noise it is compared to,
+spp per scene. At 8192 vs 1024 spp the Classroom's ratios are 0.266 (worst) / 0.328 (median);
+the calib room's are 0.341 / 0.350, over the bound by 2-5% (pure 1/sqrt gives 0.354 for 8x).
+Rendered 8192 for both as instructed; calib room flagged, 16384 would give 0.24 (assumed).
+
+Scale test first (calib room, 7200x3600, 256 spp): 58.2 s vs 65.9 s projected, ratio 0.883,
+so proceed. Then the calib room reference at "8192 spp" took 135 s against 35 min projected.
+Cause: calib_room.blend ships with use_adaptive_sampling on (threshold 0.01); noise_floor.py
+turns it off, preview360.py did not. The Classroom blend has it off, so its reference, already
+rendering, stayed valid. preview360.py now forces adaptive off and time_limit 0, asserts seed,
+samples, adaptive and time_limit after the render, records them in meta.json, and got the
+loud-failure wrapper (exit 1 on a raise; render_foveated.py too, both verified on a bad
+--blend). Also added --time-write: re-saves Render Result to a scratch path, times it, and
+asserts the byte size equals pano.exr. Deleted the adaptive-on reference, re-ran.
+
+Uniform scale test: 63.1 s, ratio 0.958; EXR write 0.38 s; 502 MB on disk. inspect_preview
+handles 7200x3600 in 14 s.
+
+References, measured: calib room 1939.8 s (32.3 min, ratio 0.921 to the 35.1 projected),
+Classroom 2147.4 s (35.8 min, ratio 0.970 to 36.9). EXR writes 0.38 s / 1.6 s inside those.
+Files 501 MB / 2.00 GB (ZIP; the 1.14 GB in the previous entry was uncompressed arithmetic).
+inspect_preview on both matches A1: holes 0 / 0.0208, backfaces 0 / 0.0038, nadir 1.6002 /
+1.2001 m, zenith 1.6002 / 1.6967 m. These render times are the uniform-cost baseline at s0.
+
+render_foveated.py now calls pin_seed (smoke-tested on the Classroom at 128 px: key removed,
+exit 0), since A4 renders many fixations in one session. Write-up in
+`docs/a2-reference-and-noise-floor.md`.

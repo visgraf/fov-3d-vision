@@ -21,13 +21,14 @@ import math
 import os
 import sys
 import time
+import traceback
 
 import bpy
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bl_common import (configure_multilayer_exr, ensure_cycles, eye_record, find_eye,  # noqa: E402
-                       rigid, script_args, setup_device)
+                       pin_seed, rigid, script_args, setup_device)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -101,6 +102,8 @@ def main():
     r.use_compositing = r.use_sequencer = False
     r.use_single_layer = True
     c = scene.cycles
+    for what in pin_seed(scene):        # a keyframed seed would silently reuse one seed per session
+        print(f"[foveated] removed {what}")
     c.samples, c.seed = args.spp, 0
     c.use_adaptive_sampling = False
     c.pixel_filter_type, c.filter_width = "BOX", 1.0
@@ -139,4 +142,18 @@ def main():
     print(f"[foveated] wrote {out} ({seconds:.2f}s on {backend})")
 
 
-main()
+def run():
+    """`blender -b -P` exits 0 even when the script raised (CLAUDE.md), so a tool that writes an
+    artifact must make its own failure loud: traceback, a FAILED line, exit 1."""
+    try:
+        main()
+    except BaseException:
+        traceback.print_exc()
+        print("[foveated] FAILED", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
+
+
+if __name__ == "__main__":
+    run()

@@ -59,3 +59,13 @@ to avoid. Extracting a shared scene library later is cheaper than keeping two in
 Supersedes the naming suggestion in D4; the one-repository substance of D4 stands.
 Overturned if: the scene tooling is wanted by another project, in which case `w3d-scenes`
 becomes its home and this repository depends on it.
+
+## D7 — Reference noise at most a third of the fixation noise it is compared to; spp per scene (2026-09-13)
+
+The reference panorama's relative noise, worst tile and median, must be at most one third of
+the noise of the fixation renders it will be compared to; each scene picks its own spp.
+Why: the reference exists to read fixation renders against, so its noise only needs to be
+negligible relative to theirs; a fixed 1% worst-tile target was set by the darkest patch of
+the Classroom and cost ten hours. Supersedes the one-spp-for-both rule and the 1% target.
+Overturned if: a matcher turns out to be sensitive to reference noise below that ratio, or
+fixation renders go above 1024 spp.

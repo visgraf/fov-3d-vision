@@ -20,6 +20,7 @@ import math
 import os
 import sys
 import time
+import traceback
 
 import bpy
 
@@ -42,6 +43,10 @@ def main():
                          "identity check and the sample footprint omega both assume.")
     ap.add_argument("--filter-width", type=float, default=None, help="default: 1.0 for BOX, else Cycles' own")
     ap.add_argument("--no-backface", action="store_true")
+    ap.add_argument("--time-write", action="store_true",
+                    help="after the render, re-save the multilayer EXR to a scratch path and time "
+                         "it, so render_seconds (which includes the write) can be split; the "
+                         "scratch file must match pano.exr in size and is then removed")
     args = ap.parse_args(script_args())
 
     if args.blend:
@@ -75,6 +80,12 @@ def main():
     for what in pin_seed(scene):
         print(f"[preview360] removed {what}")
     c.samples, c.seed = args.spp, 0
+    # Uniform sampling, so --spp is what every pixel gets. calib_room.blend ships with adaptive
+    # sampling on (threshold 0.01): at 8192 spp the reference rendered in 135 s against 35 min
+    # projected because most pixels stopped early (measured 2026-09-13). noise_floor.py and
+    # render_foveated.py already force this off; a reference must match them.
+    c.use_adaptive_sampling = False
+    c.time_limit = 0.0
     c.pixel_filter_type = args.filter
     c.filter_width = args.filter_width if args.filter_width is not None else (1.0 if args.filter == "BOX" else c.filter_width)
     try:
@@ -89,6 +100,23 @@ def main():
     t0 = time.time()
     bpy.ops.render.render(write_still=True)
     t_render = time.time() - t0
+    got = (c.samples, c.seed, c.use_adaptive_sampling, c.time_limit)
+    if got != (args.spp, 0, False, 0.0):   # frame evaluation can overwrite any of these
+        raise RuntimeError(f"sampling settings did not take: (samples, seed, adaptive, time_limit) "
+                           f"= {got} after the render, expected ({args.spp}, 0, False, 0.0); is one animated?")
+
+    t_write, write_note = None, None
+    if args.time_write:
+        scratch = os.path.join(out, "_write_timing.exr")
+        t0 = time.time()
+        bpy.data.images["Render Result"].save_render(scratch, scene=scene)
+        t_write = time.time() - t0
+        sz_ref, sz_scr = os.path.getsize(r.filepath), os.path.getsize(scratch)
+        os.remove(scratch)
+        write_note = f"re-saved Render Result as multilayer EXR: {sz_scr} bytes vs pano.exr {sz_ref} bytes"
+        if sz_scr != sz_ref:
+            raise RuntimeError(f"write timing invalid: {write_note}; the re-save is not the same file")
+        print(f"[preview360] EXR write {t_write:.1f}s ({write_note})")
 
     im = r.image_settings
     im.media_type, im.file_format, im.color_mode, im.color_depth = "IMAGE", "PNG", "RGB", "8"
@@ -126,8 +154,12 @@ def main():
         "unit_scale_length": scene.unit_settings.scale_length,
         "width": args.width, "height": args.width // 2, "spp": args.spp,
         "denoise": args.denoise, "device": backend,
+        "adaptive_sampling": False, "time_limit": 0.0, "seed": 0,
         "pixel_filter": args.filter, "filter_width": round(c.filter_width, 4),
         "render_seconds": round(t_render, 2),
+        "render_seconds_includes": "the multilayer EXR write (write_still=True is inside the timer)",
+        "exr_write_seconds": None if t_write is None else round(t_write, 2),
+        "exr_write_note": write_note,
         "backface_seconds": None if t_back is None else round(t_back, 2),
         "equirect_convention": "lon=(u-0.5)*2pi, lat=(0.5-v)*pi, v=0 top; "
                                "d_eye=(sin lon cos lat, sin lat, -cos lon cos lat) in EYE frame (x right, y up, -z forward)",
@@ -138,4 +170,18 @@ def main():
     print(f"[preview360] wrote {out} (render {t_render:.1f}s)")
 
 
-main()
+def run():
+    """`blender -b -P` exits 0 even when the script raised (CLAUDE.md), so a tool that writes an
+    artifact must make its own failure loud: traceback, a FAILED line, exit 1."""
+    try:
+        main()
+    except BaseException:
+        traceback.print_exc()
+        print("[preview360] FAILED", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
+
+
+if __name__ == "__main__":
+    run()
