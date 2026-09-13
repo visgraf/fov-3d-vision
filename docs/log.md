@@ -326,3 +326,36 @@ cards) with no brightness bias (0.996-1.013), so on those targets (b) measures e
 not noise. Left as specified. (c) fails as required on 49/50 and 10/10; the exception is a
 wire target whose 90 deg rotation lands on similar wall. Full profile untested. Write-up in
 `docs/a4-fixation-sequence.md`.
+
+## 2026-09-13 — check (b) reformulated and still registration-limited; A5 integration and curve; uniform wins on the calib room
+
+Step 1. `fixation_sequence.py --seed-pair` (default on) renders every fixation again at seed 1
+in a second pass (so the seed change's scene re-sync is not inside the timed renders):
+fix_b.exr, samples_b.npz, not part of the record. `check_sequence.py` (b) is now binned at
+0.5 deg within 2 deg of the fovea, footprint-weighted means against the reference's box means,
+bound per fixation 1.5*sqrt(n^2 + (n/4)^2) from the seed pair. Calib room 17/50 pass, bounds
+0.012-0.043 (median 0.026), binned alignment floor median 0.023 (max 0.137); Classroom 8/10,
+bounds 0.043-0.222 (median 0.061), floor 0.017. (c) 50/50 and 10/10. Measured why 33 still
+fail: a 1 px (0.1 deg) shift of the reference alone exceeds the bound on 39/50, a half-pixel
+on 23/50; cells are 2.5-5 samples wide on cards whose spoke edges recur every 2 px. A
+footprint-matched variant was worse (0.050). Bound untouched. Old statistic kept as
+resampling_floor (0.098 / 0.116). (d) is +0.59%, not -0.59% as the A4 note said (fixed): the
+footprint integrates to the cap to 0.001% over the exact disc; the rim ring of straddling
+pixel squares adds 1.48% outside and misses 0.87% inside, net +0.61%.
+
+Step 2. `tools/integrate_sphere.py`: disc splat with 1/footprint weights onto the reference
+grid, centroid per cell, D8 metric with the reference box at the centroid (cell-centre box
+reported too, 0.02-0.03 worse). Identity check exact (2e-16) to lat 70 deg, 0.11-0.14 beyond
+because a polar pixel's disc spans its longitude neighbours; mass check +0.02-0.09%. One
+fixation covers 0.118 of the sphere (81% of its cap: disc corner gaps); 50 cover 0.578.
+Calib room, 40 M rays at K=50: foveated targets 0.354 RMS (median 0.176), sphere 0.186;
+uniform W=1118 targets 0.125, sphere 0.077. Uniform wins at every K on this scene, and the
+foveated target error rises with K (0.159 -> 0.354). Measured causes: the uniform is
+grid-registered and shows only its 64 spp noise (0.077, A2 says 0.073); the foveated pays the
+resampling floor at 0.1 deg on the stars; and 1/footprint leaks blur: coarse-sample share of
+the weight at the targets 0.50 at K=50 (finest-only or 1/fp^2 variants: 0.259 / 0.274, still
+above uniform). Checks (2) 0.354 vs bound 0.026 and (3) control 1.46x both fail, recorded.
+Classroom, K=10, 8 M rays: foveated targets 0.223 vs uniform 0.297, sphere 0.276 vs 0.240;
+control 5.3x passes, (2) fails (0.223 vs 0.061). Binned-to-0.5-deg target error 0.067 / 0.073.
+Full profile untested for A4 and A5. Write-up in `docs/a5-spherical-integration.md`; D8 added.
+No new pinned asset: the uniform renders and integrations are regenerable in seconds.

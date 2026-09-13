@@ -69,3 +69,13 @@ negligible relative to theirs; a fixed 1% worst-tile target was set by the darke
 the Classroom and cost ten hours. Supersedes the one-spp-for-both rule and the 1% target.
 Overturned if: a matcher turns out to be sensitive to reference noise below that ratio, or
 fixation renders go above 1024 spp.
+
+## D8 — Error is measured footprint-aware (2026-09-13)
+
+Each integrated cell is compared to the reference box-filtered to that cell's effective
+footprint, centred on the centroid of the samples that reached it, so error is measured at
+the resolution the sampling provides there and where its samples are; the resampling floor
+(per-sample nearest-pixel disagreement) is reported separately, never folded into the bound.
+Why: a fixed-resolution metric would charge the periphery for resolution it was never asked
+for and hide that the fovea's error is set by registration and noise, not by content.
+Overturned if: the matcher needs a metric at a fixed resolution.

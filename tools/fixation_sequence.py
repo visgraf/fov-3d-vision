@@ -8,6 +8,8 @@
 The scene is opened once and the foveated OSL camera set up once (render_foveated.py); each
 gaze is a rotation of that camera about the eye centre (D2, D3). Per fixation, under
 --out/f<NNN>/:
+    fix_b.exr, samples_b.npz   the same fixation at seed 1 (--seed-pair, default on): only so
+                  the checker can measure this fixation's own noise; not part of the record
     fix.exr       Combined + Depth + Normal + Position, 32-bit, single part, UNCOMPRESSED so
                   exr_lite can read it back here (Blender's Python has no OpenEXR reader and
                   cannot load a multilayer EXR through bpy)
@@ -163,6 +165,10 @@ def main():
     ap.add_argument("--spp-sweep", default="16,64,256",
                     help="timing-only renders of the whole gaze list at these spp; '' to skip")
     ap.add_argument("--fit-min-spp", type=int, default=64)
+    ap.add_argument("--seed-pair", dest="seed_pair", action="store_true", default=True,
+                    help="also render every fixation at seed 1 (fix_b.exr, samples_b.npz) so the "
+                         "checker can measure noise locally; the record is seed 0 (default on)")
+    ap.add_argument("--no-seed-pair", dest="seed_pair", action="store_false")
     add_profile(ap, script_args(), s0="s0", spp="fix_spp")
     args = ap.parse_args(script_args())
 
@@ -197,14 +203,8 @@ def main():
     warmup = render_fixation(scene, args.spp)
     print(f"[sequence] warm-up render {warmup:.3f}s (discarded)", flush=True)
 
-    fixations = []
-    for fid, g in enumerate(gazes):
-        fdir = os.path.join(out, f"f{fid:03d}")
-        os.makedirs(fdir, exist_ok=True)
-        set_gaze(cam, eye, g["yaw"], g["pitch"])
-        secs = render_fixation(scene, args.spp)
-        t_io = time.perf_counter()
-        exr_path = os.path.join(fdir, "fix.exr")
+    def grab_samples(fid: int, g: dict, exr_path: str) -> tuple[dict, np.ndarray]:
+        """Save the live Render Result, read it back, and build the D1 record."""
         save_render_result(scene, exr_path)             # before the next render: shared buffer
         ch = read_uncompressed_exr(exr_path)
         rgb = np.stack([ch[[k for k in ch if k.endswith(f"Combined.{c}")][0]] for c in "RGB"], -1)
@@ -212,7 +212,7 @@ def main():
         if rgb.shape[:2] != (n, n):
             raise RuntimeError(f"fixation {fid}: file is {rgb.shape[:2]}, raster is {n}x{n}")
         d_eye = to_eye_frame(rs["direction_cam"][inside], g["yaw"], g["pitch"])
-        samples = {
+        return {
             "origin": origin,
             "direction": d_eye.astype(np.float32),
             "value": rgb[inside].astype(np.float32),
@@ -220,7 +220,16 @@ def main():
             "distance": depth[inside].astype(np.float32),
             "fixation_id": np.full(n_inside, fid, dtype=np.int32),
             "raster_index": rs["raster_index"][inside].astype(np.int32),
-        }
+        }, depth
+
+    fixations = []
+    for fid, g in enumerate(gazes):
+        fdir = os.path.join(out, f"f{fid:03d}")
+        os.makedirs(fdir, exist_ok=True)
+        set_gaze(cam, eye, g["yaw"], g["pitch"])
+        secs = render_fixation(scene, args.spp)
+        t_io = time.perf_counter()
+        samples, depth = grab_samples(fid, g, os.path.join(fdir, "fix.exr"))
         np.savez(os.path.join(fdir, "samples.npz"), **samples)
         meta = fixation_meta(scene, eye, eye_note, cam, backend, n, s0, args.e2, args.emax, args.spp,
                              g["yaw"], g["pitch"], secs, args.profile, seconds_include_write=False)
@@ -237,6 +246,23 @@ def main():
                           "samples": n_inside, "hits": int((depth[inside] < 1e9).sum())})
         print(f"[sequence] f{fid:03d} {g['name']:<16} yaw {g['yaw']:7.2f} pitch {g['pitch']:6.2f}  "
               f"render {secs:.3f}s  io {io_secs:.3f}s", flush=True)
+
+    # Second pass at seed 1, after the timed pass so the seed change (which forces a scene
+    # re-sync) is paid once, not inside every timed render. Same gazes, same settings; only
+    # the noise differs. The record is seed 0; this exists so check_sequence.py can measure
+    # the noise of each fixation where it compares it.
+    if args.seed_pair:
+        t_b0 = time.perf_counter()
+        for fid, g in enumerate(gazes):
+            fdir = os.path.join(out, f"f{fid:03d}")
+            set_gaze(cam, eye, g["yaw"], g["pitch"])
+            secs_b = render_fixation(scene, args.spp, seed=1)
+            samples_b, _ = grab_samples(fid, g, os.path.join(fdir, "fix_b.exr"))
+            np.savez(os.path.join(fdir, "samples_b.npz"), **samples_b)
+            fixations[fid]["render_seconds_seed1"] = round(secs_b, 4)
+        render_fixation(scene, args.spp, seed=0)           # back to the record's seed
+        print(f"[sequence] seed-1 pass: {len(gazes)} renders in {time.perf_counter() - t_b0:.1f}s "
+              f"(fix_b.exr, samples_b.npz; not part of the record)", flush=True)
 
     sweep = [int(x) for x in args.spp_sweep.split(",") if x.strip()]
     rows, fit, pairs = [], None, []
@@ -287,7 +313,7 @@ def main():
         "profile": args.profile, "eye_note": eye_note,
         "origin_m": [float(x) for x in origin],
         "warp": {"E2_deg": args.e2, "e_max_deg": args.emax, "s0_deg": s0, "raster": n},
-        "spp": args.spp, "samples_per_fixation": n_inside,
+        "spp": args.spp, "samples_per_fixation": n_inside, "seed_pair": args.seed_pair,
         "gazes": gazes,
         "warmup_seconds_discarded": warmup,
         "fixations": fixations,

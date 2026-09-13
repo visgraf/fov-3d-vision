@@ -44,7 +44,7 @@ One camera, one centre of projection.
 | A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **done** — both references at 8192 spp, 32.3 / 35.8 min measured; D7 met on the Classroom, 2-5% short on the calib room; `docs/a2-reference-and-noise-floor.md` |
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | **done, one check open** — `fixation_sequence.py` renders 50 fixations in 5 s on the small profile and writes the D1 record; warp, footprint and reader checks pass, the foveal-agreement check fails where texture edges dominate; full profile untested; `docs/a4-fixation-sequence.md` |
-| A5 | Integration of the sequence into a spherical representation | |
+| A5 | Integration of the sequence into a spherical representation | **done, two checks open** — `integrate_sphere.py` and the error-versus-budget curve with an equal-budget uniform baseline; uniform wins on the calibration room under D8, foveation wins at the Classroom's targets; full profile untested; `docs/a5-spherical-integration.md` |
 
 Parameters still to fix in A2/A3: foveal spacing s₀, the falloff constant E₂ in
 `s(e) = s₀(1 + e/E₂)`, and the maximum eccentricity. All three are engineering knobs,
@@ -77,18 +77,23 @@ uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` tog
 the small-profile references (about a minute each). D7 holds on both scenes against the
 profiles' fixation spp.
 
-A4 has its tool and its record. `tools/fixation_sequence.py` opens a scene once and renders a
-gaze list through the foveated camera, 15 ms per fixation on the calibration room and 28 ms
-on the Classroom at the small profile, dominated by the call floor; the marginal cost is 10 to
-11 ns per sample, the same as uniform rendering. Each fixation yields a D1 sample record
-(origin, direction, value, footprint, distance, fixation id, raster index). Checks against the
-small references: directions agree with the Position pass to 0.02 reference pixels, footprints
-sum to the 45 deg cap within 0.6%, the record equals the file. The foveal-agreement check as
-specified fails on most calibration targets, and the measured reason is sub-pixel alignment on
-resolved Siemens-star edges rather than noise; that formulation is a decision to make. Two
-Blender behaviours are now handled by the tools: a keyframed seed, and a sample count that
-persistent data ignores unless the scene is tagged. The full profile has not been run.
-Tier 1 needs no reference: the HDRI is its own.
+A4 and A5 have their tools, their records and their curves, all at the small profile.
+`tools/fixation_sequence.py` renders a gaze list through the foveated camera in one session
+(15 ms per fixation on the calibration room, 28 ms on the Classroom) and writes a D1 sample
+record per fixation, checked against the small references by `tools/check_sequence.py`:
+directions agree with the Position pass to 0.02 reference pixels, footprints sum to the
+45 deg cap within 0.6%, the record equals the file, and the foveal-agreement check is now
+binned with a bound measured from a seed pair per fixation, passing 17 of 50 and 8 of 10 with
+the remaining failures measured as registration on resolved Siemens-star edges.
+`tools/integrate_sphere.py` splats the samples onto the sphere and measures the
+footprint-aware error (D8) against the ray budget next to an equal-budget uniform render.
+The honest result: on the calibration room uniform wins at every budget, because the uniform
+image is grid-registered with the reference while the foveated samples pay a resampling
+floor at 0.1 deg on high-contrast targets and the 1/footprint weighting leaks blur into the
+fovea where fixations crowd; on the Classroom foveation wins at the targets from five
+fixations on and loses slightly over the sphere. Two A5 checks fail and are recorded with
+their measured causes rather than adjusted. Nothing has run at the full profile. Tier 1
+needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

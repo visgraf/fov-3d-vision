@@ -78,34 +78,44 @@ one's, measured. At 64 spp a fixation is dominated by the call floor.
 | reader: samples.npz vs fix.exr | exact, all 50 | exact, all 10 |
 | (a) warp + gaze vs Position pass, reference px, p99.9 median (worst fixation) | 0.018 (0.064) | 0.018 (0.024) |
 | (a) max over all samples | 0.091 px | 0.025 px |
-| (b) foveal median rel diff < bound; bound | 13 of 50 pass; 0.0754 | 9 of 10 pass; 0.196 |
-| (c) control at 90 deg yaw fails as required | 49 of 50 | 10 of 10 |
-| (d) footprints sum to 1.8403 sr | 0.59% low, every fixation | 0.59% low, every fixation |
+| (b) binned foveal median < measured bound (see below) | 17 of 50 pass | 8 of 10 pass |
+| (c) control at 90 deg yaw fails as required | 50 of 50 | 10 of 10 |
+| (d) footprints sum to 1.8403 sr | 0.59% high, every fixation | 0.59% high, every fixation |
 
 (a) and (d) pass everywhere; the record's geometry is right. The bound in (b) is
 sqrt(noise_fix^2 + noise_ref^2) with A2's median-tile rel_rms at the two spp, combined in
 quadrature because the fixation and the reference are independent renders (assumed: that
 the tile medians describe the foveal region).
 
-**(b) fails as specified on 37 calibration targets, and the cause is measured.** The checker
-also reports an alignment floor: the reference's median relative disagreement with itself
-half a pixel away at the same directions. On the 1 to 1.6 deg cards (e 0 and 2.5) it is
-0.014 to 0.017 and (b) passes at 0.05 to 0.06; on the wire targets, plain wall behind, it
-is 0.008 and (b) passes at 0.03 to 0.04; on the 4 to 11 deg cards the Siemens-star spokes are
-resolved at 0.1 deg, the floor is 0.08 to 0.19, and the foveal median is 0.08 to 0.16, tracking
-the floor. There is no brightness bias: mean fixation value over mean reference value is
-0.996 to 1.013 on every fixation checked. So on those targets (b) measures sub-pixel
-alignment on texture edges, not noise, and its bound does not include that. The check is
-left as specified; changing its formulation is a decision.
+**(b) as first specified** (per-sample nearest-pixel lookup, bound from A2's tile medians)
+failed on 37 calibration targets, and the cause was measured: on the 4 to 11 deg cards the
+Siemens-star spokes are resolved at 0.1 deg, the reference disagrees with a half-pixel shift
+of itself by 0.08 to 0.19 there, and the per-sample statistic tracked that floor with no
+brightness bias (0.996 to 1.013). That statistic is kept in the output as `resampling_floor`
+(median 0.098 on the calib room, 0.116 on the Classroom) because A5 reports it.
 
-(c) fails to fail on one target, `wire_2mm`: rotated 90 deg the fovea lands on a stretch of
-wall like the one behind the wire, median 0.059 against a bound of 0.075.
+**(b) reformulated (2026-09-13):** the sequence renders each fixation twice (seeds 0 and 1;
+the record is seed 0), the checker bins the samples within 2 deg into 0.5 deg cells on the
+sphere and compares footprint-weighted cell means with the reference's box means, and the
+bound is measured per fixation: 1.5 x sqrt(n^2 + (n/4)^2) with n the same binned statistic
+between the two seeds over sqrt(2). Results: calib room 17 of 50 pass, bounds 0.012 to 0.043
+(median 0.026), binned alignment floor (reference vs its half-pixel shift, binned) median
+0.023, max 0.137; Classroom 8 of 10 pass, bounds 0.043 to 0.222 (median 0.061), alignment
+floor median 0.017. (c) fails as required on 50 of 50 and 10 of 10.
 
-Classroom: (b) fails on gaze (0, -20), the floor under the desks, at 0.414 with an alignment
-floor of 0.127; A2's worst tile was that region (level 0.042 against 0.568 elsewhere) and
-its relative noise is far above the median-tile figure the bound uses. Two gazes look through
-windows (9,626 and 9,940 hits of 12,492); those samples carry distance 1e10 and are excluded
-from (a) and (b).
+Why 33 still fail, measured before touching anything: the binned statistic remains
+registration-limited on the cards. Shifting the reference by one pixel (0.1 deg) alone
+exceeds the bound on 39 of 50 fixations, and the half-pixel shift does on 23 of 50, because a
+0.5 deg cell is only 2.5 to 5 samples wide and the spoke edges recur every two pixels, while
+the measured noise bound is 0.026. A variant that box-filters the reference through each
+sample's own footprint before binning was tried and is worse (median 0.050), so it was not
+adopted. The bound is untouched; the check stands as specified and the failures are recorded.
+
+(d): the sum is 0.59% above the cap, not below, and the cause is measured on the analytic
+warp: the footprint integrates to the 45 deg cap to 0.001% over the exact disc r <= 1, and the
+excess is the ring of pixels whose squares straddle r = 1, which reach 1.48% of the cap
+outside the disc and leave 0.87% uncovered inside it, net +0.61%, because the Jacobian grows
+outward. The tolerance is unchanged.
 
 ## Assumed
 
