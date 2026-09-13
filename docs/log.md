@@ -82,3 +82,31 @@ Two defects the checker caught while being written, both fixed:
 
 Assumed, not measured: that a custom camera runs on OptiX rather than silently falling back
 to CPU. That is the one open item and needs the GPU.
+
+## 2026-09-12 — A3 spike passed on the GPU
+
+Calibration room, s0 = 0.02 (631x631), 256 spp, on the RTX 4090. Measured: OptiX 3.454 s
+against CPU 16.1 s, speedup 4.66; depth max error 7.1e-7 m; warp p99.9 0.00033 deg, max
+0.00035 deg, rim 44.9987 deg; 312,745 samples inside the disc against 15,884,163 uniform at
+s0, 50.8x; clipping clean; no checks failed. A3 is done and the custom camera is usable.
+
+Two things that change what comes next:
+- 4.66x is a floor, not the asymptotic speedup. A foveated render is small, so fixed per-call
+  cost is a large share of 3.45 s. A4 must therefore measure the *marginal* cost of a
+  fixation inside one Blender session with persistent data, not total time divided by N, or
+  the budget will measure scene setup.
+- `rel_diff_median` 3.5e-6 is not a noise estimate: both runs used seed 0 and Cycles is
+  deterministic across devices at a fixed seed. The A2 noise floor must vary the seed
+  explicitly. The p99 tail of 0.7% is most likely sub-pixel direction differences between
+  backends flipping which side of an edge a sample lands on.
+
+## 2026-09-12 — A2 noise-floor tool written, smoke-tested on CPU
+
+`tools/noise_floor.py` renders tiles of the full-resolution reference panorama via Cycles'
+border render, so each tile has the reference pixel scale at a tile's cost, and renders each
+twice with different seeds. sigma = RMS(A-B)/sqrt(2) estimates one render's noise without
+needing a converged reference, so no bias from one is smuggled into the measurement.
+
+Smoke test (calib room, 2 tiles of 48 px, CPU): rel_rms 0.1515 / 0.1087 / 0.0733 at 8 / 16 /
+32 spp. Ratios 1.39 and 1.48 against the 1.41 expected for 1/sqrt(spp), so the estimator
+behaves. Fixed cost per render call with persistent data on: 0.023 s.

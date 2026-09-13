@@ -1,7 +1,7 @@
 # Step A3 — the foveated camera
 
-Status: the warp and the custom-camera path are built and verified on CPU. One question is
-open and needs the GPU — see "Your part" below.
+Status: **done**. Verified on CPU, then on an RTX 4090 through OptiX. The custom camera runs
+on the GPU; no fallback is needed and A4/A5 can use real renders rather than resampling.
 
 ## The warp
 
@@ -66,11 +66,21 @@ across a pixel's footprint, which at the rim spans a whole degree, so a pixel st
 depth discontinuity reports a direction that is not its centre's. That inflates the max
 (0.030° here) while the mapping itself is good to 0.005°.
 
-## Your part: does the custom camera really run on OptiX?
+## The OptiX question, answered
 
-The manual says custom cameras need the OptiX backend for GPU. That should mean the 4090
-works, but "should" is not measured, and a silent fallback to CPU would quietly invalidate
-every timing in the budget.
+Measured on the calibration room at s0 = 0.02 (631x631 raster), 256 spp: OptiX 3.45 s against
+CPU 16.1 s, a 4.66x speedup, with `rel_diff_median` 3.5e-6 and every check passing on the GPU
+(depth 7.1e-7 m, warp p99.9 0.00033 deg, rim 44.9987 deg). Cycles selected OPTIX, and 4.66x is
+far from the ~1.0 a silent fallback would produce.
+
+Two readings worth keeping. First, 4.66x is a floor, not the asymptotic ratio: a foveated
+render is small, so a fixed per-call cost (scene sync, BVH, OSL compile to PTX) is a large
+share of 3.45 s. Second, `rel_diff` is *not* a noise measurement — both runs used seed 0 and
+Cycles is deterministic across devices at a given seed, so the small tail (p99 0.7%) is most
+likely sub-pixel direction differences flipping which side of a geometric edge a sample lands
+on, not Monte Carlo variance.
+
+The command that produced it:
 
 ```bash
 cd fov-3d-vision
@@ -83,20 +93,10 @@ blender -b scenes/calib_room/calib_room.blend -P tools/render_foveated.py -- \
 
 `--s0 0.02` gives a 632x632 raster, large enough that the timing difference is unambiguous.
 
-What the result means:
+`--s0 0.02` gives a 631x631 raster (not 632; `N` rounds down), large enough that the timing
+difference cannot be ambiguous.
 
-* `"device": "OPTIX"` in the output confirms Cycles selected it. If it says CPU, no OptiX
-  device was found and the rest of the comparison is meaningless.
-* `speedup` well above 1 means the GPU path is real. Near 1.0 with OptiX reported means a
-  silent fallback — that is the failure this test exists to catch.
-* `rel_diff_median` near 0 means both devices compute the same camera. It will not be
-  exactly 0 (different RNG streams), but it should be small; anything above a few percent
-  means the shader behaves differently on the two backends.
-* `checks_failed` empty means depth, warp and clipping all still hold on the GPU.
-
-Also worth a glance at the console: any OSL or device warning during the OptiX run is worth
-reporting even if the numbers look fine.
-
-If it fails, Phase A is not blocked. With a fixed head the reference panorama *is* the scene,
-so resampling it through the same warp is a legitimate sampler and A4 and A5 proceed
-unchanged. Only the compute-budget claim needs the real camera.
+The warp error also fell from 0.005 deg at s0 = 0.05 to 0.00033 deg here, and the max
+converged onto the p99.9 (0.00035 against 0.00033). That is the footprint explanation
+confirmed from the other direction: rim pixels are 2.5x smaller at this s0, so there is much
+less averaging across depth discontinuities inside a pixel.
