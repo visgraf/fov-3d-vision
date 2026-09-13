@@ -136,3 +136,46 @@ Re-run after the fix reproduces the earlier rel_rms values exactly (0.15150 / 0.
 0.07335 at 8 / 16 / 32 spp), which is the check that the new reader changed nothing.
 
 CLAUDE.md now states the two-interpreter rule, since the sandbox cannot catch it.
+
+## 2026-09-12 — A2 paused: noise_floor.py audited, not yet trustworthy
+
+Full audit in `docs/reviews/2026-09-12-noise-floor.md`, run on the workstation.
+`tools/noise_floor.py` should not be trusted until the fix pass lands.
+
+The serious finding is an unguarded ordering invariant. `Render Result` is a live shared
+buffer, so the estimator is only correct because each render is read before the next is
+issued. Render both seeds and then read both, and the two files come back with identical
+pixels: measured max|A-B| 2.499e-01 with the current ordering against 1.490116e-07 with
+both-then-read. sigma collapses by six orders of magnitude and the tool reports
+`chosen_spp = 16` with a confident projection. Plausible numbers, no exception, nothing
+asserting the invariant.
+
+Measured, and good: seeds do decorrelate. sigma ratios across 16 to 512 spp cluster on the
+1.414 expected for 1/sqrt(spp); same-seed renders differ by at most 1.490116e-07 on OptiX
+and exactly 0 on CPU. Border rendering with persistent data is not cached. `save_render`
+does honour `scene.render.image_settings` — `color_depth="16"` produced a float16 file, and
+`file_format="PNG"` wrote an actual PNG to a path named .exr — so those settings are
+load-bearing, not decoration.
+
+Measured, and wrong: the `a + b*spp` fit measures curvature, not overhead. The intercept
+ranges 0.0279 to 0.0627 s, a spread of 105% of its own median, while a single number is
+reported. Tile 0 absorbs a one-time warm-up (first render 0.155 s against 0.029 to 0.037 s
+for the same spp elsewhere) and gets a negative low-end marginal cost. Linearity fails
+below about 256 spp; the data look like max(fixed, b*spp). The slope is sound: 18% spread,
+median 1.523e-04 s/spp.
+
+The projection is absent at the default target: 2048 spp gives rel_rms_worst 0.01941
+against `--target 0.01`. Reaching 1% needs about 7700 spp (assumed, by 1/sqrt(spp)
+extrapolation).
+
+Assumed, from the stable slope: 1.523e-04 s/spp over ~16.3k pixels is 9.3 ns per
+pixel-sample, so the full 25.92 Mpx reference projects to roughly 2 minutes at 512 spp and
+half an hour at 7700 spp. Tiling the reference is therefore unnecessary for time; the only
+size constraint is the 1.14 GB EXR.
+
+Fix pass pending: assert that the two seed renders actually differ, so the worst failure
+mode becomes loud; discard a warm-up render before timing; fit only the linear regime and
+report per-tile spread instead of a single median; assert float32 and alpha == 1; stop
+rounding `seconds` before fitting; drop the unused `configure_multilayer_exr` import; put
+sigma and rel_p99 on the same scale (one is an RMS, the other a mean absolute difference,
+so they differ by ~20% for Gaussian noise).

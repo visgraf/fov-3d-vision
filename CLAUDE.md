@@ -16,6 +16,12 @@ Claude Code enters only when a job is too big for a chat turn: a multi-file refa
 a long run, a large sweep. No specification relay, no review levels, no PR gate.
 Push to main; revert if wrong.
 
+Chat calls the handoff. When a conversation's context stops being reconstructible
+from this repository, Chat says so, writes whatever is missing into `docs/log.md`,
+and prepares the instructions to carry over. A new conversation starts by cloning
+and reading, never from a summary: a summary is a second source of truth and starts
+drifting immediately.
+
 ## Two hard rules
 
 1. **Measured or assumed, never in between.** Every number in a claim is either
