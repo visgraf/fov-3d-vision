@@ -179,3 +179,39 @@ report per-tile spread instead of a single median; assert float32 and alpha == 1
 rounding `seconds` before fitting; drop the unused `configure_multilayer_exr` import; put
 sigma and rel_p99 on the same scale (one is an RMS, the other a mean absolute difference,
 so they differ by ~20% for Gaussian noise).
+
+## 2026-09-13 — noise_floor.py fix pass, checked host-side; Blender path not run here
+
+Rewrote `tools/noise_floor.py` against the audit's list. Every item landed:
+- The ordering invariant is now guarded: a seed pair with rel_rms below 1e-5 fails the run
+  (same-seed differs by <= 1.5e-7 absolute, different seeds by >= 1e-2 relative, both
+  measured 2026-09-12). `--control late-read` reproduces the read-after-both-renders bug on
+  purpose and passes only if the guard fires; `--control same-seed` reports how close
+  "identical" is on the device.
+- One warm-up render, timed and discarded, before any tile is measured.
+- The `a + b*spp` fit is gone. Timing is reported as a call floor (time at the smallest
+  spp) and a slope fitted only on spp >= `--fit-min-spp` (default 256), converted to
+  ns per pixel-sample with each tile's own pixel count, each as median plus range over
+  tiles. Seconds are no longer rounded before fitting; `time.perf_counter` replaces `time.time`.
+- `read_rgb` asserts float, 4 channels, depth 128 (float32) and alpha exactly 1, and uses
+  `foreach_get` (22x faster than `pixels[:]`, measured in the audit).
+- `rel_p99` is now the 99th percentile of the per-pixel RMS, on the same scale as sigma.
+- When no measured spp meets the target, the spp that would is extrapolated by 1/sqrt(spp)
+  and labelled assumed; the projection uses it and adds the call floor. A normalised
+  1/sqrt(spp) scaling check is reported per run. Default `--spp` now reaches 8192.
+- Unused `configure_multilayer_exr` import dropped. `run()` is behind `__name__ ==
+  "__main__"` so the analysis functions can be imported.
+
+Measured, in the Chat sandbox: `tools/check_noise_floor_stats.py` passes 13 checks on
+synthetic data — sigma to 0.3% of a known value, p99/rms 1.969 against 1.945 expected for
+Gaussian noise (the old mean-absolute statistic gave 1.738), slope recovered to 1.2% from
+max(floor, b*spp) data where the old straight-line intercept was 60% off, guard fires on an
+identical pair and not on a real one, extrapolation lands on the target exactly.
+
+Not measured: anything involving Blender. The sandbox today has no `bpy` (the wheel is not
+on PyPI for its Python 3.12, and download.blender.org is not reachable), which contradicts
+what CLAUDE.md says about the sandbox. The Blender-side control flow was driven end to end
+with a stub `bpy` whose Render Result buffer is live like the real one — normal run, both
+controls, exit codes — but that proves the script's logic, not the Blender API calls
+(`img.depth == 128`, `pixels.foreach_get`, `save_render` under border render). Those are
+what the two `--control` runs and one real run on the workstation must confirm.

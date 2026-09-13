@@ -41,8 +41,8 @@ One camera, one centre of projection.
 | | Step | State |
 |---|---|---|
 | A1 | Scene sources: gather and check 3D scenes | **done** — three tiers verified on GPU; `docs/a1-scene-gathering.md` |
-| A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | next |
-| A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | |
+| A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **next** — `tools/noise_floor.py` fixed after audit; runs and renders pending on the GPU |
+| A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | |
 | A5 | Integration of the sequence into a spherical representation | |
 
@@ -66,10 +66,18 @@ declared budget. Not yet chosen.
 
 ## State
 
-Step A1 is complete. Three scenes are gathered and checked — a generated calibration room,
-the Poly Haven `workshop` HDRI, and Blender's Classroom with an `EYE` placed in it — all
-verified on an RTX 4090 through OptiX. Measurements are in `scenes/manifest.json` and
-`docs/log.md`; what remains untested is listed at the end of `docs/a1-scene-gathering.md`.
+A1 and A3 are complete. Three scenes are gathered and checked — a generated calibration
+room, the Poly Haven `workshop` HDRI, and Blender's Classroom with an `EYE` placed in it —
+and the foveated OSL camera renders on the RTX 4090 through OptiX at 50.8x fewer rays than
+uniform sampling of the same field. Measurements are in `scenes/manifest.json`,
+`docs/a3-foveated-camera.md` and `docs/log.md`.
+
+A2 is in progress. `tools/noise_floor.py` was audited on the workstation
+(`docs/reviews/2026-09-12-noise-floor.md`) and rewritten; its two `--control` modes and the
+host-side `tools/check_noise_floor_stats.py` are the checks. Still to run: the noise floor on
+the calibration room and Classroom, the spp choice, and the two reference panoramas
+(`preview360.py --width 7200 --filter BOX`), whose render time is the uniform-cost baseline.
+Tier 1 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.
