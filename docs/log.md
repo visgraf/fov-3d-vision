@@ -292,3 +292,37 @@ reference A4 develops against.
 
 Fixation spp is at most a sixteenth of the reference spp in both profiles so D7 holds by
 construction: 1/sqrt(16) = 0.25 for small, 1/sqrt(32) = 0.18 for full, both under a third.
+
+## 2026-09-13 — A4: fixation sequence tool, sample record, and its checks; stale sample count caught
+
+Step 0: md5 of the four full reference files pinned in the manifest; D7 on the calib room
+closed against the full profile's 256 spp fixations (0.162 / 0.174 from the noise table).
+Small references rendered and pinned: calib room 62.6 s, Classroom 71.5 s, 3600x1800 at
+1024 spp, BOX, adaptive off, inspect matches A1 to 4 digits. `render_foveated.py --profile
+small`: raster 126, s0 0.1002 (from the rounded raster, not 0.1 exactly), 64 spp, check passes.
+
+`render_foveated.py` refactored into setup_foveated_camera / set_gaze / render_fixation /
+save_render_result / fixation_meta; CLI output re-checked at yaw 20 pitch -5. New:
+`tools/exr_lite.py` (numpy reader for uncompressed single-part EXR, bit-identical to OpenEXR
+on all 11 channels; Blender cannot read multilayer back and Render Result has no pixels in
+background mode), `tools/fixation_sequence.py`, `tools/check_sequence.py`.
+
+Caught by the tool's own sweep: with persistent data Cycles ignored a change of
+cycles.samples alone (16/256/4096 spp all 16 ms). A seed change or scene.update_tag() makes
+it take; render_fixation now tags on any spp or seed change, and each sweep level renders a
+seed pair whose noise must fall as 1/sqrt(spp). noise_floor.py and A3 alternated seeds, so
+their numbers stand.
+
+Measured, small profile: calib room 50 targets, 12,492 samples each, 15.2 ms per fixation
+median (14.4-16.3), warm-up 0.309 s, floor 8.6 ms, 10.06 ns per sample (9.50-10.56), floor
+57% of a 64 spp render; Classroom 10 gazes, 28.4 ms (25.6-32.3), warm-up 0.750 s, floor
+21.8 ms, 11.21 ns per sample (8.98-12.07), floor 77%. The fit on spp >= 64 is two points.
+
+Checks: (a) directions vs Position pass 0.018 px p99.9 median, max 0.091 px, all pass;
+(d) footprints sum to the 45 deg cap 0.59% low, all pass; reader exact. (b) foveal agreement
+passes 13/50 on the calib room and 9/10 on the Classroom; the failures track a measured
+alignment floor (reference vs itself half a pixel away: 0.08-0.19 on the resolved Siemens-star
+cards) with no brightness bias (0.996-1.013), so on those targets (b) measures edge alignment,
+not noise. Left as specified. (c) fails as required on 49/50 and 10/10; the exception is a
+wire target whose 90 deg rotation lands on similar wall. Full profile untested. Write-up in
+`docs/a4-fixation-sequence.md`.

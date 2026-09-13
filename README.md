@@ -43,7 +43,7 @@ One camera, one centre of projection.
 | A1 | Scene sources: gather and check 3D scenes | **done** — three tiers verified on GPU; `docs/a1-scene-gathering.md` |
 | A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **done** — both references at 8192 spp, 32.3 / 35.8 min measured; D7 met on the Classroom, 2-5% short on the calib room; `docs/a2-reference-and-noise-floor.md` |
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
-| A4 | A sequence of fixations | |
+| A4 | A sequence of fixations | **done, one check open** — `fixation_sequence.py` renders 50 fixations in 5 s on the small profile and writes the D1 record; warp, footprint and reader checks pass, the foveal-agreement check fails where texture edges dominate; full profile untested; `docs/a4-fixation-sequence.md` |
 | A5 | Integration of the sequence into a spherical representation | |
 
 Parameters still to fix in A2/A3: foveal spacing s₀, the falloff constant E₂ in
@@ -72,17 +72,23 @@ and the foveated OSL camera renders on the RTX 4090 through OptiX at 50.8x fewer
 uniform sampling of the same field. Measurements are in `scenes/manifest.json`,
 `docs/a3-foveated-camera.md` and `docs/log.md`.
 
-A2 is complete. The noise floor is measured on both mesh scenes with `tools/noise_floor.py`
-(two controls plus a host-side check), and both reference panoramas are rendered at
-7200x3600, 8192 spp, box filter: 32.3 min for the calibration room and 35.8 min for the
-Classroom on the RTX 4090, within 8% of the projection from 128 px tiles. Those times are the
-uniform-cost baseline at s0 = 0.05. The criterion is D7: reference noise at most a third of
-the 1024 spp fixation noise; the Classroom meets it (0.27 / 0.33) and the calibration room is
-2 to 5% over (0.34 / 0.35), recorded rather than resolved. Two things the checks caught on
-the way: the Classroom keyframes the Cycles seed, and the calibration room blend ships with
-adaptive sampling on; the tools now strip the first and force the second off. Numbers in
-`docs/a2-reference-and-noise-floor.md` and `scenes/manifest.json`. Tier 1 needs no reference:
-the HDRI is its own.
+A2 is complete: both references at 8192 spp (32.3 and 35.8 min on the RTX 4090, the
+uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` together with
+the small-profile references (about a minute each). D7 holds on both scenes against the
+profiles' fixation spp.
+
+A4 has its tool and its record. `tools/fixation_sequence.py` opens a scene once and renders a
+gaze list through the foveated camera, 15 ms per fixation on the calibration room and 28 ms
+on the Classroom at the small profile, dominated by the call floor; the marginal cost is 10 to
+11 ns per sample, the same as uniform rendering. Each fixation yields a D1 sample record
+(origin, direction, value, footprint, distance, fixation id, raster index). Checks against the
+small references: directions agree with the Position pass to 0.02 reference pixels, footprints
+sum to the 45 deg cap within 0.6%, the record equals the file. The foveal-agreement check as
+specified fails on most calibration targets, and the measured reason is sub-pixel alignment on
+resolved Siemens-star edges rather than noise; that formulation is a decision to make. Two
+Blender behaviours are now handled by the tools: a keyframed seed, and a sample count that
+persistent data ignores unless the scene is tagged. The full profile has not been run.
+Tier 1 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.
