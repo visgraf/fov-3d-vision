@@ -61,31 +61,24 @@ findings above and both re-run on CPU in the sandbox:
   rel_err_median 0.0034 with the default filter, 0.0018 with `--filter BOX`.
 - `preview360.py` calls `view_layer.update()` before reading the eye pose.
 
-## 2026-09-12 — step A1 re-run from scratch, all three tiers reproduce
+## 2026-09-12 — A3 spike: the foveated OSL camera works on CPU
 
-Ran the full run order in `docs/a1-scene-gathering.md` on the Linux box (Blender 5.2.1, OptiX,
-RTX 4090), with both downloads fetched again rather than reused. Every number in
-`scenes/manifest.json` came back. Nothing in the repository changed as a result, so the manifest
-stands as written.
+Built `tools/foveated_camera.osl`, `tools/render_foveated.py`, `tools/check_foveated.py` and
+ran them on the calibration room in the sandbox, Blender 5.2.1, CPU. Details and the warp
+table in `docs/a3-foveated-camera.md`.
 
-Measured, tier by tier:
-- Calib room: `report.json` identical to the previous run **field for field**, and
-  `calib_room.targets.json` byte-identical. Render 1.7 s.
-- Workshop HDRI: re-downloaded (339.5 MB), md5 matched the committed `asset.json`, and
-  `fetch_hdris.py` rewrote `asset.json` byte-identically (`git status` clean). column_shift 0,
-  rel_err_median 0.015172, p99 0.228632 against 0.01517 / 0.22863 in the manifest. Box-filter
-  diagnostic: 0.003232 / 0.047311 against 0.0032 / 0.047. Negative control, eye rotated 90°:
-  512 px = W/4. Render 1.4 s at 16 spp.
-- Classroom: zip 70,279,690 bytes, md5 3adbb7114b514bfc6fc724ce20f86b4e — now recorded in the
-  manifest, which previously pinned this file by URL alone. From `renderCam`, backface_fraction
-  0.13598 and depth_min 0.1035 m; renderCam is at y −4.466 against a scene bound at −4.925, so
-  the "0.46 m off the rear wall" in the note is 0.459 m measured. From `EYE` at (−0.6, −1.0, 1.2):
-  hole 0.020788, backface 0.003776, nadir 1.200143 m, zenith 1.696648 m, against 0.02079 / 0.0038 /
-  1.20014 / 1.69665. Render 5.2 s at 64 spp, denoised.
+Measured, at s0 = 0.05 deg, E2 = 2 deg, e_max = 45 deg, raster 253x253:
+- Depth through a custom camera is still ray distance: max error 5.8e-7 m.
+- Warp matches the formula to 0.005 deg at p99.9; rim 44.995 deg against a 45 deg target.
+- 50,269 samples inside the disc against 2,553,563 uniform at s0 over the same field: 50.8x.
+- Clipping: zero throughput leaves depth reading background for every pixel outside the disc.
+- Gaze: +yaw right, +pitch up, elevation equals --pitch exactly (checked at 20 / -5).
 
-One new thing, and it is the reason `report.json` can be identical while the EXR is not. The
-preview `pano.exr` does **not** come back byte-identical: md5 differs run to run. Rendering the
-same file twice and comparing channel by channel shows why — Depth.Z and Position are bit-identical
-(0 differing pixels), while Combined differs by at most 5.96e-07 and Normal by at most 4.17e-07,
-i.e. float32 accumulation order on the GPU. Every quantity `inspect_preview.py` reports is either
-geometric or a median over the sphere, so none of them moves. Compare reports, not checksums.
+Two defects the checker caught while being written, both fixed:
+- Yaw came out mirrored and pitch was off by a factor cos(yaw), because the Euler order
+  applied pitch before yaw. Now an explicit intrinsic yaw-then-pitch composition.
+- `--compare` happily compared two different gazes. It now fails if the warp parameters,
+  gaze, spp or source file differ.
+
+Assumed, not measured: that a custom camera runs on OptiX rather than silently falling back
+to CPU. That is the one open item and needs the GPU.
