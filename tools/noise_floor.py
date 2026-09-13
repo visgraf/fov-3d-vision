@@ -253,7 +253,8 @@ def read_rgb(path: str) -> np.ndarray:
 def main():
     import bpy
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from bl_common import ensure_cycles, find_eye, pin_seed, rigid, script_args, setup_device
+    from bl_common import (add_profile, ensure_cycles, find_eye, pin_seed, rigid, script_args,
+                           setup_device)
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--blend")
@@ -272,6 +273,7 @@ def main():
                          "identical is on this device. late-read: reproduce the read-after-"
                          "both-renders failure and pass only if the guard fires. Neither "
                          "writes noise.json.")
+    add_profile(ap, script_args(), s0="s0")
     args = ap.parse_args(script_args())
 
     if args.blend:

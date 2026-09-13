@@ -25,8 +25,8 @@ import traceback
 import bpy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from bl_common import (configure_multilayer_exr, ensure_cycles, eye_record, find_eye,  # noqa: E402
-                       node_material, pin_seed, rigid, script_args, setup_device)
+from bl_common import (add_profile, configure_multilayer_exr, ensure_cycles, eye_record,  # noqa: E402
+                       find_eye, node_material, pin_seed, rigid, script_args, setup_device)
 
 
 def main():
@@ -47,6 +47,7 @@ def main():
                     help="after the render, re-save the multilayer EXR to a scratch path and time "
                          "it, so render_seconds (which includes the write) can be split; the "
                          "scratch file must match pano.exr in size and is then removed")
+    add_profile(ap, script_args(), width="ref_width", spp="ref_spp", filter="filter")
     args = ap.parse_args(script_args())
 
     if args.blend:
@@ -152,6 +153,7 @@ def main():
         "eye": eye_record(eye),
         "eye_note": eye_note,
         "unit_scale_length": scene.unit_settings.scale_length,
+        "profile": args.profile,
         "width": args.width, "height": args.width // 2, "spp": args.spp,
         "denoise": args.denoise, "device": backend,
         "adaptive_sampling": False, "time_limit": 0.0, "seed": 0,

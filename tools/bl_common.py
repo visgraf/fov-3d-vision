@@ -15,6 +15,7 @@ Conventions used by every script in this folder
 """
 from __future__ import annotations
 
+import argparse
 import math
 import sys
 
@@ -22,6 +23,32 @@ import bpy
 from mathutils import Matrix, Vector
 
 EYE_NAME = "EYE"
+
+# Two configurations, one flag apart (CLAUDE.md, "Cost classes"). `small` is for building and
+# debugging: its reference renders in about a minute and a fixation in well under a second.
+# `full` is for the number that goes in a report. Geometry, sample record and checks are
+# identical between them; only spacing and sample counts differ. The fixation spp is at most a
+# sixteenth of the reference spp so D7 holds by construction (1/sqrt(16) = 0.25 <= 1/3).
+PROFILES = {
+    "small": {"s0": 0.1, "ref_width": 3600, "ref_spp": 1024, "fix_spp": 64, "filter": "BOX"},
+    "full": {"s0": 0.05, "ref_width": 7200, "ref_spp": 8192, "fix_spp": 256, "filter": "BOX"},
+}
+
+
+def add_profile(ap: argparse.ArgumentParser, argv: list[str], **dest_to_field: str) -> None:
+    """Add --profile to a parser. A profile only replaces *defaults*, so any flag given
+    explicitly still wins. dest_to_field maps parser destinations to PROFILES fields, e.g.
+    add_profile(ap, argv, width="ref_width", spp="ref_spp"). Must be called after the
+    mapped arguments have been added and before parse_args."""
+    ap.add_argument("--profile", choices=sorted(PROFILES), default=None,
+                    help="small: build and debug; full: the reported numbers. Sets defaults for "
+                         + ", ".join(f"--{d.replace('_', '-')}" for d in dest_to_field))
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--profile", choices=sorted(PROFILES), default=None)
+    chosen, _ = pre.parse_known_args(argv)
+    if chosen.profile:
+        prof = PROFILES[chosen.profile]
+        ap.set_defaults(**{dest: prof[field] for dest, field in dest_to_field.items()})
 
 
 def script_args() -> list[str]:

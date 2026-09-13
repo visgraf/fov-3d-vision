@@ -27,8 +27,8 @@ import bpy
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from bl_common import (configure_multilayer_exr, ensure_cycles, eye_record, find_eye,  # noqa: E402
-                       pin_seed, rigid, script_args, setup_device)
+from bl_common import (add_profile, configure_multilayer_exr, ensure_cycles, eye_record,  # noqa: E402
+                       find_eye, pin_seed, rigid, script_args, setup_device)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,6 +55,7 @@ def main():
     ap.add_argument("--spp", type=int, default=64)
     ap.add_argument("--device", default="OPTIX", choices=["OPTIX", "CUDA", "CPU"])
     ap.add_argument("--shader", default=os.path.join(HERE, "foveated_camera.osl"))
+    add_profile(ap, script_args(), s0="s0", spp="fix_spp")
     args = ap.parse_args(script_args())
 
     if args.blend:
@@ -125,6 +126,7 @@ def main():
         "blend": bpy.data.filepath, "scene": scene.name,
         "fov_kind": scene.get("fov_kind", "unknown"), "blender": bpy.app.version_string,
         "eye": eye_record(eye), "eye_note": eye_note,
+        "profile": args.profile,
         "gaze_yaw_deg": args.yaw, "gaze_pitch_deg": args.pitch,
         "camera_position_m": [round(x, 6) for x in cam.matrix_world.translation],
         "camera_forward": [round(x, 6) for x in (m @ Vector((0.0, 0.0, -1.0)))],

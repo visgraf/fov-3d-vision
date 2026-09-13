@@ -48,6 +48,35 @@ drifting immediately.
   an artifact must catch its own failure and exit nonzero.
 - Git: forward only. Revert, don't rewrite.
 
+## Cost classes
+
+The project's own renders are fast; a fixation is a fraction of a second. What is slow is
+the uniform reference at foveal spacing, which is the baseline foveation replaces. So the
+loop never waits on it. Every command falls in one class, and the class decides when it runs:
+
+- **Interactive** — under 10 s. The loop: a fixation, a check, a small sweep. Where
+  development lives.
+- **Batch** — under 5 min, run while doing something else: a noise floor, a fixation
+  sequence, an E₂ sweep.
+- **Overnight** — anything longer. Scheduled, justified in one sentence in `docs/log.md`
+  before it runs, and its result kept as a pinned asset. References, and a final
+  error-versus-budget curve at full scale. Nothing else.
+
+Two habits make the first class real:
+
+- **Build on `--profile small`, report on `--profile full`.** The two profiles in
+  `bl_common.PROFILES` are one flag apart: `small` (s₀ = 0.1°, reference 3600x1800 at 1024
+  spp, fixations at 64 spp) renders its reference in about a minute; `full` (s₀ = 0.05°,
+  7200x3600 at 8192 spp, fixations at 256 spp) is the reported configuration. Geometry, the
+  sample record and every check are identical between them. A tool is developed and debugged
+  on `small` and run on `full` once, for the number that goes in a note.
+- **References are assets, not steps.** A reference is rendered once per scene and profile,
+  recorded in `scenes/manifest.json` with its md5, and kept — backed up outside the checkout,
+  since `previews/` is gitignored. It is regenerated only if the scene, s₀ or spp changes,
+  never to refresh it. This is the one exception to "if a command made it, the command is the
+  artifact": here the command is 35 minutes, so the file is the artifact and the md5 proves
+  it is the one the log describes.
+
 ## Files
 
 - `README.md` — what this is, how to run it, the roadmap, where things stand.

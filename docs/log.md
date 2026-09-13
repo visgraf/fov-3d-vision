@@ -272,3 +272,23 @@ inspect_preview on both matches A1: holes 0 / 0.0208, backfaces 0 / 0.0038, nadi
 render_foveated.py now calls pin_seed (smoke-tested on the Classroom at 128 px: key removed,
 exit 0), since A4 renders many fixations in one session. Write-up in
 `docs/a2-reference-and-noise-floor.md`.
+
+## 2026-09-13 — cost classes, profiles, references as pinned assets
+
+After A2's two 35-minute renders: those are the uniform baseline, rendered once, and the loop
+must never wait on anything like them. CLAUDE.md gains a "Cost classes" section (interactive
+< 10 s, batch < 5 min, overnight with a logged justification) and two habits: build on
+`--profile small`, and treat references as md5-pinned assets kept outside the checkout.
+
+`bl_common.PROFILES` defines `small` (s0 0.1 deg, reference 3600x1800 at 1024 spp,
+fixations 64 spp) and `full` (s0 0.05 deg, 7200x3600 at 8192 spp, fixations 256 spp).
+`add_profile` puts `--profile` on `preview360.py`, `render_foveated.py` and
+`noise_floor.py`; a profile only replaces defaults, so explicit flags still win, and
+`meta.json` records which profile was used. Parsing behaviour checked host-side (no profile
+keeps the old defaults; profile sets them; an explicit flag wins in either order) and the
+noise-floor control flow re-driven with the stub bpy. Not run in Blender: the workstation
+verifies `preview360.py --profile small` on the calib room, which also produces the small
+reference A4 develops against.
+
+Fixation spp is at most a sixteenth of the reference spp in both profiles so D7 holds by
+construction: 1/sqrt(16) = 0.25 for small, 1/sqrt(32) = 0.18 for full, both under a third.
