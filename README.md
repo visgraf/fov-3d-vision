@@ -17,7 +17,8 @@ Throughout, the head is fixed. Eyes rotate about their own centres. See `DECISIO
     CLAUDE.md       how we work
     DECISIONS.md    what is settled, and what would unsettle it
     docs/log.md     dated record of what was run and what came out
-    docs/           one note per step; docs/reference/ holds baseline images
+    docs/           one note per step; docs/phase-a-summary.md is the Phase A summary,
+                    docs/phase-a-result.md the result page; docs/reference/ holds baseline images
     tools/          scripts, all runnable from the repository root
     scenes/         scene sources; only manifest.json and asset.json are committed
     previews/       generated, gitignored
@@ -79,7 +80,8 @@ uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` tog
 the small-profile references (about a minute each). D7 holds on both scenes against the
 profiles' fixation spp.
 
-Phase A is closed pending D11. The result is one page, `docs/phase-a-result.md`: at the
+Phase A is closed pending D11; `docs/phase-a-summary.md` is the summary (what was built, what
+was learned, what carries into Phase B). The result is one page, `docs/phase-a-result.md`: at the
 targets foveation beats uniform sampling at equal rays at every budget on both scenes (on the
 targets actually fixated, 0.183 against 0.351 at the full profile's largest K, and 0.146
 against 0.365 from the first fixation); over the sphere uniform wins at every budget below

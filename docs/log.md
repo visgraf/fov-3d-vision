@@ -437,3 +437,9 @@ rays (14.9 M, E2 1's K=50; others interpolated log-log along K): fixated 0.227 /
 differs from the profiles' E2 = 2, e_max = 45 and the criteria disagree: profiles NOT
 changed, stopped, recorded as D11 pending the objective. E2 1 fails the cap check (+1.03%,
 raster 77) and the control (2.6x). `docs/a6-warp-sweep.md`.
+
+## 2026-09-13 — Phase A summary
+
+`docs/phase-a-summary.md` written by Luiz: the question, what was accomplished (A1-A6), the
+result, eight things learned, why it matters, what carries into Phase B, deliverables. The
+README's layout and State now point to it.
