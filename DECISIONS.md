@@ -99,3 +99,14 @@ fixation's seed-pair noise and floor its binned alignment floor, both measured.
 Why: fixed constants were set at the wrong scale (0.073 was the per-pixel noise) or above what
 a scene's contrast can deliver (5x on a room whose worst case is a wall against a star card).
 Overturned if: a threshold set this way lets a known-wrong result pass a check.
+
+## D11 — E2 = 2 deg and e_max = 45 deg stand, pending the objective (2026-09-13)
+
+The A6 sweep at equal rays favours E2 = 4 for the fixated targets (0.103 against 0.155) and
+E2 = 1 for the covered sphere (0.203 on 58% against 0.435 on 22%); e_max 45 wins the targets,
+30 the sphere. The criteria disagree, so the profiles keep E2 = 2, e_max = 45 rather than
+move on one of them.
+Why: the choice is the objective's, and the objective (what the matcher needs: fovea,
+coverage, or a budgeted mix) is Phase C's to set.
+Overturned if: the objective is fixed to one criterion, in which case the sweep already names
+the value, or a policy trades E2 against K.

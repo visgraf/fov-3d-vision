@@ -416,3 +416,24 @@ targets F 0.183 vs U 0.351, sphere 0.100 (42% uncovered) vs 0.092; Classroom K=1
 scenes and profiles; uniform wins the sphere below the largest K. Longest commands: shifted
 Classroom reference 278 s, calib integration 264 s. docs/phase-a-result.md written; A4 and A5
 notes updated; charts in docs/reference/.
+
+## 2026-09-13 — fixated-targets column; (b) judged on plain content; E2 / e_max sweep
+
+Step 1: `targets_fixated` in the D9 curve (targets whose fixation is among the first K).
+Full profile, calib room: 0.146 F vs 0.365 U at K=1, 0.183 vs 0.351 at K=50; Classroom 0.075
+vs 0.228 at K=5. All four integrations re-run; other numbers unchanged.
+
+Step 2: `check_sequence.py --plain kind=wire | floor=0.03`. Small: wires 8/8, Classroom 5/7
+(desk floor; window gaze). Full: wires 0/8 at 0.006-0.013 vs bounds 0.004-0.009, measured as
+not radiometric (brightness 0.998-1.003; seed 1 scores the same as seed 0 vs the reference
+while the pair noise is 0.003; a 1 px shift gives 0.003-0.030): sub-pixel lattice vs the
+0.5 deg cells. D8 validation closed on the calibration ratio, the brightness ratio and (a).
+
+Step 3: sweep, five settings, 50 targets each, ~4-11 s per sequence, ~1 min per curve.
+Rasters 77 / 126 / 200 / 111 / 137, samples 4,669 / 12,492 / 31,428 / 9,689 / 14,745. At equal
+rays (14.9 M, E2 1's K=50; others interpolated log-log along K): fixated 0.227 / 0.155 / 0.103
+/ 0.168 / 0.168; sphere 0.203 (0.42 uncov) / 0.435 (0.78) / 0.395 (0.83) / 0.371 (0.82) / 0.378
+(0.68). E2 4 wins the targets, E2 1 the sphere; e_max 45 the targets, 30 the sphere. Choice
+differs from the profiles' E2 = 2, e_max = 45 and the criteria disagree: profiles NOT
+changed, stopped, recorded as D11 pending the objective. E2 1 fails the cap check (+1.03%,
+raster 77) and the control (2.6x). `docs/a6-warp-sweep.md`.

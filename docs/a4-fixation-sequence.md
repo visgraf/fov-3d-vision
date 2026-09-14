@@ -150,6 +150,25 @@ fixation costs 0.14 to 0.17 s, of which the call floor is 11 to 20%. With 100 sa
 floor alone, so (b) passes less often than at small (12 of 50): registration-limited, as
 before. The rim-ring excess in (d) is gone at n = 253 (-0.02% against +0.59% at n = 126).
 
+## Check (b) closed as a question (2026-09-13, fourth pass)
+
+(b) is judged on plain-content targets only (`--plain kind=wire` on the calibration room,
+`--plain floor=0.03` on the Classroom); textured targets report their statistic and floor,
+labelled registration-limited, and never fail. Results: small calib room wires 8 of 8 pass
+(the 42 registration-limited targets: 32 would pass); small Classroom 5 of 7 (failures: the
+floor under the desks, and the yaw 120 gaze through the window panes); full calib room wires
+0 of 8, statistic 0.006 to 0.013 against bounds 0.004 to 0.009; full Classroom 7 of 10.
+
+Why the full-profile wires miss, measured on all eight: brightness ratio fixation over
+reference 0.998 to 1.003; the seed-1 render scores 0.005 to 0.012 against the reference,
+the same as seed 0, while the seed pair's own noise is 0.0023 to 0.0032; a one-pixel shift
+of the reference (0.05 deg) gives 0.003 to 0.030. So the residual is the sample lattice
+against the 0.5 deg cells at sub-pixel scale, not noise and not radiometry; the bound's
+half-pixel floor term under-represents it because the foveal spacing grows from one to two
+pixels across the 2 deg fovea. The same sensitivity shows in the A6 sweep, where the wire
+pass count moves between 1 and 7 of 8 with raster size alone. Radiometric correctness rests
+on the calibration ratio, the brightness ratio and check (a); the D8 validation is closed.
+
 ## Assumed
 
 - The noise bound for (b): tile medians from A2 stand in for the foveal region.

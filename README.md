@@ -45,10 +45,12 @@ One camera, one centre of projection.
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | **done** — `fixation_sequence.py` writes the D1 record at 15 ms (small) and 140 ms (full) per fixation; warp, footprint, reader and control checks pass at both profiles, the binned foveal check is registration-limited on the cards; `docs/a4-fixation-sequence.md` |
 | A5 | Integration of the sequence into a spherical representation | **done** — finest-owns integration and the D9 curve at both profiles with equal-budget uniform baselines; foveation wins at the targets, uniform over the sphere below the largest budget; `docs/phase-a-result.md` |
+| A6 | The E2 and e_max sweep | **done, choice pending** — at equal rays E2 4 wins the fixated targets and E2 1 the covered sphere; e_max 45 and 30; profiles unchanged (D11); `docs/a6-warp-sweep.md` |
 
-Parameters still to fix in A2/A3: foveal spacing s₀, the falloff constant E₂ in
-`s(e) = s₀(1 + e/E₂)`, and the maximum eccentricity. All three are engineering knobs,
-not physiology, and E₂ deserves a sweep.
+The three warp parameters are settled as far as Phase A can settle them: s₀ is the profile
+(0.1° small, 0.05° full), and E₂ = 2°, e_max = 45° stand under D11 after the A6 sweep, which
+found that a larger E₂ buys foveal accuracy per ray and a smaller one buys coverage, so the
+choice belongs to the objective.
 
 ### Phase B — binocular
 
@@ -77,18 +79,18 @@ uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` tog
 the small-profile references (about a minute each). D7 holds on both scenes against the
 profiles' fixation spp.
 
-Phase A is complete at both profiles; the result is one page, `docs/phase-a-result.md`.
-At the targets foveation beats uniform sampling at equal rays at every budget on both scenes
-(1.9x on the calibration room and 2.7x on the Classroom at the full profile's largest K); over
-the sphere uniform wins at every budget below the largest, where the two are level, because
-fifty fixations cover 58% of the sphere and what they cover between targets is periphery
-charged for its blur. The metric (D9, at s_eval = 2 s0) charges a uniform render at the
-reference resolution 1.01x to 1.03x its own measured noise; the resampling floor comes from
-true off-grid renders of the references, pinned in the manifest; check thresholds are set
-from measured noise and scene-bounded contrast (D10). What remains open is the per-cell D8
-validation, which stays registration-limited on high-contrast texture and fails narrowly on
-three of four runs. A fixation costs 15 ms (small) and 140 ms (full) on the RTX 4090 at the
-uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
+Phase A is closed pending D11. The result is one page, `docs/phase-a-result.md`: at the
+targets foveation beats uniform sampling at equal rays at every budget on both scenes (on the
+targets actually fixated, 0.183 against 0.351 at the full profile's largest K, and 0.146
+against 0.365 from the first fixation); over the sphere uniform wins at every budget below
+the largest, where the two are level, because fifty fixations cover 58% of the sphere and
+what they cover between targets is periphery charged for its blur. The metric charges a
+grid-aligned render 1.01x to 1.03x its own measured noise; the resampling floor comes from
+true off-grid renders pinned in the manifest; check thresholds are measured (D10); the
+per-sample validation is closed, its residual at the full profile measured as sub-pixel
+lattice registration and not radiometry. The A6 sweep says the warp's E₂ trades foveal
+accuracy against coverage and leaves the choice to the objective (D11). A fixation costs
+15 ms (small) and 140 ms (full) on the RTX 4090 at the uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

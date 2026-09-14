@@ -19,7 +19,8 @@ blocks only partly covered is reported too.
 
 Metric (D9): relative RMS = RMS(reconstruction - reference at s_eval) / mean(reference at
 s_eval), solid-angle weighted, mean over RGB, (i) at the targets (blocks within --target-deg
-of every gaze of the full sequence) and (ii) over the covered sphere. A uniform render is
+of every gaze of the full sequence), (i') at the fixated targets only (those whose fixation is
+among the first K), and (ii) over the covered sphere. A uniform render is
 upsampled to the reference grid (nearest) and then box-filtered to s_eval, so its blur is
 charged like everyone else's. The resampling floor at s_eval (reference vs its bilinear
 half-pixel shift, both filtered to s_eval, at the targets) is reported beside the numbers.
@@ -451,6 +452,10 @@ def main():
         sp.finalise()
         return sp
 
+    def fixated_mask(k: int) -> np.ndarray:
+        """Blocks within --target-deg of the targets whose fixation is among the first k."""
+        return nearest_gaze_deg(grid.dir_e, targets[:k]) <= args.target_deg
+
     def evaluate(sp: Sphere, k: int) -> dict:
         val3, covered, fine, _ = sp.composite()
         val = val3.mean(-1)
@@ -458,8 +463,11 @@ def main():
         rec_a, cov_a, partial = grid.down(val, covered)          # everything
         rec = np.where(cov_f, rec_f, rec_a); cov = cov_a
         rays = sum(f["samples"] * seq["spp"] for f in fixations[:k]); secs = sum(f["render_seconds"] for f in fixations[:k])
+        near_fx = fixated_mask(k)
         out = {"K": k, "rays": int(rays), "render_seconds": secs,
                "targets": grid.rel_rms(rec, ref_e, near_t & cov), "sphere": grid.rel_rms(rec, ref_e, cov),
+               "targets_fixated": grid.rel_rms(rec, ref_e, near_fx & cov),
+               "targets_fixated_count": int(k),
                "uncovered_frac": 1.0 - grid.frac(cov), "partial_block_frac": grid.frac(partial),
                "finest_block_frac": grid.frac(cov_f), "fill_only_block_frac": grid.frac(cov & ~cov_f),
                "targets_uncovered_frac": float(1.0 - grid.omega_e[near_t & cov].sum() / grid.omega_e[near_t].sum()),
@@ -472,7 +480,7 @@ def main():
         sp = build(k, None)
         curve[k] = evaluate(sp, k)
         c = curve[k]
-        print(f"[integrate] K={k:2d}: rays {c['rays']:>9d} {c['render_seconds']:.3f}s  targets {c['targets']['rel_rms']:.4f}  "
+        print(f"[integrate] K={k:2d}: rays {c['rays']:>9d} {c['render_seconds']:.3f}s  targets {c['targets']['rel_rms']:.4f} (fixated {c['targets_fixated']['rel_rms']:.4f})  "
               f"sphere {c['sphere']['rel_rms']:.4f} (uncovered {c['uncovered_frac']:.3f}, partial {c['partial_block_frac']:.3f}, "
               f"fill-only {c['fill_only_block_frac']:.3f})  D8 binned {c['d8']['targets_binned_rel_rms']:.4f}", flush=True)
         if k == kmax:
@@ -497,13 +505,14 @@ def main():
     if not (curve[kmax]["d8"]["targets_binned_rel_rms"] < args.bound):
         fails.append(f"(4) D8 validation: binned target error {curve[kmax]['d8']['targets_binned_rel_rms']:.4f} at K={kmax} is not below {args.bound:.4f}")
 
-    def eval_uniform(folder: str) -> dict:
+    def eval_uniform(folder: str, k: int | None = None) -> dict:
         meta = json.load(open(os.path.join(folder, "meta.json")))
         img = read_combined(os.path.join(folder, "pano.exr"))
         rec, _, _ = grid.down(uniform_to_grid(img, H, W))
         return {"width": img.shape[1], "spp": meta["spp"], "rays": img.shape[0] * img.shape[1] * meta["spp"],
                 "render_seconds": meta["render_seconds"], "render_seconds_includes_write": True, "seed": meta.get("seed", 0),
                 "targets": grid.rel_rms(rec, ref_e, near_t), "sphere": grid.rel_rms(rec, ref_e, np.ones(len(ref_e), bool)),
+                "targets_fixated": grid.rel_rms(rec, ref_e, fixated_mask(k)) if k else None,
                 "pixel_deg": 360.0 / img.shape[1], "_rec": rec}
 
     uniform = {}
@@ -515,9 +524,9 @@ def main():
             if Wu < 64 or not os.path.isdir(folder):
                 uniform[k] = {"width": Wu, "skipped": "W < 64" if Wu < 64 else f"missing {folder}"}
                 continue
-            u = eval_uniform(folder); u.pop("_rec"); u["budget_ratio_to_foveated"] = u["rays"] / B
+            u = eval_uniform(folder, k); u.pop("_rec"); u["budget_ratio_to_foveated"] = u["rays"] / B
             uniform[k] = u
-            print(f"[integrate] uniform W={Wu:4d} for K={k:2d}: rays {u['rays']:>9d} {u['render_seconds']:.2f}s  targets {u['targets']['rel_rms']:.4f}  sphere {u['sphere']['rel_rms']:.4f}", flush=True)
+            print(f"[integrate] uniform W={Wu:4d} for K={k:2d}: rays {u['rays']:>9d} {u['render_seconds']:.2f}s  targets {u['targets']['rel_rms']:.4f} (fixated {u['targets_fixated']['rel_rms']:.4f})  sphere {u['sphere']['rel_rms']:.4f}", flush=True)
 
     if args.calibration:
         if not args.calibration_b:
@@ -556,13 +565,15 @@ def main():
         json.dump(result, fh, indent=1, default=float)
     with open(os.path.join(args.out, "curve.csv"), "w", newline="") as fh:
         wr = csv.writer(fh)
-        wr.writerow(["K", "rays", "render_seconds", "targets_rel_rms", "sphere_rel_rms", "uncovered_frac", "targets_uncovered_frac",
-                     "d8_targets_binned_rel_rms", "uniform_width", "uniform_rays", "uniform_seconds", "uniform_targets_rel_rms", "uniform_sphere_rel_rms"])
+        wr.writerow(["K", "rays", "render_seconds", "targets_fixated_rel_rms", "targets_rel_rms", "sphere_rel_rms", "uncovered_frac", "targets_uncovered_frac",
+                     "d8_targets_binned_rel_rms", "uniform_width", "uniform_rays", "uniform_seconds", "uniform_targets_fixated_rel_rms", "uniform_targets_rel_rms", "uniform_sphere_rel_rms"])
         for k in k_list:
             c = curve[k]; u = uniform.get(k, {})
-            wr.writerow([k, c["rays"], round(c["render_seconds"], 3), c["targets"]["rel_rms"] if c["targets"] else "", c["sphere"]["rel_rms"],
+            wr.writerow([k, c["rays"], round(c["render_seconds"], 3), c["targets_fixated"]["rel_rms"] if c["targets_fixated"] else "",
+                         c["targets"]["rel_rms"] if c["targets"] else "", c["sphere"]["rel_rms"],
                          round(c["uncovered_frac"], 4), round(c["targets_uncovered_frac"], 4), c["d8"]["targets_binned_rel_rms"],
                          u.get("width", ""), u.get("rays", ""), u.get("render_seconds", ""),
+                         u["targets_fixated"]["rel_rms"] if u.get("targets_fixated") else "",
                          u["targets"]["rel_rms"] if "targets" in u else "", u["sphere"]["rel_rms"] if "sphere" in u else ""])
     print(json.dumps({"checks": checks, "checks_failed": fails}, indent=1, default=float))
     raise SystemExit(1 if fails else 0)

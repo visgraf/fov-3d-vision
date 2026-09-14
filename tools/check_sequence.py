@@ -19,6 +19,9 @@ Checks, each of which can fail (exit 1), written to <sequence>/check.json:
              have the reference at >= 16x the fixation spp); the binned alignment floor (the
              reference against its own half-pixel shift, binned the same way) enters in
              quadrature: bound = 1.5 * sqrt(noise_fix^2 + (noise_fix/4)^2 + floor_binned^2) (D10).
+             With --plain, only plain-content fixations are judged (calib room: the wire
+             targets; Classroom: gazes whose binned alignment floor is below 0.03); the rest
+             report the statistic and the floor, labelled registration-limited, and never fail.
   (c) control  (b) with the whole fixation rotated --control-yaw degrees about the EYE's up
              axis must FAIL; if the texture were featureless it could not
   (d) cap    footprints over a fixation's disc sum to 2*pi*(1 - cos e_max) to 1%
@@ -159,6 +162,10 @@ def main():
     ap.add_argument("--control-yaw", type=float, default=90.0)
     ap.add_argument("--px-tol", type=float, default=1.0, help="reference pixels, on the p99.9")
     ap.add_argument("--cap-tol", type=float, default=0.01)
+    ap.add_argument("--plain", default=None,
+                    help="which fixations (b) is judged on: 'kind=wire' (targets of that kind in sequence.json) or "
+                         "'floor=0.03' (binned alignment floor below this). The rest are reported, labelled "
+                         "registration-limited, and never fail. Default: all fixations are judged.")
     args = ap.parse_args()
 
     seq = json.load(open(os.path.join(args.sequence, "sequence.json")))
@@ -256,10 +263,22 @@ def main():
         fc = fovea_stats(rot_y(args.control_yaw))
         rec["control_binned_rel_median"] = fc["binned_rel_median"]
         rec["control_resampling"] = fc["resampling_floor"]
+        kind = seq["gazes"][f["id"]].get("kind") if f["id"] < len(seq.get("gazes", [])) else None
+        if args.plain is None:
+            plain = True
+        elif args.plain.startswith("kind="):
+            plain = kind == args.plain[5:]
+        elif args.plain.startswith("floor="):
+            plain = rec["align_floor_binned"] < float(args.plain[6:])
+        else:
+            raise SystemExit(f"--plain must be kind=<kind> or floor=<value>, got {args.plain!r}")
+        rec["kind"] = kind
+        rec["b_judged"] = bool(plain)
+        rec["b_label"] = "plain" if plain else "registration-limited"
         if rec["bound"] is None:
             fails.append(f"f{f['id']:03d}: no seed pair, (b) has no bound")
         else:
-            if not (rec["fovea_binned_rel_median"] < rec["bound"]):
+            if plain and not (rec["fovea_binned_rel_median"] < rec["bound"]):
                 fails.append(f"f{f['id']:03d}: (b) binned foveal median {rec['fovea_binned_rel_median']:.4f} >= bound {rec['bound']:.4f}")
             if not (rec["control_binned_rel_median"] >= rec["bound"]):
                 fails.append(f"f{f['id']:03d}: (c) control at {args.control_yaw} deg yaw still passes "
@@ -291,6 +310,10 @@ def main():
         "resampling_floor": agg("resampling_floor"), "align_floor_per_sample": agg("align_floor_per_sample"),
         "fovea_cells": agg("fovea_cells"), "fovea_samples": agg("fovea_samples"),
         "fovea_pass_count": int(sum(r["bound"] is not None and r["fovea_binned_rel_median"] < r["bound"] for r in per)),
+        "plain_rule": args.plain, "plain_count": int(sum(r["b_judged"] for r in per)),
+        "plain_pass_count": int(sum(r["b_judged"] and r["bound"] is not None and r["fovea_binned_rel_median"] < r["bound"] for r in per)),
+        "registration_limited_count": int(sum(not r["b_judged"] for r in per)),
+        "registration_limited_pass_count": int(sum((not r["b_judged"]) and r["bound"] is not None and r["fovea_binned_rel_median"] < r["bound"] for r in per)),
         "control_fail_count": int(sum(r["bound"] is not None and r["control_binned_rel_median"] >= r["bound"] for r in per)),
         "cap_rel_err": agg("cap_rel_err"), "reader_max_abs_diff": agg("reader_max_abs_diff"),
         "per_fixation": per, "checks_failed": fails,
