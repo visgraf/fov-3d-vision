@@ -43,8 +43,8 @@ One camera, one centre of projection.
 | A1 | Scene sources: gather and check 3D scenes | **done** — three tiers verified on GPU; `docs/a1-scene-gathering.md` |
 | A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **done** — both references at 8192 spp, 32.3 / 35.8 min measured; D7 met on the Classroom, 2-5% short on the calib room; `docs/a2-reference-and-noise-floor.md` |
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
-| A4 | A sequence of fixations | **done, one check open** — `fixation_sequence.py` renders 50 fixations in 5 s on the small profile and writes the D1 record; warp, footprint and reader checks pass, the foveal-agreement check fails where texture edges dominate; full profile untested; `docs/a4-fixation-sequence.md` |
-| A5 | Integration of the sequence into a spherical representation | **done, checks open** — finest-owns integration and the D9 error-versus-budget curve with an equal-budget uniform baseline; foveation wins at the targets on both scenes, uniform over the sphere at small budgets; full profile untested; `docs/a5-spherical-integration.md` |
+| A4 | A sequence of fixations | **done** — `fixation_sequence.py` writes the D1 record at 15 ms (small) and 140 ms (full) per fixation; warp, footprint, reader and control checks pass at both profiles, the binned foveal check is registration-limited on the cards; `docs/a4-fixation-sequence.md` |
+| A5 | Integration of the sequence into a spherical representation | **done** — finest-owns integration and the D9 curve at both profiles with equal-budget uniform baselines; foveation wins at the targets, uniform over the sphere below the largest budget; `docs/phase-a-result.md` |
 
 Parameters still to fix in A2/A3: foveal spacing s₀, the falloff constant E₂ in
 `s(e) = s₀(1 + e/E₂)`, and the maximum eccentricity. All three are engineering knobs,
@@ -77,27 +77,18 @@ uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` tog
 the small-profile references (about a minute each). D7 holds on both scenes against the
 profiles' fixation spp.
 
-A4 and A5 have their tools, their records and their curves, all at the small profile.
-`tools/fixation_sequence.py` renders a gaze list through the foveated camera in one session
-(15 ms per fixation on the calibration room, 28 ms on the Classroom) and writes a D1 sample
-record per fixation, checked against the small references by `tools/check_sequence.py`:
-directions agree with the Position pass to 0.02 reference pixels, footprints sum to the
-45 deg cap within 0.6%, the record equals the file, and the foveal-agreement check is now
-binned with a bound measured from a seed pair per fixation, passing 17 of 50 and 8 of 10 with
-the remaining failures measured as registration on resolved Siemens-star edges.
-`tools/integrate_sphere.py` integrates the samples finest-owns onto the sphere, reconstructs
-it at the declared evaluation scale (D9, s_eval = 2 s0) and measures the error against the
-ray budget next to an equal-budget uniform render charged for its blur the same way; the
-per-sample footprint-aware comparison (D8) stays as a validation check. The result at the
-small profile: at the targets foveation beats uniform at every budget on both scenes, 1.8x on
-the calibration room and 5x on the Classroom at the largest K; over the sphere uniform wins
-on the calibration room until the largest budget, where the two are level on the covered
-part, and the two are level on the Classroom, with the foveated leaving 31 to 42% of the
-sphere uncovered at the largest K and far more at small K. The metric charges a uniform
-render at the reference resolution 3% more than its own measured noise. Three checks fail
-and are recorded with measured causes rather than adjusted. Nothing has run at the full
-profile. Tier 1
-needs no reference: the HDRI is its own.
+Phase A is complete at both profiles; the result is one page, `docs/phase-a-result.md`.
+At the targets foveation beats uniform sampling at equal rays at every budget on both scenes
+(1.9x on the calibration room and 2.7x on the Classroom at the full profile's largest K); over
+the sphere uniform wins at every budget below the largest, where the two are level, because
+fifty fixations cover 58% of the sphere and what they cover between targets is periphery
+charged for its blur. The metric (D9, at s_eval = 2 s0) charges a uniform render at the
+reference resolution 1.01x to 1.03x its own measured noise; the resampling floor comes from
+true off-grid renders of the references, pinned in the manifest; check thresholds are set
+from measured noise and scene-bounded contrast (D10). What remains open is the per-cell D8
+validation, which stays registration-limited on high-contrast texture and fails narrowly on
+three of four runs. A fixation costs 15 ms (small) and 140 ms (full) on the RTX 4090 at the
+uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

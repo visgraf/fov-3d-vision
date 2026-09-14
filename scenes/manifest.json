@@ -114,6 +114,44 @@
      "nadir_depth_m": 1.6002,
      "zenith_depth_m": 1.6002
     }
+   },
+   "reference_shift": {
+    "status": "rendered",
+    "date": "2026-09-13",
+    "profile": "full",
+    "path": "previews/reference_shift/calib_room/pano.exr",
+    "md5": "7f32d2752e498525cc3b32eaa2cc2611",
+    "width": 7200,
+    "height": 3600,
+    "spp": 1024,
+    "seed": 1,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "yaw_offset_px": 0.5,
+    "yaw_offset_deg": 0.025,
+    "render_seconds": 246.41,
+    "exr_bytes": 502004330,
+    "purpose": "the reference re-rendered half a pixel of yaw off-grid, seed 1: the resampling floor at s_eval (integrate_sphere.py --shifted); not a reference for anything else"
+   },
+   "reference_small_shift": {
+    "status": "rendered",
+    "date": "2026-09-13",
+    "profile": "small",
+    "path": "previews/reference_small_shift/calib_room/pano.exr",
+    "md5": "89100be22404f192a683e22cae94f9bf",
+    "width": 3600,
+    "height": 1800,
+    "spp": 1024,
+    "seed": 1,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "yaw_offset_px": 0.5,
+    "yaw_offset_deg": 0.05,
+    "render_seconds": 62.82,
+    "exr_bytes": 129256773,
+    "purpose": "the reference re-rendered half a pixel of yaw off-grid, seed 1: the resampling floor at s_eval (integrate_sphere.py --shifted); not a reference for anything else"
    }
   },
   {
@@ -256,6 +294,44 @@
      "nadir_depth_m": 1.20015,
      "zenith_depth_m": 1.69666
     }
+   },
+   "reference_shift": {
+    "status": "rendered",
+    "date": "2026-09-13",
+    "profile": "full",
+    "path": "previews/reference_shift/classroom/pano.exr",
+    "md5": "6badf771e8ec06f3645d135ca60217e8",
+    "width": 7200,
+    "height": 3600,
+    "spp": 1024,
+    "seed": 1,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "yaw_offset_px": 0.5,
+    "yaw_offset_deg": 0.025,
+    "render_seconds": 278.34,
+    "exr_bytes": 2004808790,
+    "purpose": "the reference re-rendered half a pixel of yaw off-grid, seed 1: the resampling floor at s_eval (integrate_sphere.py --shifted); not a reference for anything else"
+   },
+   "reference_small_shift": {
+    "status": "rendered",
+    "date": "2026-09-13",
+    "profile": "small",
+    "path": "previews/reference_small_shift/classroom/pano.exr",
+    "md5": "ee02c04925e273c63fd45abe465c61f1",
+    "width": 3600,
+    "height": 1800,
+    "spp": 1024,
+    "seed": 1,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "yaw_offset_px": 0.5,
+    "yaw_offset_deg": 0.05,
+    "render_seconds": 71.29,
+    "exr_bytes": 515141795,
+    "purpose": "the reference re-rendered half a pixel of yaw off-grid, seed 1: the resampling floor at s_eval (integrate_sphere.py --shifted); not a reference for anything else"
    }
   }
  ]

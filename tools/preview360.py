@@ -23,6 +23,7 @@ import time
 import traceback
 
 import bpy
+from mathutils import Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bl_common import (add_profile, configure_multilayer_exr, ensure_cycles, eye_record,  # noqa: E402
@@ -44,6 +45,10 @@ def main():
     ap.add_argument("--filter-width", type=float, default=None, help="default: 1.0 for BOX, else Cycles' own")
     ap.add_argument("--no-backface", action="store_true")
     ap.add_argument("--seed", type=int, default=0, help="Cycles seed; a second seed gives a noise measurement")
+    ap.add_argument("--yaw-offset-px", type=float, default=0.0,
+                    help="rotate the camera about the EYE's vertical by this fraction of a pixel of this "
+                         "render (0.5 = half a pixel = s0/2 deg, +right); an off-grid reference for the "
+                         "resampling floor")
     ap.add_argument("--time-write", action="store_true",
                     help="after the render, re-save the multilayer EXR to a scratch path and time "
                          "it, so render_seconds (which includes the write) can be split; the "
@@ -71,7 +76,8 @@ def main():
     cam_data.dof.use_dof = False
     cam = bpy.data.objects.new("PREVIEW360", cam_data)
     scene.collection.objects.link(cam)
-    cam.matrix_world = rigid(eye.matrix_world)
+    yaw_offset_deg = args.yaw_offset_px * 360.0 / args.width
+    cam.matrix_world = rigid(eye.matrix_world) @ Matrix.Rotation(math.radians(-yaw_offset_deg), 4, "Y")  # +yaw right, as gaze_matrix
     scene.camera = cam
 
     r = scene.render
@@ -158,6 +164,7 @@ def main():
         "width": args.width, "height": args.width // 2, "spp": args.spp,
         "denoise": args.denoise, "device": backend,
         "adaptive_sampling": False, "time_limit": 0.0, "seed": args.seed,
+        "yaw_offset_px": args.yaw_offset_px, "yaw_offset_deg": yaw_offset_deg,
         "pixel_filter": args.filter, "filter_width": round(c.filter_width, 4),
         "render_seconds": round(t_render, 2),
         "render_seconds_includes": "the multilayer EXR write (write_still=True is inside the timer)",

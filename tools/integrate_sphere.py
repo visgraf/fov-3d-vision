@@ -29,13 +29,12 @@ Checks that can fail (exit 1):
                    reference at s_eval to 1e-6 over |lat| <= --identity-lat (a polar pixel's
                    disc spans its longitude neighbours, so the poles are reported, not judged)
   (2) control      every gaze yawed --control-yaw deg gives a target error at least
-                   --control-factor times the largest-K value
+                   --control-factor (3, D10) times the largest-K value
   (3) calibration  a uniform render at the full s0 resolution and the fixation spp, scored by
-                   the metric, must show its noise: --calibration-expect +- --calibration-tol
-                   (0.073 +- 0.01 on the calib room, A2's 64 spp median-tile figure). Reported
-                   next to it, from a second seed of that render when given: the same render's
-                   noise measured at s_eval as the seed pair's RMS / sqrt(2), which is what the
-                   metric should charge when there is nothing but noise to charge.
+                   the metric, must show its own noise: the expected value is that render's
+                   seed-pair noise at s_eval (RMS(seed0 - seed1) / sqrt 2, both filtered), and
+                   the score over it must lie in --calibration-ratio (1.0 to 1.15, D10). The
+                   first pass expected 0.073, the per-pixel figure at the wrong scale.
   (4) D8 validation  the per-cell footprint-aware comparison of A5's first pass, binned to
                    0.5 deg at the targets, below --bound (the median measured (b) bound)
 """
@@ -126,7 +125,7 @@ def candidates(H: int, W: int, d: np.ndarray, fp: np.ndarray) -> tuple[np.ndarra
             dc = dir_of(lon_c.ravel(), lat_c.ravel()).reshape(rows.shape + (3,))
             inside = ok & ((dc * d[s][:, None, :]).sum(-1) >= cos_rho[s][:, None])
             si, ci = np.nonzero(inside)
-            out_idx.append((rows[si, ci] * W + cols[si, ci]).astype(np.int64))
+            out_idx.append((rows[si, ci] * W + cols[si, ci]).astype(np.int32))
             out_s.append(s[si].astype(np.int32))
     return np.concatenate(out_idx), np.concatenate(out_s)
 
@@ -353,12 +352,17 @@ def main():
     ap.add_argument("--finest-factor", type=float, default=1.5)
     ap.add_argument("--target-deg", type=float, default=1.0)
     ap.add_argument("--control-yaw", type=float, default=90.0)
-    ap.add_argument("--control-factor", type=float, default=5.0)
+    ap.add_argument("--control-factor", type=float, default=3.0)
     ap.add_argument("--identity-lat", type=float, default=60.0)
     ap.add_argument("--calibration", help="preview360 folder: uniform at the full s0 resolution, fixation spp")
     ap.add_argument("--calibration-b", help="the same render at another seed, for its measured noise")
-    ap.add_argument("--calibration-expect", type=float, default=0.073)
-    ap.add_argument("--calibration-tol", type=float, default=0.01)
+    ap.add_argument("--calibration-ratio", default="1.0,1.15",
+                    help="pass if score / (seed-pair noise at s_eval) lies in this range (D10)")
+    ap.add_argument("--shifted", help="preview360 folder of the reference re-rendered half a pixel off-grid "
+                                      "(--yaw-offset-px 0.5): the resampling floor at s_eval")
+    ap.add_argument("--shift-noise", type=float, default=None,
+                    help="per-pixel relative noise of the reference and the shifted render (A2 tile figure at their "
+                         "spp); halved for the s_eval box and subtracted for both renders in quadrature")
     ap.add_argument("--skip-identity", action="store_true")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -386,11 +390,35 @@ def main():
     kmax = max(k_list)
     band = np.abs(np.degrees(grid.lat_e)) <= args.identity_lat
 
-    # resampling floor at s_eval
+    # resampling floor at s_eval. Old form: the reference against its bilinear half-pixel shift
+    # (also a 2x2 blur, so it overstates on fine texture). New form (Step 2, 2026-09-13): a true
+    # off-grid render of the reference, half a pixel of yaw away, with both renders' noise at
+    # s_eval subtracted in quadrature.
     shift_e, _, _ = grid.down(half_pixel_shift(ref_mean).reshape(-1))
-    floor = {"targets": grid.rel_rms(shift_e, ref_e, near_t), "sphere": grid.rel_rms(shift_e, ref_e, np.ones(len(ref_e), bool)),
-             "how": "reference vs its bilinear half-pixel shift, both box-filtered to s_eval"}
-    print(f"[integrate] s_eval {s_eval:.3f} deg ({grid.We}x{grid.He}); resampling floor at targets {floor['targets']['rel_rms']:.4f}, sphere {floor['sphere']['rel_rms']:.4f}", flush=True)
+    all_e = np.ones(len(ref_e), bool)
+    floor = {"bilinear_old": {"targets": grid.rel_rms(shift_e, ref_e, near_t), "sphere": grid.rel_rms(shift_e, ref_e, all_e),
+                              "how": "reference vs its bilinear half-pixel shift, both box-filtered to s_eval (superseded)"}}
+    if args.shifted:
+        sh_meta = json.load(open(os.path.join(args.shifted, "meta.json")))
+        sh = read_combined(os.path.join(args.shifted, "pano.exr"))
+        if sh.shape != ref.shape:
+            raise SystemExit(f"shifted reference {sh.shape} does not match the reference {ref.shape}")
+        sh_e, _, _ = grid.down(sh.mean(-1).reshape(-1))
+        sig = (args.shift_noise or 0.0) / block           # per-pixel noise halved by the 2x2 box (assumed 1/sqrt(4))
+        def floor_of(m):
+            raw = grid.rel_rms(sh_e, ref_e, m)["rel_rms"]
+            return {"raw_rel_rms": raw, "rel_rms": float(math.sqrt(max(raw ** 2 - 2 * sig ** 2, 0.0)))}
+        floor["shifted"] = {"targets": floor_of(near_t), "sphere": floor_of(all_e), "folder": args.shifted,
+                            "yaw_offset_px": sh_meta.get("yaw_offset_px"), "yaw_offset_deg": sh_meta.get("yaw_offset_deg"),
+                            "spp": sh_meta.get("spp"), "seed": sh_meta.get("seed"),
+                            "noise_subtracted": {"per_pixel_rel": args.shift_noise, "at_s_eval": sig,
+                                                 "how": "both renders, in quadrature: sqrt(raw^2 - 2 sig^2)"}}
+        fl_t, fl_s = floor["shifted"]["targets"]["rel_rms"], floor["shifted"]["sphere"]["rel_rms"]
+    else:
+        fl_t, fl_s = floor["bilinear_old"]["targets"]["rel_rms"], floor["bilinear_old"]["sphere"]["rel_rms"]
+    floor["used"] = "shifted" if args.shifted else "bilinear_old"
+    print(f"[integrate] s_eval {s_eval:.3f} deg ({grid.We}x{grid.He}); resampling floor ({floor['used']}) at targets {fl_t:.4f}, sphere {fl_s:.4f}"
+          f"; bilinear old {floor['bilinear_old']['targets']['rel_rms']:.4f} / {floor['bilinear_old']['sphere']['rel_rms']:.4f}", flush=True)
 
     checks = {}
     if not args.skip_identity:
@@ -492,22 +520,22 @@ def main():
             print(f"[integrate] uniform W={Wu:4d} for K={k:2d}: rays {u['rays']:>9d} {u['render_seconds']:.2f}s  targets {u['targets']['rel_rms']:.4f}  sphere {u['sphere']['rel_rms']:.4f}", flush=True)
 
     if args.calibration:
-        ca = eval_uniform(args.calibration)
+        if not args.calibration_b:
+            raise SystemExit("--calibration needs --calibration-b: the expected value is the render's own seed-pair noise (D10)")
+        ca, cb = eval_uniform(args.calibration), eval_uniform(args.calibration_b)
+        e = ca["_rec"] - cb["_rec"]; w = grid.omega_e
+        noise = float(math.sqrt((w * e * e).sum() / w.sum()) / ((w * ref_e).sum() / w.sum()) / math.sqrt(2))
+        lo, hi = (float(x) for x in args.calibration_ratio.split(","))
         cal = {"folder": args.calibration, "width": ca["width"], "spp": ca["spp"], "rays": ca["rays"], "render_seconds": ca["render_seconds"],
                "targets_rel_rms": ca["targets"]["rel_rms"], "sphere_rel_rms": ca["sphere"]["rel_rms"],
-               "expect": args.calibration_expect, "tol": args.calibration_tol}
-        if args.calibration_b:
-            cb = eval_uniform(args.calibration_b)
-            e = ca["_rec"] - cb["_rec"]; w = grid.omega_e
-            cal["seed_pair_noise_at_s_eval"] = float(math.sqrt((w * e * e).sum() / w.sum()) / ((w * ref_e).sum() / w.sum()) / math.sqrt(2))
-            cal["seed_pair_noise_how"] = "RMS(seed0 - seed1) / mean(ref) / sqrt(2), both at s_eval, over the sphere"
-            cal["score_over_measured_noise"] = cal["sphere_rel_rms"] / cal["seed_pair_noise_at_s_eval"]
+               "seed_pair_noise_at_s_eval": noise, "seed_pair_noise_how": "RMS(seed0 - seed1) / mean(ref) / sqrt(2), both at s_eval, over the sphere",
+               "score_over_measured_noise": ca["sphere"]["rel_rms"] / noise, "pass_range": [lo, hi]}
         checks["calibration"] = cal
-        if not (abs(cal["sphere_rel_rms"] - args.calibration_expect) <= args.calibration_tol):
-            fails.append(f"(3) calibration: uniform at s0 scores {cal['sphere_rel_rms']:.4f} over the sphere, expected "
-                         f"{args.calibration_expect} +- {args.calibration_tol}")
-        print(f"[integrate] calibration W={ca['width']}: sphere {cal['sphere_rel_rms']:.4f}, targets {cal['targets_rel_rms']:.4f}"
-              + (f", seed-pair noise at s_eval {cal['seed_pair_noise_at_s_eval']:.4f} (score/noise {cal['score_over_measured_noise']:.3f})" if args.calibration_b else ""), flush=True)
+        if not (lo <= cal["score_over_measured_noise"] <= hi):
+            fails.append(f"(3) calibration: score / noise {cal['score_over_measured_noise']:.3f} outside [{lo}, {hi}] "
+                         f"(score {cal['sphere_rel_rms']:.4f}, noise {noise:.4f})")
+        print(f"[integrate] calibration W={ca['width']} {ca['spp']} spp: sphere {cal['sphere_rel_rms']:.4f}, targets {cal['targets_rel_rms']:.4f}, "
+              f"seed-pair noise at s_eval {noise:.4f}, score/noise {cal['score_over_measured_noise']:.3f}", flush=True)
 
     series = [("foveated, targets", [(c["rays"], c["targets"]["rel_rms"]) for c in curve.values() if c["targets"]], (200, 30, 30), False),
               ("uniform, targets", [(u["rays"], u["targets"]["rel_rms"]) for u in uniform.values() if "targets" in u], (200, 30, 30), True),

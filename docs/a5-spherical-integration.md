@@ -88,7 +88,36 @@ textures are finer than the calib room's cards at this scale). Targets: foveated
 to 5x at every K. Sphere: level at K = 5 and K = 10 (0.577 vs 0.579, 0.520 vs 0.516), with
 64% and 31% of the sphere uncovered; uniform wins at K = 2 and loses at K = 1.
 
-## Checks, D9 pass
+## Full profile and the D10 thresholds (2026-09-13, third pass)
+
+Both scenes run at `--profile full` (s_eval 0.1 deg, 3600x1800 blocks on the 7200x3600 grid,
+256 spp fixations, uniform baselines at 634 to 4484 px). The side-by-side tables, the two
+full-profile charts and the mechanism are in `docs/phase-a-result.md`; the calib room
+integration took 4.4 min at K up to 50, the Classroom 2.0 min. Full-profile headline: targets
+F / U 0.183 / 0.351 at K = 50 on the calibration room and 0.134 / 0.363 at K = 10 on the
+Classroom; sphere 0.100 (58% covered) / 0.092 and 0.514 (68% covered) / 0.409.
+
+Thresholds are now measured (D10): the calibration point passes when score over the render's
+own seed-pair noise at s_eval is within 1.0 to 1.15 (1.029 at small with the 3600 px 64 spp
+pair, 1.013 at full with the 7200 px 256 spp pair, 63.5 s each); the control threshold is 3x
+(3.7x and 4.2x on the calibration room, 8.8x and 11.5x on the Classroom); the D8 validation
+bound is the median of check_sequence's D10 bounds (0.043 / 0.073 small, 0.024 / 0.022 full)
+and the binned target error against it is 0.067 / 0.072 / 0.025 / 0.051: fails on three of
+four runs, passes on the small Classroom by 0.0003. The first pass's 0.073 expectation for
+the calibration point was the per-pixel noise at the wrong scale.
+
+The resampling floor is now from a true off-grid render: the reference re-rendered with
+`preview360.py --yaw-offset-px 0.5` (half a pixel of yaw about the EYE's vertical), seed 1,
+1024 spp, pinned in the manifest as `reference_shift` and `reference_small_shift`; the floor
+is RMS(reference - shifted) at s_eval with both renders' noise subtracted in quadrature (A2's
+1024 spp tile median halved for the box, 0.009 and 0.022; the subtraction moves the floors by
+at most 0.005). Old bilinear against new, targets / sphere: calib room small 0.217 / 0.089
+against 0.175 / 0.065, full 0.300 / 0.070 against 0.226 / 0.051; Classroom small 0.368 /
+0.222 against 0.375 / 0.131, full 0.243 / 0.215 against 0.257 / 0.107. The bilinear shift is
+also a 2x2 blur, so it overstated the sphere floors by up to 2x and the target floors on the
+cards by 0.04 to 0.07.
+
+## Checks, D9 pass (small profile, first thresholds)
 
 | | calib room | Classroom |
 |---|---|---|
@@ -118,8 +147,7 @@ On (4): unchanged from the first pass; registration-limited on the cards, see th
 
 ## Untested
 
-- **The full profile** (s_eval 0.1 deg, 7200x3600 grid): nothing in A4 or A5 has run there;
-  about four times the cells, so roughly 4 min per integration run (assumed).
+- The full profile is now run: 4.4 min per calib room integration (the 4 min projected).
 - The error on `distance`; only radiance is compared.
 - Sequences other than target order.
 

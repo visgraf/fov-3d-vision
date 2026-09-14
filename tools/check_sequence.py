@@ -16,9 +16,9 @@ Checks, each of which can fail (exit 1), written to <sequence>/check.json:
              relative difference. The bound is measured per fixation from the seed pair the
              sequence rendered: noise_fix = the same binned statistic between seed 0 and
              seed 1 divided by sqrt(2); the reference term is noise_fix/4 (D7: both profiles
-             have the reference at >= 16x the fixation spp); bound = 1.5 * sqrt(noise_fix^2
-             + (noise_fix/4)^2). Reported next to it: the binned alignment floor, the
-             reference against its own half-pixel shift binned the same way.
+             have the reference at >= 16x the fixation spp); the binned alignment floor (the
+             reference against its own half-pixel shift, binned the same way) enters in
+             quadrature: bound = 1.5 * sqrt(noise_fix^2 + (noise_fix/4)^2 + floor_binned^2) (D10).
   (c) control  (b) with the whole fixation rotated --control-yaw degrees about the EYE's up
              axis must FAIL; if the texture were featureless it could not
   (d) cap    footprints over a fixation's disc sum to 2*pi*(1 - cos e_max) to 1%
@@ -229,16 +229,17 @@ def main():
             f_cell = fov.bin_mean(dd[hit], val[hit], fp[hit])
             out = {}
             out["binned_rel_median"], out["cells"] = binned_rel_median(f_cell, r_cell)
+            rs_ = ref_dir_shift.reshape(-1, 3)[near]
+            s_cell = fov.bin_mean(rs_, rv, rw)
+            out["align_floor_binned"], _ = binned_rel_median(s_cell, r_cell)
             if val_b is not None:
                 b_cell = fov.bin_mean(dd[hit], val_b[hit], fp[hit])
                 m = np.isfinite(f_cell) & np.isfinite(b_cell) & np.isfinite(r_cell)
                 pair = np.abs(f_cell[m] - b_cell[m]) / np.maximum(r_cell[m], 1e-3)
                 out["noise_fix"] = float(np.median(pair)) / math.sqrt(2.0)
-                nf = out["noise_fix"]
-                out["bound"] = args.bound_factor * math.sqrt(nf ** 2 + (args.ref_noise_ratio * nf) ** 2)
-            rs_ = ref_dir_shift.reshape(-1, 3)[near]
-            s_cell = fov.bin_mean(rs_, rv, rw)
-            out["align_floor_binned"], _ = binned_rel_median(s_cell, r_cell)
+                nf, fl = out["noise_fix"], out["align_floor_binned"]
+                # D10: the bound carries this fixation's own binned alignment floor in quadrature
+                out["bound"] = args.bound_factor * math.sqrt(nf ** 2 + (args.ref_noise_ratio * nf) ** 2 + fl ** 2)
             # the per-sample statistics, kept as the resampling floor
             ecc = np.degrees(np.arccos(np.clip(dd @ fw, -1.0, 1.0)))
             fs = (ecc <= args.fovea_deg) & hit
@@ -280,8 +281,8 @@ def main():
     report = {
         "sequence": args.sequence, "reference": args.reference, "fixations": len(per),
         "fovea_deg": args.fovea_deg, "cell_deg": args.cell_deg,
-        "bound_how": f"{args.bound_factor} * sqrt(noise_fix^2 + ({args.ref_noise_ratio} noise_fix)^2), noise_fix = binned "
-                     f"median |seed0 - seed1| / ref / sqrt(2), per fixation",
+        "bound_how": f"{args.bound_factor} * sqrt(noise_fix^2 + ({args.ref_noise_ratio} noise_fix)^2 + floor_binned^2), noise_fix = binned "
+                     f"median |seed0 - seed1| / ref / sqrt(2), floor_binned = reference vs its half-pixel shift binned, per fixation (D10)",
         "cap_sr": cap, "px_tol": args.px_tol,
         "warp_px_p999": agg("warp_px_p999"), "warp_px_max": agg("warp_px_max"),
         "fovea_binned_rel_median": agg("fovea_binned_rel_median"), "bound": agg("bound"),

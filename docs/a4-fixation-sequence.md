@@ -97,11 +97,13 @@ brightness bias (0.996 to 1.013). That statistic is kept in the output as `resam
 **(b) reformulated (2026-09-13):** the sequence renders each fixation twice (seeds 0 and 1;
 the record is seed 0), the checker bins the samples within 2 deg into 0.5 deg cells on the
 sphere and compares footprint-weighted cell means with the reference's box means, and the
-bound is measured per fixation: 1.5 x sqrt(n^2 + (n/4)^2) with n the same binned statistic
-between the two seeds over sqrt(2). Results: calib room 17 of 50 pass, bounds 0.012 to 0.043
-(median 0.026), binned alignment floor (reference vs its half-pixel shift, binned) median
-0.023, max 0.137; Classroom 8 of 10 pass, bounds 0.043 to 0.222 (median 0.061), alignment
-floor median 0.017. (c) fails as required on 50 of 50 and 10 of 10.
+bound is measured per fixation (D10): 1.5 x sqrt(n^2 + (n/4)^2 + floor^2) with n the same
+binned statistic between the two seeds over sqrt(2) and floor the fixation's binned
+alignment floor (reference vs its half-pixel shift, binned). Results at small: calib room
+40 of 50 pass, bounds 0.014 to 0.206 (median 0.043), alignment floor median 0.023, max 0.137;
+Classroom 8 of 10 pass, bounds 0.044 to 0.222 (median 0.073), floor median 0.017. Without the
+floor term the bound medians were 0.026 and 0.061 and 17 of 50 passed. (c) fails as required
+on 50 of 50 and 10 of 10 against the new bound.
 
 Why 33 still fail, measured before touching anything: the binned statistic remains
 registration-limited on the cards. Shifting the reference by one pixel (0.1 deg) alone
@@ -117,6 +119,37 @@ excess is the ring of pixels whose squares straddle r = 1, which reach 1.48% of 
 outside the disc and leave 0.87% uncovered inside it, net +0.61%, because the Jacobian grows
 outward. The tolerance is unchanged.
 
+## Full profile (2026-09-13, second pass)
+
+Run with `--profile full` (raster 253x253, s0 0.0499 deg, 256 spp, 50,269 samples per
+fixation), seed pairs on, checked against the full references.
+
+| | calib room, 50 targets | Classroom, 10 gazes |
+|---|---|---|
+| render per fixation, median (range) | 140 ms (138 to 142) | 169 ms (143 to 173) |
+| warm-up, discarded | 0.463 s | 0.880 s |
+| seed-1 pass | 50 renders in 7.5 s | 10 in 2.3 s |
+| sweep median at 16 / 64 / 256 spp | 16.0 / 40.4 / 138.2 ms | 33.6 / 61.8 / 168.5 ms |
+| call floor, median (range) | 16.0 ms (15.3 to 16.9) | 33.6 ms (32.1 to 38.4) |
+| ns per sample, median (range) | 10.14 (10.00 to 10.36) | 11.03 (9.07 to 11.39) |
+| floor as a share of a 256 spp render | 11% | 20% |
+| seed-pair rel_rms at 16 / 64 / 256 spp | 0.212 / 0.098 / 0.046 | 0.602 / 0.263 / 0.120 |
+| whole sequence, wall | 26 s | 10 s |
+| (a) warp vs Position pass, p99.9 median, max | 0.018 px, 0.095 px | 0.018 px, 0.026 px |
+| (b) binned, D10 bound | 12 of 50 pass; bounds 0.004 to 0.108 (median 0.024) | 7 of 10; 0.012 to 0.055 (median 0.022) |
+| (b) seed-pair noise, binned, median | 0.0033 | 0.0083 |
+| (b) binned alignment floor, median (max) | 0.016 (0.072) | 0.007 (0.022) |
+| (c) control fails as required | 50 of 50 | 10 of 10 |
+| (d) footprint sum vs cap | -0.02% | -0.02% |
+| reader | exact | exact |
+| resampling floor (per-sample), median | 0.033 | 0.068 |
+
+At full the marginal cost is again the uniform one (10.1 and 11.0 ns per sample) and a
+fixation costs 0.14 to 0.17 s, of which the call floor is 11 to 20%. With 100 samples per
+0.5 deg cell at 256 spp the binned noise is 0.003 and the (b) bound is set by the alignment
+floor alone, so (b) passes less often than at small (12 of 50): registration-limited, as
+before. The rim-ring excess in (d) is gone at n = 253 (-0.02% against +0.59% at n = 126).
+
 ## Assumed
 
 - The noise bound for (b): tile medians from A2 stand in for the foveal region.
@@ -125,10 +158,8 @@ outward. The tolerance is unchanged.
 
 ## Untested
 
-- **The full profile.** Nothing here has run at `--profile full` (raster 253, 50,269 samples,
-  256 spp). Projected from the small-profile fit: 9 ms + 10 ns x 50,269 x 256 = 0.14 s per
-  fixation on the calib room (assumed), 50 fixations in about 7 s plus warm-up; the checks
-  against the 500 MB and 2 GB full references have not been run.
+- The full profile is now run (table above); the 0.14 s per fixation projected from the small
+  fit was measured at 0.140 s.
 - A gaze list longer than 50, and whether the call floor drifts over a long session.
 - The record has not been consumed by anything downstream yet; D1's adjacency question
   (raster index as the only neighbourhood) is open.

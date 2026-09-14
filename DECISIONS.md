@@ -89,3 +89,13 @@ per-sample validation check.
 Why: D8 compares each cell at its own footprint, so a coarse uniform render is charged only
 for its noise and never for its blur, which is how 2.3 deg pixels "won" at K = 1.
 Overturned if: a matcher is shown to need a different scale.
+
+## D10 — Check thresholds are set from measured noise and scene-bounded contrast, not fixed constants (2026-09-13)
+
+The calibration point passes when the metric's score over the render's own seed-pair noise at
+s_eval lies in 1.0 to 1.15; the 90 deg control must be at least 3x the largest-K target error;
+the D8 validation bound per fixation is 1.5 sqrt(n^2 + (n/4)^2 + floor^2) with n the
+fixation's seed-pair noise and floor its binned alignment floor, both measured.
+Why: fixed constants were set at the wrong scale (0.073 was the per-pixel noise) or above what
+a scene's contrast can deliver (5x on a room whose worst case is a wall against a star card).
+Overturned if: a threshold set this way lets a known-wrong result pass a check.

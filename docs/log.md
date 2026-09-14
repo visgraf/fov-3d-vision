@@ -385,3 +385,34 @@ specified 0.073 +- 0.01, which is the per-pixel figure at 0.1 deg; at 0.2 deg th
 halves it (0.037 assumed, 0.032 measured). Left as specified and recorded. D8 validation at
 the 0.5 deg bin still fails (0.067 vs 0.026, 0.072 vs 0.061). Charts committed under
 docs/reference/. Full profile untested.
+
+## 2026-09-13 — overnight-class justification: two full-profile shifted references
+
+Two renders of about 4.5 min each (projected from A2's 9.92 and 10.43 ns per pixel-sample at
+1024 spp over 25.92 Mpx): the full references re-rendered half a pixel of yaw off-grid, so the
+resampling floor at s_eval is measured from a true off-grid render rather than a bilinear
+shift. Rendered once, pinned by md5 as assets, seed 1 so their noise is independent of the
+references'.
+
+## 2026-09-13 — D10 thresholds, off-grid floor, full profile on both scenes; Phase A result written
+
+Thresholds (D10): calibration passes on score / own seed-pair noise at s_eval in 1.0-1.15
+(1.029 small, 1.013 full; the earlier 0.073 expectation was the per-pixel noise at the wrong
+scale); control 3x (3.7x / 4.2x calib room, 8.8x / 11.5x Classroom); (b) bound carries the
+fixation's binned alignment floor in quadrature (small: 40/50 and 8/10 pass, bound medians
+0.043 / 0.073; full: 12/50 and 7/10, 0.024 / 0.022, noise 0.003-0.008 so the floor sets it);
+(c) still fails on every fixation. D8 validation at the 0.5 deg bin: 0.067 vs 0.043, 0.072 vs
+0.073 (pass), 0.025 vs 0.024, 0.051 vs 0.022.
+
+Off-grid floor: preview360.py --yaw-offset-px; four shifted references rendered (seed 1,
+1024 spp, 0.5 px: small 62.8 / 71.3 s, full 246 / 278 s), pinned by md5. Floor at s_eval,
+targets / sphere: calib 0.175 / 0.065 small, 0.226 / 0.051 full; Classroom 0.375 / 0.131,
+0.257 / 0.107; the bilinear version overstated the sphere floors by up to 2x.
+
+Full profile: fixations 140 ms (calib, floor 16 ms, 10.14 ns/sample) and 169 ms (Classroom,
+34 ms, 11.03); warp 0.018 px; cap -0.02%. Curve at s_eval 0.1 deg, calib K=50, 643 M rays:
+targets F 0.183 vs U 0.351, sphere 0.100 (42% uncovered) vs 0.092; Classroom K=10: 0.134 vs
+0.363, sphere 0.514 (32% uncovered) vs 0.409. Foveation wins at the targets at every K on both
+scenes and profiles; uniform wins the sphere below the largest K. Longest commands: shifted
+Classroom reference 278 s, calib integration 264 s. docs/phase-a-result.md written; A4 and A5
+notes updated; charts in docs/reference/.
