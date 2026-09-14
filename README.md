@@ -44,7 +44,7 @@ One camera, one centre of projection.
 | A2 | Reference render at foveal spacing, plus the uniform-cost baseline and the noise floor | **done** — both references at 8192 spp, 32.3 / 35.8 min measured; D7 met on the Classroom, 2-5% short on the calib room; `docs/a2-reference-and-noise-floor.md` |
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | **done, one check open** — `fixation_sequence.py` renders 50 fixations in 5 s on the small profile and writes the D1 record; warp, footprint and reader checks pass, the foveal-agreement check fails where texture edges dominate; full profile untested; `docs/a4-fixation-sequence.md` |
-| A5 | Integration of the sequence into a spherical representation | **done, two checks open** — `integrate_sphere.py` and the error-versus-budget curve with an equal-budget uniform baseline; uniform wins on the calibration room under D8, foveation wins at the Classroom's targets; full profile untested; `docs/a5-spherical-integration.md` |
+| A5 | Integration of the sequence into a spherical representation | **done, checks open** — finest-owns integration and the D9 error-versus-budget curve with an equal-budget uniform baseline; foveation wins at the targets on both scenes, uniform over the sphere at small budgets; full profile untested; `docs/a5-spherical-integration.md` |
 
 Parameters still to fix in A2/A3: foveal spacing s₀, the falloff constant E₂ in
 `s(e) = s₀(1 + e/E₂)`, and the maximum eccentricity. All three are engineering knobs,
@@ -85,14 +85,18 @@ directions agree with the Position pass to 0.02 reference pixels, footprints sum
 45 deg cap within 0.6%, the record equals the file, and the foveal-agreement check is now
 binned with a bound measured from a seed pair per fixation, passing 17 of 50 and 8 of 10 with
 the remaining failures measured as registration on resolved Siemens-star edges.
-`tools/integrate_sphere.py` splats the samples onto the sphere and measures the
-footprint-aware error (D8) against the ray budget next to an equal-budget uniform render.
-The honest result: on the calibration room uniform wins at every budget, because the uniform
-image is grid-registered with the reference while the foveated samples pay a resampling
-floor at 0.1 deg on high-contrast targets and the 1/footprint weighting leaks blur into the
-fovea where fixations crowd; on the Classroom foveation wins at the targets from five
-fixations on and loses slightly over the sphere. Two A5 checks fail and are recorded with
-their measured causes rather than adjusted. Nothing has run at the full profile. Tier 1
+`tools/integrate_sphere.py` integrates the samples finest-owns onto the sphere, reconstructs
+it at the declared evaluation scale (D9, s_eval = 2 s0) and measures the error against the
+ray budget next to an equal-budget uniform render charged for its blur the same way; the
+per-sample footprint-aware comparison (D8) stays as a validation check. The result at the
+small profile: at the targets foveation beats uniform at every budget on both scenes, 1.8x on
+the calibration room and 5x on the Classroom at the largest K; over the sphere uniform wins
+on the calibration room until the largest budget, where the two are level on the covered
+part, and the two are level on the Classroom, with the foveated leaving 31 to 42% of the
+sphere uncovered at the largest K and far more at small K. The metric charges a uniform
+render at the reference resolution 3% more than its own measured noise. Three checks fail
+and are recorded with measured causes rather than adjusted. Nothing has run at the full
+profile. Tier 1
 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been

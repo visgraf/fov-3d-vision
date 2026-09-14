@@ -43,6 +43,7 @@ def main():
                          "identity check and the sample footprint omega both assume.")
     ap.add_argument("--filter-width", type=float, default=None, help="default: 1.0 for BOX, else Cycles' own")
     ap.add_argument("--no-backface", action="store_true")
+    ap.add_argument("--seed", type=int, default=0, help="Cycles seed; a second seed gives a noise measurement")
     ap.add_argument("--time-write", action="store_true",
                     help="after the render, re-save the multilayer EXR to a scratch path and time "
                          "it, so render_seconds (which includes the write) can be split; the "
@@ -80,7 +81,7 @@ def main():
     c = scene.cycles
     for what in pin_seed(scene):
         print(f"[preview360] removed {what}")
-    c.samples, c.seed = args.spp, 0
+    c.samples, c.seed = args.spp, args.seed
     # Uniform sampling, so --spp is what every pixel gets. calib_room.blend ships with adaptive
     # sampling on (threshold 0.01): at 8192 spp the reference rendered in 135 s against 35 min
     # projected because most pixels stopped early (measured 2026-09-13). noise_floor.py and
@@ -102,9 +103,9 @@ def main():
     bpy.ops.render.render(write_still=True)
     t_render = time.time() - t0
     got = (c.samples, c.seed, c.use_adaptive_sampling, c.time_limit)
-    if got != (args.spp, 0, False, 0.0):   # frame evaluation can overwrite any of these
+    if got != (args.spp, args.seed, False, 0.0):   # frame evaluation can overwrite any of these
         raise RuntimeError(f"sampling settings did not take: (samples, seed, adaptive, time_limit) "
-                           f"= {got} after the render, expected ({args.spp}, 0, False, 0.0); is one animated?")
+                           f"= {got} after the render, expected ({args.spp}, {args.seed}, False, 0.0); is one animated?")
 
     t_write, write_note = None, None
     if args.time_write:
@@ -156,7 +157,7 @@ def main():
         "profile": args.profile,
         "width": args.width, "height": args.width // 2, "spp": args.spp,
         "denoise": args.denoise, "device": backend,
-        "adaptive_sampling": False, "time_limit": 0.0, "seed": 0,
+        "adaptive_sampling": False, "time_limit": 0.0, "seed": args.seed,
         "pixel_filter": args.filter, "filter_width": round(c.filter_width, 4),
         "render_seconds": round(t_render, 2),
         "render_seconds_includes": "the multilayer EXR write (write_still=True is inside the timer)",

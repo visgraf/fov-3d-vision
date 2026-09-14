@@ -79,3 +79,13 @@ the resolution the sampling provides there and where its samples are; the resamp
 Why: a fixed-resolution metric would charge the periphery for resolution it was never asked
 for and hide that the fovea's error is set by registration and noise, not by content.
 Overturned if: the matcher needs a metric at a fixed resolution.
+
+## D9 — The error-versus-budget curve is measured at a declared evaluation scale (2026-09-13)
+
+The curve is measured at s_eval = 2 x s0 (0.2 deg small, 0.1 deg full): the representation is
+reconstructed over the sphere at s_eval and compared to the reference filtered to s_eval, at
+the targets and over the sphere, with the uncovered fraction beside. D8 remains the
+per-sample validation check.
+Why: D8 compares each cell at its own footprint, so a coarse uniform render is charged only
+for its noise and never for its blur, which is how 2.3 deg pixels "won" at K = 1.
+Overturned if: a matcher is shown to need a different scale.

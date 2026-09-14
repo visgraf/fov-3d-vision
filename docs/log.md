@@ -359,3 +359,29 @@ Classroom, K=10, 8 M rays: foveated targets 0.223 vs uniform 0.297, sphere 0.276
 control 5.3x passes, (2) fails (0.223 vs 0.061). Binned-to-0.5-deg target error 0.067 / 0.073.
 Full profile untested for A4 and A5. Write-up in `docs/a5-spherical-integration.md`; D8 added.
 No new pinned asset: the uniform renders and integrations are regenerable in seconds.
+
+## 2026-09-13 — D9: the curve at a declared scale; finest-owns integration; foveation wins at the targets
+
+D8 charged a coarse uniform render only for its noise, never its blur, so 2.3 deg pixels "won"
+at K=1. D9 added: the curve is measured at s_eval = 2 s0 (0.2 deg small), reconstruction vs
+reference both at s_eval; uniform nearest-upsampled to the reference grid then filtered the
+same way. `integrate_sphere.py` rewritten: finest-owns layering (samples within 1.5x the
+cell's finest footprint own it; coarser ones fill only where nothing finer covers), s_eval
+reconstruction with the uncovered fraction always beside the sphere error, resampling floor
+at s_eval, PIL chart, and the D8 per-cell comparison kept as a check. `preview360.py --seed`
+added for the calibration point.
+
+Calib room at s_eval 0.2 deg: targets F/U 0.292/0.347 at K=1 ... 0.161/0.294 at K=50 (F wins
+at every K, 1.8x at 50); sphere F/U 0.546/0.296 at K=1 (F uncovered 0.868) ... 0.140/0.151 at
+K=50 (uncovered 0.416): uniform wins the sphere at every K below 50, level at 50. Floor at
+s_eval 0.217 targets / 0.089 sphere. Classroom K=10: targets 0.152 vs 0.759 (5x), sphere 0.520
+vs 0.516 with 0.314 uncovered; control 8.8x passes. Calib room control 3.7x fails (wall vs
+star card bounds the wrong-content error at 0.59; right-content residual 0.16 is registration
+plus 0.03 noise). Identity of the reconstruction path 2.2e-16 / 4.4e-16 within lat 60.
+
+Calibration point: uniform 3600x1800 at 64 spp (5.0 s) scores 0.0332 over the sphere; its own
+noise at s_eval from a seed pair is 0.0323, so the metric charges noise x 1.03. It fails the
+specified 0.073 +- 0.01, which is the per-pixel figure at 0.1 deg; at 0.2 deg the 2x2 box
+halves it (0.037 assumed, 0.032 measured). Left as specified and recorded. D8 validation at
+the 0.5 deg bin still fails (0.067 vs 0.026, 0.072 vs 0.061). Charts committed under
+docs/reference/. Full profile untested.
