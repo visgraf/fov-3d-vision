@@ -63,7 +63,7 @@ structure this needs.
 
 | | Step | State |
 |---|---|---|
-| B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **written, not yet run** — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; `docs/b1-verged-pairs.md` |
+| B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **done** 2026-09-15 — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; results in `docs/b1-verged-pairs.md`: all checks pass on both profiles, (e) within 0.002 spacings, control matches prediction to 3 µm; 29 ms / 271 ms per pair |
 | B2 | Disparity between the two per-eye maps read against the Depth pass; per-eye references | next |
 | B3 | The E₂ / e_max sweep re-run with the disparity error as the objective (D11) | after B2 |
 

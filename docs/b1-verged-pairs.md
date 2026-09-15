@@ -89,9 +89,71 @@ blender -b scenes/calib_room/calib_room.blend -P tools/fixation_pairs.py -- \
 
 ## Results
 
-Not yet run. To be filled from `check.json` of both runs: (a) worst, cap range, (e) miss
-median and max in mm and in spacings, the control's miss against its prediction, measured
-minus predicted vergence, seconds per pair.
+First workstation run 2026-09-15 (Blender 5.2.1 LTS, RTX 4090 through OptiX, 50 pairs per
+run, 42 cards judged, 8 wires reported). All numbers below are **measured**, from
+`previews/pairs/<run>/check.json` (`summary` block) unless a file is named; the source of
+each is `pairs.json` for timings. Every check passed on both profiles: `fails: []` in all
+four check files.
+
+| | small (s₀ 0.100°, 64 spp) | full (s₀ 0.050°, 256 spp) |
+|---|---|---|
+| samples per fixation | 12,492 | 50,269 |
+| reader (npz vs exr, max abs diff) | 0 | 0 |
+| (a) warp, worst p99.9 over 100 fixations | 0.016 s₀ | 0.017 s₀ |
+| (d) cap ratio, all fixations | 1.0059 | 0.9998 |
+| (e) verged miss on cards, median / max | 0.0025 / 0.0041 mm | 0.0012 / 0.0024 mm |
+| (e) in spacings, max | 0.0010 | 0.0013 |
+| (e) tolerance range (Dᵢ·s₀) | 0.83 – 4.60 mm | 0.41 – 2.29 mm |
+| control (f): predicted miss range | 3.84 – 31.5 mm | 3.84 – 31.5 mm |
+| control: judged fixations on-card / off-card | 72 / 12 | 72 / 12 |
+| control: on-card miss median (range) | 30.98 mm (3.84 – 31.50) | 30.98 mm (3.84 – 31.50) |
+| control: \|measured − predicted\| max, on-card | 0.0026 mm | 0.0014 mm |
+| control: off-card miss | 3000 – 3175 mm (the wall) | same |
+| control: unresolvable (pred. < 1 spacing) | p041 ladder_2.6m, L and R | none |
+| vergence, \|measured − predicted\| max (verged run) | 2.1e-5° | 1.7e-5° |
+| seconds per pair, median | 0.029 s | 0.271 s |
+| seconds per fixation, median | 0.0147 s | 0.136 s |
+| sequence wall (50 pairs) | 2.3 s (verged), 2.2 s (control) | 14.9 s, 14.8 s |
+| whole command incl. Blender start | 2.9 s | 15.4 s |
+
+Cost class as measured: small is interactive (2.9 s per sequence), full is batch by the
+README's classes but only just (15 s); both match the A4-based prediction (30 ms / 280 ms
+per pair predicted, 29 / 271 measured).
+
+The verged misses are a few µm at 2 m, three orders below the tolerance, so they are the
+render's own precision rather than a geometric residual. Their origin is assumed, not
+separated: the OSL camera reads the jittered per-sample raster position under a box filter of
+width 1, so the mean of the symmetric 2×2 centre block converges to P up to the stratified
+jitter's residual and float32 Position. Check (a) at 0.016 s₀ with the eye 31.5 mm
+off the head origin says Blender composes the offset as `rig.camera_pose` does; a wrong
+offset would have shown as 9 s₀ at small.
+
+**Control, off-card.** Twelve of the 84 judged control fixations (six pairs, both eyes) leave
+the card entirely: the 1° card at e = 0 (35 mm wide, half-width 17.5 mm), the four 1.6° cards
+at e = 2.5° (57 mm, half-width 28 mm), both against a 31.5 mm predicted miss, and the 3° card
+of the 0.5 m ladder (26 mm, half-width 13 mm against 18.1 mm). Sizes from
+`make_calib_room.place_card`, geometry not measured here. Their centre ray
+lands on the wall 3.0–3.2 m away, so the miss is 3000–3175 mm, at least the prediction as the
+check requires; the 72 on-card fixations match the prediction to 3 µm. The small-profile
+control cannot resolve the 2.6 m ladder (3.84 mm predicted against 4.60 mm tolerance) and
+`check_pairs.py` lists it as such; at full the same pair is 1.7 spacings and is judged.
+
+**Wires (reported only).** Fixation points sit on the wire axis, so the verged centre ray
+stops at the cylinder surface one radius short: at full the miss equals the radius for all
+eight (0.49, 0.74, 0.99, 1.50, 1.98, 2.95, 3.92, 5.90 mm for radii 0.5–6 mm; centre depth
+1.4628 m against 1.4687 m predicted for the 6 mm wire, i.e. 5.9 mm short). At small the even
+raster's four centre pixels sit ±0.5 spacing (±1.3 mm at 1.5 m) off the axis, so the three
+wires thinner than that (0.5, 0.75, 1 mm) are missed altogether and the centre ray reaches the
+back wall (miss 1.86–2.18 m, depth 3.3–3.7 m); the 1.5–6 mm wires give 0.6–5.8 mm, a little
+under one radius because the block averages oblique hits. In the control all wires but the
+6 mm one are missed at both profiles (miss 1.55–2.18 m). None of this is a rig error; a line
+target needs its own check (open item below).
+
+Sheets: `previews/pairs/{calib_room,calib_room_control,calib_room_full,calib_room_control_full}/sheet.png`
+(regenerable; not pinned). Verged: the cross on the card centre in both eyes. Control: the
+card displaced to the right in L and to the left in R by ~0.9° at 2 m, as predicted.
+
+Nothing was changed in code to make a check pass; no thresholds moved.
 
 ## What B1 leaves open
 

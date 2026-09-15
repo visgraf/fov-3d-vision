@@ -472,3 +472,24 @@ on the 2 m ring, 7.2 deg at the 0.5 m ladder, 0.17 deg at the 2.6 m ladder (azim
 almost on the baseline: the control is unresolvable there at small s0, 3.8 mm vs 4.6 mm tol);
 about 30 ms per pair small, 280 ms full (from A4). CLAUDE.md notes the bpy-less case.
 Write-up in `docs/b1-verged-pairs.md`, Results empty until the run.
+
+## 2026-09-15 — B1 first workstation run: verged pairs and control, both profiles, all checks pass
+
+Step 0: `warp.py --self-test`, `rig.py --self-test` pass in `.venv`; both import and pass under
+Blender 5.2.1's bundled Python (no fix needed). Step 1-2, small (OptiX, RTX 4090): verged 50
+pairs 2.9 s wall incl. Blender start (29 ms median per pair, 14.7 ms per fixation, 12,492
+samples), control the same; interactive class as predicted (30 ms). check_pairs: reader diff 0,
+(a) 0.016 s0 with the eye 31.5 mm off the head origin (a wrong offset would read 9 s0), cap
+1.0059, (e) verged miss median 0.0025 mm / max 0.0041 mm (0.001 spacings) on 42/42 cards;
+control on-card miss median 30.98 mm within 3 µm of rig.py's prediction on 72 fixations, 12
+off-card (the 35 mm cards at e <= 2.5 deg and the 0.5 m ladder: ray lands on the wall,
+3.0-3.2 m), 2.6 m ladder unresolvable at small (3.84 vs 4.60 mm tol) as predicted; vergence
+measured minus predicted 2e-5 deg. Step 3, full: 271 ms per pair, 136 ms per fixation
+(50,269 samples), 14.9 s per sequence, 15.4 s the whole command (batch, predicted 280 ms /
+15 s); (a) 0.017 s0, cap 0.9998, (e) 0.0012 / 0.0024 mm, control on-card within 1.4 µm of
+prediction, 2.6 m ladder resolved (1.7 spacings). Four check.json files, `fails: []` in all.
+Wires (reported only): verged centre miss equals the wire radius at full (P is on the axis,
+the ray stops at the surface); at small the 2x2 centre block sits +-1.3 mm off-axis at 1.5 m
+so the three wires under 1.3 mm radius are missed to the wall. Nothing changed in code,
+thresholds, warp or record. Results in `docs/b1-verged-pairs.md`; previews regenerable, nothing
+pinned.
