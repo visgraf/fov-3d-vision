@@ -110,3 +110,14 @@ Why: the choice is the objective's, and the objective (what the matcher needs: f
 coverage, or a budgeted mix) is Phase C's to set.
 Overturned if: the objective is fixed to one criterion, in which case the sweep already names
 the value, or a policy trades E2 against K.
+
+## D12 — Two eyes on the EYE rig; the D1 record gains an origin per eye (2026-09-14)
+
+EYE stays the head frame and the cyclopean point. The eye centres are at +-ipd/2 on its local
+X (63 mm default), each eye a rotation of the same foveated camera about its own centre; a
+verged pair fixates one world point, each eye's gaze P - C_i, yaw-then-pitch, no torsion. The
+record is D1 with origin = this eye's centre plus eye_id and pair_id, directions still in the
+head frame; per-eye folders L/ and R/ are Phase A sequences, pairs.json holds the rig.
+Why: the scenes and every Phase A tool stay as they are; only the checker needs the centre.
+Overturned if: torsion (Listing's law) is needed for rectification, which changes the gaze
+composition in rig.py and not the record; or if a matcher needs the two eyes in one file.

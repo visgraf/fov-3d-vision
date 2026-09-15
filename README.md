@@ -19,7 +19,8 @@ Throughout, the head is fixed. Eyes rotate about their own centres. See `DECISIO
     docs/log.md     dated record of what was run and what came out
     docs/           one note per step; docs/phase-a-summary.md is the Phase A summary,
                     docs/phase-a-result.md the result page; docs/reference/ holds baseline images
-    tools/          scripts, all runnable from the repository root
+    tools/          scripts, all runnable from the repository root; warp.py and rig.py are pure numpy
+                (both interpreters import them; each has --self-test)
     scenes/         scene sources; only manifest.json and asset.json are committed
     previews/       generated, gitignored
 
@@ -59,6 +60,12 @@ A second eye at a second fixed centre, plus vergence. With both centres fixed, t
 is fixed in the head frame, so the epipolar geometry is constant and rectification is one
 change of coordinates on the sphere. Phase A's per-eye spherical maps are already the data
 structure this needs.
+
+| | Step | State |
+|---|---|---|
+| B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **written, not yet run** — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; `docs/b1-verged-pairs.md` |
+| B2 | Disparity between the two per-eye maps read against the Depth pass; per-eye references | next |
+| B3 | The E₂ / e_max sweep re-run with the disparity error as the objective (D11) | after B2 |
 
 ### Phase C — open
 

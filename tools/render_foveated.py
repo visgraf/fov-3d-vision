@@ -37,20 +37,18 @@ from bl_common import (add_profile, configure_multilayer_exr, ensure_cycles, eye
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def raster_size(s0_deg: float, e2_deg: float, emax_deg: float) -> int:
-    """Pixels across so that spacing at the centre is s0."""
-    return int(round(2.0 * (e2_deg / s0_deg) * math.log(1.0 + emax_deg / e2_deg)))
+from warp import raster_size, s0_of  # noqa: E402,F401  (moved to warp.py for Phase B; re-exported)
 
 
-def s0_of(n: int, e2_deg: float, emax_deg: float) -> float:
-    return 2.0 * e2_deg * math.log(1.0 + emax_deg / e2_deg) / n
-
-
-def gaze_matrix(eye, yaw_deg: float, pitch_deg: float) -> Matrix:
+def gaze_matrix(eye, yaw_deg: float, pitch_deg: float, offset_local=(0.0, 0.0, 0.0)) -> Matrix:
     """Camera pose for a gaze: the EYE's rigid pose, then intrinsic yaw-then-pitch about the
     eye centre, so the resulting elevation equals pitch exactly; the Y sign is negated so
-    +yaw turns right (verified in A3). No translation: D3."""
+    +yaw turns right (verified in A3). No translation of the head: D3. offset_local is the
+    eye centre in the EYE (head) frame, (0,0,0) for the cyclopean eye of Phase A and
+    (+-ipd/2, 0, 0) for the two eyes of Phase B (D12); the rotation is about that centre.
+    Same composition as rig.camera_pose."""
     return (rigid(eye.matrix_world)
+            @ Matrix.Translation(Vector(offset_local))
             @ Matrix.Rotation(math.radians(-yaw_deg), 4, "Y")
             @ Matrix.Rotation(math.radians(pitch_deg), 4, "X"))
 
@@ -103,8 +101,8 @@ def setup_foveated_camera(scene, eye, shader_path: str, e2: float, emax: float, 
     return cam
 
 
-def set_gaze(cam, eye, yaw_deg: float, pitch_deg: float) -> None:
-    cam.matrix_world = gaze_matrix(eye, yaw_deg, pitch_deg)
+def set_gaze(cam, eye, yaw_deg: float, pitch_deg: float, offset_local=(0.0, 0.0, 0.0)) -> None:
+    cam.matrix_world = gaze_matrix(eye, yaw_deg, pitch_deg, offset_local)
     bpy.context.view_layer.update()
 
 

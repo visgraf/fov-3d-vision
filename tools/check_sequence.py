@@ -204,7 +204,9 @@ def main():
         if rec["reader_max_abs_diff"] != 0.0:
             fails.append(f"f{f['id']:03d}: samples.npz differs from fix.exr by {rec['reader_max_abs_diff']:.3e}")
         if not np.allclose(s["origin"], eye_pos, atol=1e-5):
-            fails.append(f"f{f['id']:03d}: origin {s['origin']} is not the eye position {eye_pos}")
+            fails.append(f"f{f['id']:03d}: origin {s['origin']} is not the reference's eye position {eye_pos}; "
+                         f"(a) and (b) below assume the same centre. A Phase B per-eye sequence (D12) has its own "
+                         f"centre: check it with tools/check_pairs.py, or render a reference from that centre")
 
         # (a) analytic direction vs Position pass, in reference pixels
         hit = s["distance"] < 1e9

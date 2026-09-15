@@ -10,7 +10,9 @@ this process optimises for cheap recovery rather than for prevention.
 
 Chat has a sandbox with Blender as a Python module (CPU, no GPU, no large assets, no
 network to asset sites). So Chat writes the code and runs it there before handing it
-over; what comes back to Luiz has already executed at least once.
+over; what comes back to Luiz has already executed at least once. Some sessions have no
+`bpy` at all (Phase B's first did): then Chat says so, runs what is pure numpy, exercises
+the Blender-side script through a stub, and the first real run is on the workstation.
 
 Claude Code enters only when a job is too big for a chat turn: a multi-file refactor,
 a long run, a large sweep. No specification relay, no review levels, no PR gate.

@@ -443,3 +443,32 @@ raster 77) and the control (2.6x). `docs/a6-warp-sweep.md`.
 `docs/phase-a-summary.md` written by Luiz: the question, what was accomplished (A1-A6), the
 result, eight things learned, why it matters, what carries into Phase B, deliverables. The
 README's layout and State now point to it.
+
+## 2026-09-14 — B1 written: the second eye, verged pairs, foveae-on-target; not yet run
+
+Reviewed the third-party suggestions for Phase B: adopted the binocular schema (D12, minimal:
+origin per eye, eye_id, pair_id, schema tag, pose and timestamp in meta, rig in pairs.json),
+split only the pure-numpy geometry out of `fixation_sequence.py` / `render_foveated.py` into
+`tools/warp.py` and `tools/rig.py` (host-side checkers need them; `integrate_sphere.py` untouched
+until B2 needs it per eye); test vectors are check (a), kept; objective-before-E2 is D11; rays
+as the budget with timing separate is already the practice; CI deferred until self-tests exist
+(they do now: `warp.py --self-test`, `rig.py --self-test`, each shown to fail on a wrong sign).
+
+`render_foveated.gaze_matrix` / `set_gaze` gained `offset_local` (eye centre in the head frame,
+default 0: Phase A unchanged). `tools/fixation_pairs.py` renders verged pairs on the rig
+(ipd 63 mm default, `--vergence on|off`), writing L/ and R/ Phase A sequences plus pairs.json;
+`tools/check_pairs.py` judges reader, (a) against this eye's centre, (d), (e) centre pixels on
+P within one spacing at the target's distance, (f) the control's predicted miss, and draws a
+sheet. `check_sequence.py`'s origin failure now points at check_pairs (a per-eye sequence
+against the cyclopean reference is off by parallax, 0.9 deg at 2 m).
+
+This sandbox had no bpy (Python 3.12, no wheel). Pure-numpy parts ran here; the writer and
+checker were exercised end to end through a stub Blender (`tools/dev/fake_blender_pairs.py`: analytic ray caster over the calib
+room's cards and walls, real uncompressed EXRs written with OpenEXR and read back by exr_lite:
+reader diff 0): verged run 42/42 cards pass (e), control run fails (e) on every resolvable card
+by the predicted amount; a 1 cm error injected into one fixation point fails (e) on both eyes.
+Those are plumbing results, not measurements. Predicted for the workstation: 1.80 deg vergence
+on the 2 m ring, 7.2 deg at the 0.5 m ladder, 0.17 deg at the 2.6 m ladder (azimuth 83 deg,
+almost on the baseline: the control is unresolvable there at small s0, 3.8 mm vs 4.6 mm tol);
+about 30 ms per pair small, 280 ms full (from A4). CLAUDE.md notes the bpy-less case.
+Write-up in `docs/b1-verged-pairs.md`, Results empty until the run.

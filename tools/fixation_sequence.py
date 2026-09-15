@@ -49,61 +49,13 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-CAP_45_SR = 2.0 * math.pi * (1.0 - math.cos(math.radians(45.0)))
+CAP_45_SR = 2.0 * math.pi * (1.0 - math.cos(math.radians(45.0)))  # see warp.cap_sr
 
 
-# ----------------------------------------------------------------------------------------
-# Analytic warp on the raster. Pure numpy; no Blender. Rows are top-down as in the EXR file;
-# the OSL camera's raster y points up, so row i has Py = 0.5 - (i + 0.5)/n (measured against
-# the Position pass, 2026-09-13: file row 5 of 126 looks up).
-# ----------------------------------------------------------------------------------------
-
-def warp_direction(px: np.ndarray, py: np.ndarray, e2: float, emax: float) -> np.ndarray:
-    """Cycles camera-shader frame (+X right, +Y up, +Z forward) direction for normalised raster
-    offsets (px, py) from the centre, r = 2*hypot in [0, 1] at the rim. Same formula as
-    foveated_camera.osl; evaluated outside r <= 1 too (finite differences need it)."""
-    r = 2.0 * np.hypot(px, py)
-    e = np.radians(e2 * ((1.0 + emax / e2) ** r - 1.0))
-    phi = np.arctan2(py, px)
-    return np.stack([np.sin(e) * np.cos(phi), np.sin(e) * np.sin(phi), np.cos(e)], axis=-1)
-
-
-def raster_samples(n: int, e2: float, emax: float) -> dict:
-    """Pixel-centre directions (camera frame), footprints (sr), the inside mask and raster
-    indices for an n x n raster."""
-    j, i = np.meshgrid(np.arange(n), np.arange(n))
-    px = (j + 0.5) / n - 0.5
-    py = 0.5 - (i + 0.5) / n
-    r = 2.0 * np.hypot(px, py)
-    inside = r <= 1.0
-    d = warp_direction(px, py, e2, emax)
-    h = 1.0 / n                                     # one pixel, in normalised raster units
-    dx = warp_direction(px + h / 2, py, e2, emax) - warp_direction(px - h / 2, py, e2, emax)
-    dy = warp_direction(px, py + h / 2, e2, emax) - warp_direction(px, py - h / 2, e2, emax)
-    omega = np.linalg.norm(np.cross(dx, dy), axis=-1)
-    return {"direction_cam": d, "footprint": omega, "inside": inside,
-            "raster_index": np.stack([i, j], axis=-1)}
-
-
-def gaze_rotation(yaw_deg: float, pitch_deg: float) -> np.ndarray:
-    """3x3: Blender-camera-local -> EYE frame for a gaze, Ry(-yaw) @ Rx(pitch), the same
-    composition as render_foveated.gaze_matrix."""
-    y, p = math.radians(-yaw_deg), math.radians(pitch_deg)
-    ry = np.array([[math.cos(y), 0.0, math.sin(y)], [0.0, 1.0, 0.0], [-math.sin(y), 0.0, math.cos(y)]])
-    rx = np.array([[1.0, 0.0, 0.0], [0.0, math.cos(p), -math.sin(p)], [0.0, math.sin(p), math.cos(p)]])
-    return ry @ rx
-
-
-def to_eye_frame(direction_cam: np.ndarray, yaw_deg: float, pitch_deg: float) -> np.ndarray:
-    """Camera-shader frame (+Z forward) -> Blender camera local (-Z forward) -> EYE frame."""
-    local = direction_cam * np.array([1.0, 1.0, -1.0])
-    return local @ gaze_rotation(yaw_deg, pitch_deg).T
-
-
-def gaze_of_world_direction(d_world, eye_rot3: np.ndarray) -> tuple[float, float]:
-    """(yaw, pitch) in degrees that points the camera along d_world, from the EYE's rotation."""
-    d = eye_rot3.T @ (np.asarray(d_world, dtype=np.float64) / np.linalg.norm(d_world))
-    return math.degrees(math.atan2(d[0], -d[2])), math.degrees(math.asin(np.clip(d[1], -1.0, 1.0)))
+# The analytic warp and the gaze composition moved to tools/warp.py and tools/rig.py for Phase B
+# (pure numpy, importable host-side). Re-exported here so nothing that imported them breaks.
+from rig import gaze_of_world_direction, gaze_rotation, to_eye_frame  # noqa: E402,F401
+from warp import raster_samples, warp_direction  # noqa: E402,F401
 
 
 def load_gazes(targets_path: str | None, gazes: str | None, eye_rot3: np.ndarray) -> list[dict]:
