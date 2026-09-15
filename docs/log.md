@@ -493,3 +493,29 @@ the ray stops at the surface); at small the 2x2 centre block sits +-1.3 mm off-a
 so the three wires under 1.3 mm radius are missed to the wall. Nothing changed in code,
 thresholds, warp or record. Results in `docs/b1-verged-pairs.md`; previews regenerable, nothing
 pinned.
+
+## 2026-09-15 — B2 written: stereo truth sidecar, epipolar frame, triangulation check; per-eye references; not yet run
+
+Decided with Luiz after B1: B2 as ground truth from the Position pass (no rendering), the
+triangulation check with a naive-estimator control, epipolar coordinates on the sphere, and
+per-eye references; B3's objective will be a reference matcher as an instrument plus the
+matcher-free Fisher-information bound (D15 when written). D13 (truth is a sidecar, epipolar
+frame is the head X axis) and D14 (torsion moot while the warp is isotropic) added.
+
+`warp.py` gained the inverse warp (direction -> continuous raster coordinates; self-test:
+exact round trip on every inside pixel, fails on a flipped row). `rig.py` gained
+to_camera_frame, epipolar, phi_distance_deg, triangulate (sine rule), depth_quantum_m;
+self-tests: random points share phi and triangulate back to 1e-9, parallax at the fixated
+midline point equals the vergence, parallel rays give inf, quantum at 2 m / s0 0.1 is 0.111 m;
+fails on a wrong axis or a swapped sine-rule term. `tools/stereo_truth.py` (host side) writes
+truth.npz per fixation and truth.json per run, checks (i) epipolar, (j) round trip, (k)
+triangulation identity, (h) depth at the cards with the naive control. `preview360.py
+--eye-offset` for per-eye references, meta.json's eye.position_m is then the offset centre.
+
+Sandbox (no bpy): the tool ran on the B1 stub runs. Verged: (i) 0.000 s0, (k) 0.000 s0, (j)
+100%, (h) truth error 0 vs hit and target, naive passes; visible 93.8% / occluded 4.2% (cards
+in front of walls) / outside 0.6% / inconsistent 1.4% (nearest other-eye pixel looking past a
+card edge). Control: truth passes vs the hit (max 0.2 mm), naive gives inf on every card as
+required; 7214 samples within 5 deg of the axis excluded per run (the ladders at azimuth 83).
+Negatives: ipd 0.070 in pairs.json fails (h) at 2.22 m vs 2.00; swapped centres fail with inf.
+Stub numbers, not measurements. Write-up `docs/b2-stereo-truth.md`, Results empty.

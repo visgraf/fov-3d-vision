@@ -69,6 +69,22 @@ def raster_samples(n: int, e2: float, emax: float) -> dict:
             "raster_index": np.stack([i, j], axis=-1)}
 
 
+def raster_of_direction(d_cam: np.ndarray, n: int, e2: float, emax: float) -> tuple[np.ndarray, np.ndarray]:
+    """Inverse of raster_samples: camera-shader-frame unit directions (+Z forward) -> continuous
+    raster coordinates (row, col) with pixel centres at integers, plus the inside mask (r <= 1).
+    Directions behind the camera or beyond e_max are outside. Used for ground-truth
+    correspondence: where a world point falls in the other eye's raster."""
+    d = np.asarray(d_cam, dtype=np.float64)
+    e = np.degrees(np.arccos(np.clip(d[..., 2], -1.0, 1.0)))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r = np.log(np.maximum(1.0 + e / e2, 1e-300)) / math.log(1.0 + emax / e2)
+    phi = np.arctan2(d[..., 1], d[..., 0])
+    px, py = 0.5 * r * np.cos(phi), 0.5 * r * np.sin(phi)
+    row = (0.5 - py) * n - 0.5
+    col = (px + 0.5) * n - 0.5
+    return np.stack([row, col], axis=-1), r <= 1.0
+
+
 def centre_pixels(n: int) -> np.ndarray:
     """(row, col) of the pixel(s) nearest the raster centre: one for odd n, the 2x2 block for
     even n. Their mean direction is the foveal centre to within a quarter sample."""
@@ -116,6 +132,14 @@ def self_test() -> list[str]:
         # rows are top-down: row 0 looks up (+Y), column 0 looks left (-X)
         if not (rs["direction_cam"][0, n // 2, 1] > 0.0 and rs["direction_cam"][n // 2, 0, 0] < 0.0):
             fails.append("raster orientation: row 0 should look up and column 0 left")
+        # the inverse warp returns every inside pixel's own index
+        rc, ins = raster_of_direction(rs["direction_cam"], n, e2, emax)
+        ij = rs["raster_index"].astype(np.float64)
+        if not np.array_equal(ins, rs["inside"]):
+            fails.append(f"inverse warp inside mask differs on {int((ins != rs['inside']).sum())} pixels (n {n})")
+        err = np.abs(rc - ij)[rs["inside"]].max()
+        if err > 1e-6:
+            fails.append(f"inverse warp round trip off by {err:.2e} px (n {n})")
         # unit directions
         norms = np.linalg.norm(rs["direction_cam"], axis=-1)
         if np.abs(norms - 1.0).max() > 1e-12:

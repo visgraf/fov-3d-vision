@@ -64,8 +64,8 @@ structure this needs.
 | | Step | State |
 |---|---|---|
 | B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **done** 2026-09-15 — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; results in `docs/b1-verged-pairs.md`: all checks pass on both profiles, (e) within 0.002 spacings, control matches prediction to 3 µm; 29 ms / 271 ms per pair |
-| B2 | Disparity between the two per-eye maps read against the Depth pass; per-eye references | next |
-| B3 | The E₂ / e_max sweep re-run with the disparity error as the objective (D11) | after B2 |
+| B2 | Ground-truth stereo correspondence from the Position pass, epipolar coordinates on the sphere, the triangulation check and its control; per-eye references | **written, not yet run** — `stereo_truth.py`, `preview360.py --eye-offset`; D13, D14; `docs/b2-stereo-truth.md` |
+| B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | after B2 |
 
 ### Phase C — open
 

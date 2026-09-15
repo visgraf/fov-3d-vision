@@ -37,7 +37,9 @@ drifting immediately.
 - `EYE` is a Blender camera object: local −Z is gaze, local +Y is head up.
 - Equirect (u, v) → EYE-frame direction: `lon = (u−0.5)·2π`, `lat = (0.5−v)·π`, v = 0 at the top row.
 - Sample record: origin, direction, value, footprint (solid angle), ray distance,
-  fixation id, raster index.
+  fixation id, raster index; Phase B adds eye id and pair id (D12), and truth.npz beside it (D13).
+- Epipolar (θ, φ) of a head-frame direction: θ from +X (the baseline), φ = atan2(d_y, −d_z)
+  about X. Corresponding directions share φ; parallax θ_R − θ_L > 0 (D13).
 - Python: plain and typed where it helps. No framework.
 - **Two interpreters, and they are not interchangeable.** Scripts run by `blender -b -P`
   use Blender's bundled Python: bpy, mathutils and numpy, nothing else. Host-side scripts

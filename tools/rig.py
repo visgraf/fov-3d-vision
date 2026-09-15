@@ -45,6 +45,13 @@ def to_eye_frame(direction_cam: np.ndarray, yaw_deg: float, pitch_deg: float) ->
     return local @ gaze_rotation(yaw_deg, pitch_deg).T
 
 
+def to_camera_frame(d_head: np.ndarray, yaw_deg: float, pitch_deg: float) -> np.ndarray:
+    """Inverse of to_eye_frame: head-frame directions -> camera-shader frame (+Z forward) of the
+    camera at this gaze, so warp.raster_of_direction can place them on its raster."""
+    local = np.asarray(d_head, dtype=np.float64) @ gaze_rotation(yaw_deg, pitch_deg)
+    return local * np.array([1.0, 1.0, -1.0])
+
+
 def gaze_of_world_direction(d_world, head_rot3: np.ndarray) -> tuple[float, float]:
     """(yaw, pitch) in degrees that points a camera along d_world, given the head rotation."""
     d = head_rot3.T @ (np.asarray(d_world, dtype=np.float64) / np.linalg.norm(d_world))
@@ -131,6 +138,53 @@ def pair_for_point(p: np.ndarray, head_origin: np.ndarray, head_rot3: np.ndarray
             "vergence_deg": vergence_deg(p, centres) if verged else 0.0,
             "vergence_if_verged_deg": vergence_deg(p, centres),
             "eyes": eyes}
+
+
+# ----------------------------------------------------------------------------------------
+# epipolar coordinates on the sphere (D13). Both centres lie on the head's X axis, so every
+# epipolar plane contains that axis: a head-frame direction d is (theta, phi) with
+#   theta = angle from +X (the baseline axis), in [0, pi]
+#   phi   = the plane's rotation about X, atan2(d_y, -d_z): 0 is the forward horizontal
+#           half-plane, +pi/2 straight up, pi backward.
+# Corresponding directions in the two eyes share phi and differ in theta; the parallax
+# theta_R - theta_L is positive for every finite point, and equals the vergence at the fixated
+# point. Eye torsion does not enter: directions are in the head frame.
+# ----------------------------------------------------------------------------------------
+
+def epipolar(d_head: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(theta_deg, phi_deg) of head-frame unit directions."""
+    d = np.asarray(d_head, dtype=np.float64)
+    theta = np.degrees(np.arccos(np.clip(d[..., 0], -1.0, 1.0)))
+    phi = np.degrees(np.arctan2(d[..., 1], -d[..., 2]))
+    return theta, phi
+
+
+def phi_distance_deg(phi_a: np.ndarray, phi_b: np.ndarray, theta: np.ndarray) -> np.ndarray:
+    """Great-circle distance across epipolar planes: the phi difference (wrapped) scaled by
+    sin theta, which is what a direction error perpendicular to the epipolar line measures."""
+    d = np.abs((phi_a - phi_b + 180.0) % 360.0 - 180.0)
+    return d * np.sin(np.radians(theta))
+
+
+def triangulate(theta_l_deg: np.ndarray, theta_r_deg: np.ndarray, ipd_m: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Ray distances (from C_L, from C_R) and the parallax (deg) of a point seen at theta_L from
+    C_L and theta_R from C_R, by the sine rule in the triangle C_L C_R P:
+        gamma = theta_R - theta_L,  |P - C_L| = ipd sin theta_R / sin gamma,  |P - C_R| = ipd sin theta_L / sin gamma.
+    gamma <= 0 (parallel or diverging rays) gives inf."""
+    tl, tr = np.radians(np.asarray(theta_l_deg, dtype=np.float64)), np.radians(np.asarray(theta_r_deg, dtype=np.float64))
+    gamma = tr - tl
+    with np.errstate(divide="ignore", invalid="ignore"):
+        dl = np.where(gamma > 0, ipd_m * np.sin(tr) / np.sin(gamma), np.inf)
+        dr = np.where(gamma > 0, ipd_m * np.sin(tl) / np.sin(gamma), np.inf)
+    return dl, dr, np.degrees(gamma)
+
+
+def depth_quantum_m(distance_m, s0_deg: float, ipd_m: float) -> np.ndarray:
+    """Depth change for one sample spacing of parallax at this distance: D^2 s0 / ipd to first
+    order (exact: d|P-C|/d gamma = -|P-C| cot gamma). The tolerance of the triangulation check."""
+    D = np.asarray(distance_m, dtype=np.float64)
+    gamma = 2.0 * np.arctan(ipd_m / 2.0 / D)
+    return D * math.radians(s0_deg) / np.tan(gamma)
 
 
 def head_rot3_of(eye_record: dict) -> np.ndarray:
@@ -222,7 +276,36 @@ def self_test() -> list[str]:
     if target_point({"name": "x"}, origin) is not None:
         fails.append("target with no geometry should give None")
 
-    # 6. head_rot3_of round-trips the eye record
+    # 6. epipolar coordinates and triangulation: a random point's directions from the two
+    #    centres share phi, triangulate back to the right distances, and the parallax at the
+    #    fixated midline point equals the vergence; parallel rays give inf
+    for _ in range(200):
+        p = origin + rng.uniform(-3, 3, size=3) * np.array([1, 1, 0.5]) + np.array([0, 1.5, 0])
+        dl, dr_ = p - c[0], p - c[1]
+        Dl, Dr = np.linalg.norm(dl), np.linalg.norm(dr_)
+        hl, hr = head.T @ (dl / Dl), head.T @ (dr_ / Dr)
+        tl, pl = epipolar(hl); tr, pr_ = epipolar(hr)
+        if phi_distance_deg(pl, pr_, tl) > 1e-9:
+            fails.append(f"epipolar phi differs between the eyes for p={p}: {pl} vs {pr_}")
+            break
+        Dl2, Dr2, gam = triangulate(tl, tr, ipd)
+        if abs(Dl2 - Dl) > 1e-9 * Dl or abs(Dr2 - Dr) > 1e-9 * Dr or gam <= 0:
+            fails.append(f"triangulation of p={p}: {Dl2:.6f}/{Dr2:.6f} vs {Dl:.6f}/{Dr:.6f}, parallax {gam}")
+            break
+    tl, _ = epipolar(head.T @ ((p_mid - c[0]) / np.linalg.norm(p_mid - c[0])))
+    tr, _ = epipolar(head.T @ ((p_mid - c[1]) / np.linalg.norm(p_mid - c[1])))
+    if abs(triangulate(tl, tr, ipd)[2] - pair_for_point(p_mid, origin, head, ipd)["vergence_deg"]) > 1e-9:
+        fails.append("parallax at the fixated midline point != vergence")
+    if np.isfinite(triangulate(80.0, 80.0, ipd)[0]) or np.isfinite(triangulate(80.0, 79.0, ipd)[0]):
+        fails.append("parallel or diverging rays should triangulate to inf")
+    if not (0.10 < float(depth_quantum_m(2.0, 0.1, ipd)) < 0.12):
+        fails.append(f"depth quantum at 2 m, s0 0.1: {float(depth_quantum_m(2.0, 0.1, ipd)):.4f} m, expected ~0.111")
+    # to_camera_frame inverts to_eye_frame
+    dh = rng.normal(size=(50, 3)); dh /= np.linalg.norm(dh, axis=1, keepdims=True)
+    if np.abs(to_eye_frame(to_camera_frame(dh, 33.0, -12.0), 33.0, -12.0) - dh).max() > 1e-12:
+        fails.append("to_camera_frame is not the inverse of to_eye_frame")
+
+    # 7. head_rot3_of round-trips the eye record
     rec = {"forward": (head @ [0, 0, -1.0]).tolist(), "up": (head @ [0, 1.0, 0]).tolist()}
     if not np.allclose(head_rot3_of(rec), head):
         fails.append("head_rot3_of(eye_record) != head rotation")

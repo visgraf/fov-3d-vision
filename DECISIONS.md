@@ -121,3 +121,24 @@ head frame; per-eye folders L/ and R/ are Phase A sequences, pairs.json holds th
 Why: the scenes and every Phase A tool stay as they are; only the checker needs the centre.
 Overturned if: torsion (Listing's law) is needed for rectification, which changes the gaze
 composition in rig.py and not the record; or if a matcher needs the two eyes in one file.
+
+## D13 — Ground truth is a derived sidecar; the epipolar frame is the head's X axis (2026-09-15)
+
+Stereo truth (hit point, the other eye's direction to it, parallax, where it falls in the other
+raster, visibility) is computed host-side from the Position and Depth passes and written as
+truth.npz beside samples.npz; the D1 record stays what the renderer emitted. Epipolar
+coordinates of a head-frame direction are theta from +X (the baseline) and phi about X.
+Why: with both centres on X every epipolar plane contains X, so rectification is this one
+change of coordinates and needs no re-render; a derived label that is regenerable in seconds
+should not be baked into the record.
+Overturned if: a matcher needs the truth interleaved with the samples in one file, or the eyes
+leave the head's X axis (a tilted or asymmetric rig).
+
+## D14 — Eye torsion is moot while the warp is isotropic (2026-09-15)
+
+No torsion model (Listing's law or other) in Phases B and C. Closes B1's open item.
+Why: the record stores directions in the head frame and the warp is radially symmetric about
+the gaze (D2), so a torsion of the eye changes which raster pixel sampled which direction and
+nothing a consumer of the record can see; epipolar geometry is set by the two centres alone.
+Overturned if: D2 is overturned by an anisotropic warp, in which case torsion sets its
+orientation and rig.py's gaze composition must model it.

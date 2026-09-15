@@ -23,7 +23,7 @@ import time
 import traceback
 
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bl_common import (add_profile, configure_multilayer_exr, ensure_cycles, eye_record,  # noqa: E402
@@ -49,6 +49,11 @@ def main():
                     help="rotate the camera about the EYE's vertical by this fraction of a pixel of this "
                          "render (0.5 = half a pixel = s0/2 deg, +right); an off-grid reference for the "
                          "resampling floor")
+    ap.add_argument("--eye-offset", type=float, nargs=3, default=(0.0, 0.0, 0.0), metavar=("X", "Y", "Z"),
+                    help="render from this offset of the EYE centre, in the EYE (head) frame, metres: "
+                         "(-0.0315 0 0) / (0.0315 0 0) are the L / R eyes of the 63 mm rig (D12). meta.json's "
+                         "eye.position_m is then the offset centre, so check_sequence.py and integrate_sphere.py "
+                         "read a per-eye sequence against it unchanged")
     ap.add_argument("--time-write", action="store_true",
                     help="after the render, re-save the multilayer EXR to a scratch path and time "
                          "it, so render_seconds (which includes the write) can be split; the "
@@ -77,7 +82,8 @@ def main():
     cam = bpy.data.objects.new("PREVIEW360", cam_data)
     scene.collection.objects.link(cam)
     yaw_offset_deg = args.yaw_offset_px * 360.0 / args.width
-    cam.matrix_world = rigid(eye.matrix_world) @ Matrix.Rotation(math.radians(-yaw_offset_deg), 4, "Y")  # +yaw right, as gaze_matrix
+    cam.matrix_world = (rigid(eye.matrix_world) @ Matrix.Translation(Vector(args.eye_offset))
+                        @ Matrix.Rotation(math.radians(-yaw_offset_deg), 4, "Y"))  # +yaw right, offset then rotate, as gaze_matrix
     scene.camera = cam
 
     r = scene.render
@@ -157,7 +163,9 @@ def main():
         "scene": scene.name,
         "fov_kind": scene.get("fov_kind", "unknown"),
         "blender": bpy.app.version_string,
-        "eye": eye_record(eye),
+        "eye": dict(eye_record(eye), position_m=[round(x, 6) for x in cam.matrix_world.translation]),
+        "eye_offset_local_m": list(args.eye_offset),
+        "head": eye_record(eye),
         "eye_note": eye_note,
         "unit_scale_length": scene.unit_settings.scale_length,
         "profile": args.profile,
