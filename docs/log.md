@@ -588,3 +588,38 @@ RMS/bound 5.8, (l) 100%, (m) 38/42 judged and passing; control (`--search 24`) (
 recovering ~9 cells; negatives: a lazy matcher fails (m) on the control and (l); sigma x3 fails
 (n); sigma x10 leaves nothing matchable and fails on that. Predicted for the workstation: E2 4
 lowest error per pair at 2.5x the rays; information per ray undecided.
+
+## 2026-09-15 — B3 first workstation run: instrument, bound, sweep; rankings disagree, D11 stands
+
+Step 0: warp, rig and stereo_instrument self-tests pass (0.1 s). Step 1 first pass: verged
+`calib_room_sp` FAILED (n) on 10/37 cards, inlier RMS below the bound by up to 4x (p006
+0.0055 vs 0.0209 deg); control (rendered with --seed-pair, 4.5 s) clean, (m) 36/36 recovering
+~9 cells, RMS/bound 3.15. Diagnosed: both eyes rendered at seed 0 on the same raster; on a
+verged fronto-parallel card L(i,j) and R(i,j) see the same point with the same random numbers.
+Measured on the centre pixels: corr(L - L_seed1, R - R_seed1) 0.95-0.98 on cards and ladders,
+RMS(L - R) a quarter of the seed-pair noise; control 0.04. Fixed in `fixation_pairs.py`: R eye at
+seeds (2, 3), L at (0, 1), recorded in pairs.json / meta.json (a fix outside the checks;
+re-run from step 0). After: corr 0.004; verged (n) fails on 3/37 (ratios 0.75-0.95), (l) 100%,
+(m) 37/37, inlier RMS 0.27 s0 (0.13 cells), gross 6.3% (edge-free 0%), RMS/bound 1.62,
+info/ray 0.101; control unchanged. B2's per-eye (b) on the re-rendered R: 34/50, 29/42, wires 5/8
+(was 35, 30, 5); L unchanged.
+
+The remaining (n) failures (3-14 cards per setting at small, all Siemens-star rings, none at
+full): edge-free RMS half the bound with 0% gross. Ruled out by measurement: sigma too high at
+the card (it is higher there, 0.039-0.045 vs 0.030-0.039, spoke aliasing under jitter); LK
+shrinkage (raw/signal gradient power 1.02-1.05). Cause: the bound's central-difference gradient
+cancels on sub-cell spokes where one-sided slopes alternate sign; one-sided power is 4-9x the
+central on those cards and a one-sided bound puts all of them at 1.3-2.0x; at full the factor is
+1.6-2.0 and (n) passes. Bound NOT changed (working rule); reported as the bound's model error,
+Luiz's call.
+
+Step 2, sweep (each render 10-12 s interactive with the seed pass; truth + instrument ~1 s):
+inlier RMS s0 0.282 / 0.294 / 0.269 / 0.284 / 0.261 (E2 1, e_max 30, E2 2, e_max 60, E2 4);
+bound s0 0.193 / 0.150 / 0.141 / 0.145 / 0.130; info/ray 0.108 / 0.132 / 0.101 / 0.078 / 0.051;
+(n) fails 14 / 11 / 3 / 5 / 3; (l), (m), truth pass on all. `[sweep]`: lowest error E2 4,
+most information per ray e_max 30; they disagree. Per pair the bound ranks E2 like the
+instrument (4 < 2 < 1); per ray it reverses (E2 4 buys 26% more information for 2.5x rays). No
+D16; D11 stands. Step 3, full verged with seed pair (33 s batch): (l) 100%, (m) 42/42, (n)
+passes, RMS 0.42 s0 = 0.21 cells, gross 12.1% (edge-free 4.3%), RMS/bound 2.68, info/ray 0.83.
+Chart copied to docs/reference/b3_sweep_calib_room_small.png. Results in
+`docs/b3-stereo-instrument.md`. Nothing pinned.

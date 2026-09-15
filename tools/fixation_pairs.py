@@ -45,6 +45,16 @@ from warp import cap_sr, centre_pixels, raster_samples, raster_size, s0_of  # no
 
 SCHEMA = "D1v2"
 
+# Cycles seeds per eye, (main pass, seed-pair pass). The two eyes must not share a seed: with
+# the same seed and the same raster, corresponding pixels of a verged fronto-parallel card get the
+# same random numbers and the two renders share their Monte Carlo noise (B3, measured 2026-09-15:
+# correlation 0.95-0.98 between L - L_b and R - R_b on the ring cards, RMS(L - R) a quarter of
+# the seed-pair noise), which lets a matcher beat the noise bound. Within an eye the pair is
+# still two seeds, so the per-eye noise estimate is unchanged.
+EYE_SEEDS = {0: (0, 1), 1: (2, 3)}
+SEEDS_NOTE = "L seeds (0, 1), R seeds (2, 3): independent noise between the eyes (B3)"
+
+
 COLUMNS = {
     "origin": {"shape": "(3,)", "frame": "world", "unit": "m", "note": "this eye's centre, constant over the sequence (D3, D12)"},
     "direction": {"shape": "(N,3)", "frame": "EYE = head (x right, y up, -z primary gaze); shared by both eyes", "unit": "unit vector",
@@ -193,7 +203,7 @@ def main():
             fdir = os.path.join(out, en, f"f{pid:03d}")
             os.makedirs(fdir, exist_ok=True)
             set_gaze(cam, eye, g["yaw"], g["pitch"], offsets[k])
-            secs = render_fixation(scene, args.spp)
+            secs = render_fixation(scene, args.spp, seed=EYE_SEEDS[k][0])
             t_io = time.perf_counter()
             rec, measured = grab(pid, k, g, g_pair["point_m"], os.path.join(fdir, "fix.exr"))
             np.savez(os.path.join(fdir, "samples.npz"), **rec)
@@ -203,7 +213,8 @@ def main():
                          "eye_centre_m": centres[k].round(6).tolist(), "eye_offset_local_m": offsets[k].tolist(),
                          "ipd_m": args.ipd, "vergence": args.vergence, "point_m": g_pair["point_m"],
                          "name": g_pair["name"], "target_kind": g_pair["kind"],
-                         "samples_inside_disc": n_inside, "exr_codec": "NONE",
+                         "samples_inside_disc": n_inside, "exr_codec": "NONE", "seed": EYE_SEEDS[k][0],
+                         "seed_b": EYE_SEEDS[k][1] if args.seed_pair else None,
                          "footprint_sum_sr": float(rec["footprint"].sum()), "cap_sr": cap_sr(args.emax),
                          "rendered_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds")})
             with open(os.path.join(fdir, "meta.json"), "w") as fh:
@@ -227,18 +238,20 @@ def main():
             for k, g in enumerate(g_pair["eyes"]):
                 fdir = os.path.join(out, EYE_NAMES[k], f"f{pid:03d}")
                 set_gaze(cam, eye, g["yaw"], g["pitch"], offsets[k])
-                secs_b = render_fixation(scene, args.spp, seed=1)
+                secs_b = render_fixation(scene, args.spp, seed=EYE_SEEDS[k][1])
                 rec_b, _ = grab(pid, k, g, g_pair["point_m"], os.path.join(fdir, "fix_b.exr"))
                 np.savez(os.path.join(fdir, "samples_b.npz"), **rec_b)
-                seq_fix[EYE_NAMES[k]][pid]["render_seconds_seed1"] = round(secs_b, 4)
+                seq_fix[EYE_NAMES[k]][pid]["render_seconds_seed_b"] = round(secs_b, 4)
         render_fixation(scene, args.spp, seed=0)
-        print(f"[pairs] seed-1 pass: {2 * len(pairs)} renders in {time.perf_counter() - t_b0:.1f}s", flush=True)
+        print(f"[pairs] seed-pair pass: {2 * len(pairs)} renders in {time.perf_counter() - t_b0:.1f}s", flush=True)
 
     total = time.perf_counter() - t_seq0
     common = {"blend": bpy.data.filepath, "device": backend, "blender": bpy.app.version_string,
               "profile": args.profile, "eye_note": eye_note, "schema": SCHEMA,
               "warp": {"E2_deg": args.e2, "e_max_deg": args.emax, "s0_deg": s0, "raster": n},
               "spp": args.spp, "samples_per_fixation": n_inside, "seed_pair": args.seed_pair,
+              "seeds_per_eye": {EYE_NAMES[k]: list(EYE_SEEDS[k]) for k in range(2)},
+              "seeds_note": SEEDS_NOTE,
               "warmup_seconds_discarded": warmup}
     rig = {"head": eye_record(eye), "head_origin_m": head_origin.tolist(),
            "head_rot3_world_from_local": head_rot3.tolist(), "ipd_m": args.ipd,
