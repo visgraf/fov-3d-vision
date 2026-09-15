@@ -18,8 +18,9 @@ on cells the other eye sees. NOT the research matcher (D5): it runs on a uniform
 s_eval and exists so the E2 sweep has a number.
 
 The bound: per L cell, the Fisher information of a shift, I = sum over the window of
-g^2 / (sigma_L^2 + sigma_R^2), g the L map's gradient along theta; 1/sqrt(I) bounds any
-unbiased estimator's RMS. Sigma per cell is measured from the seed pair (samples_b.npz) when
+g^2 / (sigma_L^2 + sigma_R^2), g^2 the L map's one-sided gradient power along theta (a central
+difference has a null at the grid's Nyquist frequency and was not a bound on the star cards,
+B3 first run); 1/sqrt(I) bounds any unbiased estimator's RMS. Sigma per cell is measured from the seed pair (samples_b.npz) when
 the run has one, else assumed from --noise-rel (the profile's per-pixel rel RMS from the
 manifest, divided by the root of the samples per cell) and labelled so. Total information per
 pair over the fovea, divided by the pair's rays, is the matcher-free objective: disparity
@@ -208,20 +209,38 @@ def lk_refine(Az, va, Bz, vb, off: np.ndarray, h: int, iters: int = 2) -> np.nda
 
 
 def gradient_theta(M: np.ndarray, cell: float) -> np.ndarray:
-    """Central differences along columns (theta), per degree; NaN where a neighbour is missing."""
+    """Central differences along columns (theta), per degree; NaN where a neighbour is missing.
+    Kept for reference; the bound uses gradient_power_theta (see there)."""
     g = np.full_like(M, np.nan)
     g[:, 1:-1] = (M[:, 2:] - M[:, :-2]) / (2.0 * cell)
     return g
 
 
-def signal_information(g: np.ndarray, sig_a: float, sig_b: float, cell: float, k: float = 2.0) -> np.ndarray:
-    """Per-cell Fisher information of a shift, g^2 / (sig_a^2 + sig_b^2), with the noise's own
-    contribution to the gradient removed: a central difference of white noise has variance
-    sig_a^2 / (2 cell^2), which would count as information on a flat surface (measured on the
-    stub: a striped card got a 0.5-cell bound from noise alone). Only gradients above k sigma of
-    that count, and the noise variance is subtracted from them."""
-    var_g = sig_a ** 2 / (2.0 * cell ** 2)
-    g2 = np.where(np.isfinite(g), g ** 2, 0.0)
+def gradient_power_theta(M: np.ndarray, cell: float) -> np.ndarray:
+    """Squared gradient along theta as the mean of the forward and backward one-sided
+    differences squared, per degree^2; NaN where a neighbour is missing. A central difference
+    has a null at the Nyquist frequency of the grid and so reports no gradient on content with a
+    two-cell period, which the Siemens-star spokes near the star centre have at s_eval: on the
+    real cards the central-difference bound came out ABOVE the instrument's error (B3 first run,
+    ratios 0.44-0.98 on 14 of 37 cards at E2 1), i.e. it was not a bound. The one-sided power
+    has no such null; it is still below the continuous derivative's power, so the bound it
+    gives stays a lower bound."""
+    g2 = np.full_like(M, np.nan)
+    f = (M[:, 2:] - M[:, 1:-1]) ** 2
+    b = (M[:, 1:-1] - M[:, :-2]) ** 2
+    g2[:, 1:-1] = 0.5 * (f + b) / (cell ** 2)
+    return g2
+
+
+def signal_information(g2: np.ndarray, sig_a: float, sig_b: float, cell: float, k: float = 2.0) -> np.ndarray:
+    """Per-cell Fisher information of a shift, g^2 / (sig_a^2 + sig_b^2), from the one-sided
+    gradient power g2 (gradient_power_theta), with the noise's own contribution removed: a
+    one-sided difference of white noise has variance 2 sig_a^2 / cell^2, which would count as
+    information on a flat surface (measured on the stub: a striped card got a 0.5-cell bound
+    from noise alone). Only gradient power above k^2 times that counts, and the noise variance
+    is subtracted from it."""
+    var_g = 2.0 * sig_a ** 2 / (cell ** 2)
+    g2 = np.where(np.isfinite(g2), g2, 0.0)
     return np.where(g2 > (k ** 2) * var_g, g2 - var_g, 0.0) / (sig_a ** 2 + sig_b ** 2)
 
 
@@ -252,8 +271,8 @@ def self_test(seed: int = 0) -> list[str]:
     number of cells (Fourier shift) plus white noise. Recovered shift must be right to a tenth
     of a cell, gross errors (> 1 cell, a wrong NCC peak) must stay under 5%, and the inlier RMS
     must sit within a factor of the bound: the bound must not exceed it (that would be a wrong
-    bound) and the matcher must not be worse than 3x (that would be a broken matcher). Each of
-    these can fail."""
+    bound) and the matcher must not be worse than 4x (that would be a broken matcher). A fourth
+    texture near the grid's Nyquist frequency tests only the bound side. Each of these can fail."""
     fails = []
     rng = np.random.default_rng(seed)
     J, h, S, cell = 41, 2, 12, 0.2
@@ -262,7 +281,11 @@ def self_test(seed: int = 0) -> list[str]:
     kx = np.fft.fftfreq(base.shape[1]); ky = np.fft.fftfreq(base.shape[0])[:, None]
     F = np.fft.fft2(base) * np.exp(-((kx ** 2 + ky ** 2) / (2 * 0.08 ** 2)))
     tex = np.real(np.fft.ifft2(F)); tex = 1.0 + tex / tex.std() * 0.3
-    for true_shift, sigma in ((4.0, 0.01), (-2.3, 0.01), (0.4, 0.03)):
+    # a second texture with flat power along theta up to 0.45 cycles per cell (near the grid's
+    # Nyquist): a central-difference gradient loses most of that power and its bound sits high
+    Fn = np.fft.fft2(rng.normal(size=(J, J + 40))) * ((np.abs(kx) <= 0.45) & (np.abs(ky) <= 0.1))
+    nyq = np.real(np.fft.ifft2(Fn)); nyq = 1.0 + nyq / nyq.std() * 0.3
+    for true_shift, sigma, tex in ((4.0, 0.01, tex), (-2.3, 0.01, tex), (0.4, 0.03, tex), (0.3, 0.01, nyq)):
         # the matcher's convention: L[r, j] ~ R[r, j + d]. So R[r, j] = L[r, j - d]: the texture
         # moved by +d along columns, f(x - d) <-> F exp(-2 pi i w d)
         Fw = np.fft.fft(tex, axis=1); w = np.fft.fftfreq(tex.shape[1])
@@ -271,7 +294,8 @@ def self_test(seed: int = 0) -> list[str]:
         Rm = shifted[:, 20 - S:20 + J + S] + rng.normal(0, sigma, (J, J + 2 * S))       # wider by S each side
         sh, _, mt = ncc_match(Lm, Rm, h, S, 0.02)
         inner = np.zeros((J, J), bool); inner[h:J - h, :] = True                            # rows whose window is inside
-        ok = mt & inner & np.isfinite(sh)
+        I = window_sum(signal_information(gradient_power_theta(Lm, cell), sigma, sigma, cell), h)
+        ok = mt & inner & np.isfinite(sh) & (I * cell ** 2 >= 1.0)                              # bound within one cell, as main()
         if not ok.any():
             fails.append(f"shift {true_shift}: no matchable cells"); continue
         err = sh[ok] - true_shift
@@ -279,14 +303,13 @@ def self_test(seed: int = 0) -> list[str]:
         rms = float(np.sqrt(np.mean(err[~gross] ** 2)))
         if abs(float(np.median(sh[ok])) - true_shift) > 0.1:
             fails.append(f"shift {true_shift}: recovered median {float(np.median(sh[ok])):.3f}")
-        if gross.mean() > 0.05:
+        if gross.mean() > 0.05 and tex is not nyq:
             fails.append(f"shift {true_shift}, sigma {sigma}: gross fraction {100 * gross.mean():.1f}%")
-        I = window_sum(signal_information(gradient_theta(Lm, cell), sigma, sigma, cell), h)
         bound = float(np.sqrt(np.mean(1.0 / I[ok]))) / cell             # in cells
         if bound > rms * 1.05:
             fails.append(f"shift {true_shift}, sigma {sigma}: bound {bound:.4f} cells above the achieved RMS {rms:.4f}")
-        if rms > 3.0 * bound:
-            fails.append(f"shift {true_shift}, sigma {sigma}: RMS {rms:.4f} cells more than 3x the bound {bound:.4f}")
+        if rms > 4.0 * bound and tex is not nyq:            # near Nyquist the matcher is aliasing-limited; only the bound side is tested there
+            fails.append(f"shift {true_shift}, sigma {sigma}: RMS {rms:.4f} cells more than 4x the bound {bound:.4f}")
     return fails
 
 
@@ -367,8 +390,7 @@ def main():
             spc = max(1.0, (cell / s0) ** 2)                      # samples per cell at the centre
             sigL = float(args.noise_rel * np.nanmean(ML) / math.sqrt(spc)); sigR = float(args.noise_rel * np.nanmean(MR) / math.sqrt(spc))
         # the bound first: it also decides where a shift along theta is determinable at all
-        g = gradient_theta(ML, cell)
-        info_cell = signal_information(g, sigL, sigR, cell)
+        info_cell = signal_information(gradient_power_theta(ML, cell), sigL, sigR, cell)
         I_win = window_sum(info_cell, h)
         with np.errstate(divide="ignore", invalid="ignore"):
             bound = np.where(I_win > 0, 1.0 / np.sqrt(I_win), np.nan)

@@ -623,3 +623,23 @@ D16; D11 stands. Step 3, full verged with seed pair (33 s batch): (l) 100%, (m) 
 passes, RMS 0.42 s0 = 0.21 cells, gross 12.1% (edge-free 4.3%), RMS/bound 2.68, info/ray 0.83.
 Chart copied to docs/reference/b3_sweep_calib_room_small.png. Results in
 `docs/b3-stereo-instrument.md`. Nothing pinned.
+
+## 2026-09-15 — B3 follow-up written: the bound's gradient model; not yet re-run
+
+Code's first run found (n) failing on 14 of 37 cards at E2 1 (3-11 elsewhere at small, none at
+full), the bound sitting above the instrument's inlier RMS by up to 2x on Siemens-star cards
+with 0% gross — a bound that is not a bound. Diagnosis in the run's write-up, confirmed here
+by reading it: the bound took its gradient from a central difference, which has a null at the
+grid's Nyquist frequency and reports no gradient on content with a two-cell period, which the
+spokes near a star centre have at s_eval. `gradient_power_theta` now uses the mean of the
+forward and backward squared differences (no null; still below the continuous derivative's
+power, so what it gives stays a lower bound), and the noise correction changed with it (a
+one-sided difference of white noise has variance 2 sigma^2 / cell^2, four times the central
+one). Self-test: a fourth texture with flat power up to 0.45 cycles per cell, bound side only;
+the matcher-side factor loosened from 3x to 4x because the tighter bound raises the ratio
+(3.04 measured on the smooth texture). On synthetic textures the old model did not violate the
+bound, so the evidence for the change is the workstation measurement, not the self-test.
+The seed change Code made (L 0/1, R 2/3) is the same fault the stub had on 2026-09-15
+(identically seeded noise in both eyes matched by the matcher); it should have been carried
+into fixation_pairs.py then. Stub after the change: RMS/bound 8.2 (was 5.8), (l), (m), (n) pass.
+No render needed: the instrument re-runs on the eight existing runs in seconds.
