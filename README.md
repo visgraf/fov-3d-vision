@@ -47,7 +47,7 @@ One camera, one centre of projection.
 | A3 | Single foveated image: the warp, first in numpy, then as a Cycles camera | **done** — OSL camera verified on GPU; `docs/a3-foveated-camera.md` |
 | A4 | A sequence of fixations | **done** — `fixation_sequence.py` writes the D1 record at 15 ms (small) and 140 ms (full) per fixation; warp, footprint, reader and control checks pass at both profiles, the binned foveal check is registration-limited on the cards; `docs/a4-fixation-sequence.md` |
 | A5 | Integration of the sequence into a spherical representation | **done** — finest-owns integration and the D9 curve at both profiles with equal-budget uniform baselines; foveation wins at the targets, uniform over the sphere below the largest budget; `docs/phase-a-result.md` |
-| A6 | The E2 and e_max sweep | **done, choice pending** — at equal rays E2 4 wins the fixated targets and E2 1 the covered sphere; e_max 45 and 30; profiles unchanged (D11); `docs/a6-warp-sweep.md` |
+| A6 | The E2 and e_max sweep | **done, choice made in D16 (B3)** — at equal rays E2 4 wins the fixated targets and E2 1 the covered sphere; e_max 45 and 30; profiles unchanged (D11); `docs/a6-warp-sweep.md` |
 
 The three warp parameters are settled as far as Phase A can settle them: s₀ is the profile
 (0.1° small, 0.05° full), and E₂ = 2°, e_max = 45° stand under D11 after the A6 sweep, which
@@ -65,7 +65,7 @@ structure this needs.
 |---|---|---|
 | B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **done** 2026-09-15 — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; results in `docs/b1-verged-pairs.md`: all checks pass on both profiles, (e) within 0.002 spacings, control matches prediction to 3 µm; 29 ms / 271 ms per pair |
 | B2 | Ground-truth stereo correspondence from the Position pass, epipolar coordinates on the sphere, the triangulation check and its control; per-eye references | **done** 2026-09-15 — `stereo_truth.py`, `preview360.py --eye-offset`; D13, D14; results in `docs/b2-stereo-truth.md`: (i), (k) at 0.015 s₀, (j) 100%, (h) within 0.006 quanta on both profiles, naive control inf on every card; small per-eye references pinned (full ones not rendered); per-eye (b) 36/35 of 50 against Phase A's 40, wires 6/8 and 5/8 read as lattice phase |
-| B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | **done** 2026-09-15, D11 left standing — `stereo_instrument.py`, `stereo_sweep.py`; D15; results in `docs/b3-stereo-instrument.md`: (l), (m), (n) pass on the standard setting at both profiles and the control; the objective at the fixated targets is flat in E₂ at s_eval (0.272 / 0.269 / 0.261 s₀ for E₂ 1 / 2 / 4), per ray the cheaper settings win; one (n) card at e_max 30 (0.97) reported |
+| B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | **done** 2026-09-15 — `stereo_instrument.py`, `stereo_sweep.py`; D15; D16 closes D11: E₂ = 2, e_max = 45 as the middle of a flat optimum (instrument 0.272 / 0.269 / 0.261 s₀, bound 0.121 / 0.085 / 0.088 s₀ for E₂ 1 / 2 / 4); `docs/b3-stereo-instrument.md` |
 
 ### Phase C — open
 
@@ -87,7 +87,7 @@ uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` tog
 the small-profile references (about a minute each). D7 holds on both scenes against the
 profiles' fixation spp.
 
-Phase A is closed pending D11; `docs/phase-a-summary.md` is the summary (what was built, what
+Phase A is closed; D11 was closed by D16 after Phase B's sweep; `docs/phase-a-summary.md` is the summary (what was built, what
 was learned, what carries into Phase B). The result is one page, `docs/phase-a-result.md`: at the
 targets foveation beats uniform sampling at equal rays at every budget on both scenes (on the
 targets actually fixated, 0.183 against 0.351 at the full profile's largest K, and 0.146

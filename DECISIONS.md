@@ -155,3 +155,16 @@ would judge. The bound is reported beside the instrument so the ranking of E₂ 
 without trusting the matcher.
 Overturned if: the sweep's ranking differs between the instrument and the bound, in which case
 the instrument is the suspect and the sweep waits on a better one; or D5 is overturned.
+
+## D16 — E₂ = 2°, e_max = 45° stays, on evidence: the disparity objective is flat in E₂ (2026-09-15)
+
+Closes D11. The B3 sweep at the small profile: the instrument's inlier RMS at the fixated
+cards is 0.272 / 0.269 / 0.261 s₀ for E₂ = 1 / 2 / 4, the bound 0.121 / 0.085 / 0.088 s₀;
+E₂ = 2 and 4 are within 3.5% of each other on both, E₂ = 1 is 40% worse on the bound; the
+cost is 0.6M / 1.6M / 4.0M rays per pair, so per ray the cheaper setting wins on every column.
+Why: at s_eval = 2 s₀ (D9) the fovea's cells are saturated at every E₂ (spacing at 2° is 3,
+2 and 1.5 s₀), so the objective D11 named cannot separate E₂ = 2 from 4; E₂ = 1 fails the
+cap check (A6, +1.03%) and e_max is Phase C's coverage question, not this objective's. The
+standard setting is the middle of a flat optimum at 40% of E₂ = 4's cost.
+Overturned if: a finer s_eval or the Classroom scene shows a slope in E₂ larger than the
+3.5% measured here, or Phase C's gaze policy prices coverage into the objective.

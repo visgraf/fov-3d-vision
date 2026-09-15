@@ -662,3 +662,14 @@ this re-run (D16 only if the per-pair order was 4 < 2 < 1 on both), no D16: the 
 flat in E2 to 4% on the instrument and to 3.5% between E2 2 and 4 on the bound, with E2 1 40%
 above on the bound; per ray the cheaper settings win. Chart re-copied to docs/reference. README
 B3 row -> done with D11 standing. Nothing rendered, nothing pinned, no code changed by Code.
+
+## 2026-09-15 — D16: D11 closed after the bound re-run
+
+The literal condition set for Code (4 < 2 < 1 on both instrument and bound) failed by 3.5%
+under the one-sided bound (bound 0.085 for E₂ 2 against 0.088 for E₂ 4), so Code correctly
+left the decision open. Read for substance the result is stronger than the condition asked
+for: E₂ = 2 and 4 are indistinguishable on both columns (3.5% and 3%), E₂ = 1 is 40% worse on
+the bound, and the cost spans 7x. D16 keeps E₂ = 2, e_max = 45 as the middle of a flat
+optimum, with a finer s_eval or the Classroom as what could overturn it. The one remaining
+(n) failure (emax_30 p007, ratio 0.97, 85% edge cells) is within the label fuzz at a card
+whose fovea is mostly depth edge; recorded, not acted on. Phase B's three steps are done.
