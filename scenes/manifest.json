@@ -115,6 +115,98 @@
      "zenith_depth_m": 1.6002
     }
    },
+   "reference_small_L": {
+    "status": "rendered",
+    "date": "2026-09-15",
+    "profile": "small",
+    "path": "previews/reference_small_L/calib_room/pano.exr",
+    "backface": "previews/reference_small_L/calib_room/backface.exr",
+    "md5": "fdcbe57f7f0d575b532984dc1a8183e4",
+    "backface_md5": "4286c3ad5ecbde34d43edaa75c905885",
+    "width": 3600,
+    "height": 1800,
+    "spp": 1024,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "seed": 0,
+    "fixation_spp": 64,
+    "render_seconds": 60.55,
+    "render_seconds_includes_exr_write": true,
+    "exr_bytes": 136912524,
+    "eye_offset_local_m": [
+     -0.0315,
+     0.0,
+     0.0
+    ],
+    "eye_position_m": [
+     -0.0315,
+     0.0,
+     1.6
+    ],
+    "head_position_m": [
+     0.0,
+     0.0,
+     1.6
+    ],
+    "device": "OPTIX",
+    "blender": "5.2.1 LTS",
+    "note": "B2 per-eye reference: preview360.py --eye-offset; same scene, s0 and spp as reference_small, centre at the eye (D12); noise taken as reference_small's (assumed)",
+    "backup": "/home/lvelho/data/reference/reference_small_L/calib_room (md5 verified)",
+    "checks": {
+     "hole_fraction": 0.0,
+     "backface_fraction": 0.0,
+     "nadir_depth_m": 1.6002,
+     "zenith_depth_m": 1.6002,
+     "depth_min_m": 0.5258
+    }
+   },
+   "reference_small_R": {
+    "status": "rendered",
+    "date": "2026-09-15",
+    "profile": "small",
+    "path": "previews/reference_small_R/calib_room/pano.exr",
+    "backface": "previews/reference_small_R/calib_room/backface.exr",
+    "md5": "5e268d470f70aa34f57625465daca306",
+    "backface_md5": "2a33408bc9efc9befefb73c179a145a5",
+    "width": 3600,
+    "height": 1800,
+    "spp": 1024,
+    "filter": "BOX",
+    "filter_width": 1.0,
+    "adaptive_sampling": false,
+    "seed": 0,
+    "fixation_spp": 64,
+    "render_seconds": 61.08,
+    "render_seconds_includes_exr_write": true,
+    "exr_bytes": 136894587,
+    "eye_offset_local_m": [
+     0.0315,
+     0.0,
+     0.0
+    ],
+    "eye_position_m": [
+     0.0315,
+     0.0,
+     1.6
+    ],
+    "head_position_m": [
+     0.0,
+     0.0,
+     1.6
+    ],
+    "device": "OPTIX",
+    "blender": "5.2.1 LTS",
+    "note": "B2 per-eye reference: preview360.py --eye-offset; same scene, s0 and spp as reference_small, centre at the eye (D12); noise taken as reference_small's (assumed)",
+    "backup": "/home/lvelho/data/reference/reference_small_R/calib_room (md5 verified)",
+    "checks": {
+     "hole_fraction": 0.0,
+     "backface_fraction": 0.0,
+     "nadir_depth_m": 1.6002,
+     "zenith_depth_m": 1.6002,
+     "depth_min_m": 0.4742
+    }
+   },
    "reference_shift": {
     "status": "rendered",
     "date": "2026-09-13",

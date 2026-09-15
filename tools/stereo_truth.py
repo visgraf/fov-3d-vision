@@ -185,7 +185,12 @@ def main():
                   "tri_s0_p999": float(np.nanpercentile(tri, 99.9)) if len(tri) else None,
                   "roundtrip_frac": float(same.mean()) if hit.any() else None,
                   "parallax_deg_range": [float(parallax[hit].min()), float(parallax[hit].max())] if hit.any() else None,
-                  "parallax_neg_count": int((parallax[hit] <= 0).sum()),
+                  # sign judged off-axis only: within ~0.05 deg of the axis the geometric parallax
+                  # (ipd sin theta / D, 2e-5 deg at 0.001 deg) is below check (a)'s direction residual
+                  # (0.017 s0 = 0.0009 deg at full), so its sign is not resolvable there; the near-axis
+                  # count is reported beside it
+                  "parallax_neg_count": int((parallax[off_axis] <= 0).sum()),
+                  "parallax_neg_count_near_axis": int((parallax[hit & ~off_axis] <= 0).sum()),
                   "visible_frac": float((vis[hit] == 1).mean()) if hit.any() else None,
                   "occluded_frac": float((vis[hit] == 0).mean()) if hit.any() else None,
                   "outside_frac": float((vis[hit] == -1).mean()) if hit.any() else None,
@@ -246,6 +251,7 @@ def main():
                "tri_s0_p999": float(np.percentile(tri_cat, 99.9)), "tri_s0_max": float(tri_cat.max()),
                "roundtrip_frac": rt_ok / max(rt_n, 1), "axis_excluded": int(sum(e["hits"] - e["off_axis"] for r in per for e in r["eyes"])),
                "parallax_nonpositive": int(sum(e["parallax_neg_count"] for r in per for e in r["eyes"])),
+               "parallax_nonpositive_near_axis_reported": int(sum(e["parallax_neg_count_near_axis"] for r in per for e in r["eyes"])),
                "visibility": {"visible": int(vis_counts[0]), "occluded": int(vis_counts[1]), "outside_disc": int(vis_counts[2]),
                               "inconsistent": int(vis_counts[3]), "vis_tol_rel": args.vis_tol},
                "h_judged": int(sum(r["judged"] for r in per)),
@@ -263,6 +269,9 @@ def main():
         fails.append(f"(j) inverse warp round trip lands on the own pixel for only {100 * summary['roundtrip_frac']:.2f}%")
     if summary["parallax_nonpositive"]:
         fails.append(f"{summary['parallax_nonpositive']} samples have non-positive parallax (sign or centre error)")
+    if summary["parallax_nonpositive_near_axis_reported"]:
+        print(f"[truth] reported: {summary['parallax_nonpositive_near_axis_reported']} samples within {args.axis_deg} deg of the axis "
+              f"have non-positive parallax (sign unresolvable there: geometric parallax below check (a)'s residual); not judged")
     summary["fails"] = fails
     with open(os.path.join(run, "truth.json"), "w") as fh:
         json.dump({"summary": summary, "pairs": per}, fh, indent=1)

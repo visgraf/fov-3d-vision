@@ -99,11 +99,100 @@ small-profile `check_sequence` results (40/50 (b) unjudged as registration-limit
 
 ## Results
 
-Not yet run. To be filled from the four `truth.json` summaries and the two `check.json`: (i),
-(j), (k) worst values in s₀; (h) truth error vs the hit and vs the target, max, in m and in
-quanta; the naive estimator on the verged run (error) and on the control (inf); visibility
-fractions; the per-eye reference render seconds and md5s (pinned in `scenes/manifest.json` as
-`reference_small_L` / `_R`); per-eye `check_sequence` outcomes.
+First workstation run 2026-09-15 (Blender 5.2.1 LTS, RTX 4090 through OptiX for the two
+reference renders; everything else host-side in `.venv`). Every number is **measured** and
+comes from `previews/pairs/<run>/truth.json` (`summary`) unless another file is named. Cost
+class as measured: `stereo_truth.py` is interactive (0.6 s small, 1.9 s full per run, 50 pairs);
+each per-eye reference is batch (60.6 s and 61.1 s render); the seed-pair re-render of the
+verged small run is interactive (4.5 s including Blender start); `check_sequence.py` is 4 s per eye.
+
+### Truth checks, four B1 runs
+
+| | small verged | small control | full verged | full control |
+|---|---|---|---|---|
+| (i) epipolar, p99.9 (max) | 0.015 (0.016) s₀ | 0.015 (0.017) s₀ | 0.015 (0.017) s₀ | 0.015 (0.017) s₀ |
+| (k) triangulation identity, p99.9 (max) | 0.015 (0.016) s₀ | 0.015 (0.016) s₀ | 0.015 (0.017) s₀ | 0.015 (0.017) s₀ |
+| (j) inverse-warp round trip | 100.000% | 100.000% | 100.000% | 100.000% |
+| samples within 5° of the axis, excluded | 7,214 of 1,249,200 | 7,204 | 29,057 of 5,026,900 | 29,006 |
+| non-positive parallax, judged off-axis | 0 | 0 | 0 | 0 |
+| non-positive parallax, near-axis (reported) | 0 | 0 | 0 | 1 |
+| (h) truth vs the hit, max | 0.0009 m, 0.005 quanta | 0.0009 m, 0.005 q | 0.0005 m, 0.006 q | 0.0005 m, 0.005 q |
+| (h) truth vs the target, max | 0.0009 m, 0.005 quanta | 3.175 m (wall; not required) | 0.0005 m, 0.006 q | 3.175 m |
+| (h) naive vs the target, max | 0.0000 m | inf on 42/42 cards | 0.0000 m | inf on 42/42 |
+| target quantum range | 0.007 – 0.188 m | same | 0.003 – 0.093 m | same |
+| centre parallax − vergence, max | 8e-5° | – | 5e-5° | – |
+| visible / occluded / outside / inconsistent | 93.0 / 4.7 / 0.6 / 1.70% | 91.1 / 5.6 / 0.5 / 2.85% | 94.9 / 3.9 / 0.5 / 0.72% | 94.7 / 4.0 / 0.4 / 0.89% |
+| fails | none | none | none | none |
+
+(i) and (k) sit at check (a)'s residual (0.016–0.017 s₀ in B1), as predicted: the truth inherits
+the direction error of the render and nothing else. The naive estimator reproduces the target
+exactly on the verged runs because both gazes point at P by construction, and gives infinity
+on every card of the controls; the truth estimator gives the Position pass's distance on all
+four (on the controls the L centre ray is on the wall at 3–5 m, so "vs the target" is 3.2 m
+there, as it must be). The seed-pair re-render `calib_room_sp` gives the same truth summary as
+`calib_room` to every printed digit.
+
+**The one thing that failed, and what was changed.** The first pass failed on both full runs
+with 2 and 1 samples of non-positive parallax (−0.0009° and −0.013°). All three are within
+0.02° of the baseline axis (gaze near azimuth −75°, the raster reaching −90°, the hit on the left
+wall at x = −3 m), where the geometric parallax ipd·sin θ/D is 2e-5 to 5e-4 degrees. Two
+causes, both measured on those samples: (1) `rig.epipolar` took θ = arccos(dₓ) of the float32
+stored direction, whose x is quantised at −0.99999994 next to −1, so θ was off by 0.02° there
+(arccos is ill-conditioned at ±1); changed to θ = atan2(hypot(d_y, d_z), dₓ), the same function
+computed from the small components, which the self-tests and both interpreters pass unchanged
+and which removes two of the three. (2) The third (full control, L f048 raster (126, 51),
+0.0008° off the axis) has a geometric parallax of 2.0e-5° against a direction residual of
+1.6e-4° between its analytic ray and its Position-pass hit — check (a)'s residual — so its sign
+is not measurable at all. `stereo_truth.py` now judges the sign count on the same off-axis mask
+(i) and (k) already use and reports the near-axis count beside it; that is a change inside the
+checker, made after the diagnosis, and it is the only such change. B1's `check_pairs` re-run
+after the `rig.py` change is unchanged to every digit.
+
+### Per-eye references (pinned, `scenes/manifest.json` → `reference_small_L`, `_R`)
+
+| | L | R |
+|---|---|---|
+| eye.position_m / head.position_m (meta.json) | (−0.0315, 0, 1.6) / (0, 0, 1.6) | (0.0315, 0, 1.6) / (0, 0, 1.6) |
+| render seconds (incl. EXR write) | 60.55 | 61.08 |
+| pano.exr md5 | fdcbe57f7f0d575b532984dc1a8183e4 | 5e268d470f70aa34f57625465daca306 |
+| backface.exr md5 | 4286c3ad5ecbde34d43edaa75c905885 | 2a33408bc9efc9befefb73c179a145a5 |
+| inspect: holes / backface / nadir / depth min | 0 / 0 / 1.6002 m / 0.526 m | 0 / 0 / 1.6002 m / 0.474 m |
+
+3600×1800, 1024 spp, seed 0, box filter; backed up at `/home/lvelho/data/reference/reference_small_{L,R}/calib_room`,
+md5 verified. Centre and yaw checked directly: the centroid of each card's pixels in the Depth
+pass lands within 0.5 px (0.05°) of where the offset eye centre predicts it, including the ±9 px
+parallax shift of the e = 0 card (1808.8 / 1790.6 against 1800.3 cyclopean; script in the log
+entry's session, not kept). Full-profile per-eye references were not rendered (overnight, not scheduled).
+
+### Per-eye radiometric validation (`check_sequence.py`, small, wires plain)
+
+The B1 verged run has no seed pair, so against the per-eye references it gives: origin check
+passes, (a) 0.018 px median p99.9 (max 0.064, both eyes; A4 level), (d) cap +0.59%, reader diff
+0, and (b) unjudged ("no seed pair, (b) has no bound", exit 1 by design). To judge (b) the verged
+small run was re-rendered with `--seed-pair` into `previews/pairs/calib_room_sp` (4.5 s; its
+check_pairs and truth summaries are identical to `calib_room`'s), and that is what the table reports,
+beside Phase A's cyclopean small run on the same scene:
+
+| | Phase A cyclopean | B2 L | B2 R |
+|---|---|---|---|
+| (a) warp p99.9, median / max | 0.018 / 0.064 px | 0.018 / 0.064 px | 0.018 / 0.065 px |
+| (b) bound median (noise median) | 0.043 (0.017) | 0.046 (0.017) | 0.046 (0.017) |
+| (b) foveal score median | 0.038 | 0.040 | 0.037 |
+| (b) pass, all 50 | 40 | 36 | 35 |
+| registration-limited (42 cards) pass | 32 | 30 | 30 |
+| plain (8 wires) pass | 8 | 6 | 5 |
+| (c) control fails, as required | 50 / 50 | 50 / 50 | 50 / 50 |
+| (d) cap | +0.59% | +0.59% | +0.59% |
+
+Failures listed by the checker, all wires: L 0.75 mm 0.0150 vs bound 0.0136, 6 mm 0.0240 vs
+0.0233; R 0.5 mm 0.0186 vs 0.0172, 1 mm 0.0302 vs 0.0250, 1.5 mm 0.0250 vs 0.0175. Phase A's
+8/8 included passes with 1.5% and 3% margin (0.75 mm 0.0139 vs 0.0141, 6 mm 0.0188 vs 0.0194),
+and its full-profile note measured the wire score as non-radiometric, moving 0.003–0.030 under a
+1 px shift. The per-eye scores (0.011–0.030) lie in that range, the noise and bounds are the
+same as Phase A's, and the references' centres are verified above, so these are the wires'
+sub-pixel lattice phase seen from a different centre, not a rig or reference error; the
+checker's verdict stands as written (5 of 16 wire fixations fail) and no tolerance was moved.
+The ring cards behave as in Phase A (30/42 against 32/42 registration-limited).
 
 ## What B2 leaves open
 

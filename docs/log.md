@@ -519,3 +519,44 @@ card edge). Control: truth passes vs the hit (max 0.2 mm), naive gives inf on ev
 required; 7214 samples within 5 deg of the axis excluded per run (the ladders at azimuth 83).
 Negatives: ipd 0.070 in pairs.json fails (h) at 2.22 m vs 2.00; swapped centres fail with inf.
 Stub numbers, not measurements. Write-up `docs/b2-stereo-truth.md`, Results empty.
+
+## 2026-09-15 — B2 first workstation run: truth on the four B1 runs, per-eye references, per-eye (b)
+
+Step 0: self-tests pass in .venv and under Blender's bundled Python. Step 1, `stereo_truth.py`
+on the four B1 runs (interactive: 0.6 s small, 1.9 s full): small runs clean; both full runs
+FAILED first pass, 2 and 1 samples with non-positive parallax, all within 0.02 deg of the
+baseline axis (left wall at x = -3 m through the wire fixations' periphery). Diagnosed, not
+tolerated: `rig.epipolar` computed theta = arccos(d_x) on the float32 direction, whose x is
+quantised at -0.99999994 next to the axis, 0.02 deg of theta error against a geometric parallax
+of 2e-5 to 5e-4 deg there. Fixed to atan2(hypot(y, z), x) (same function, well conditioned);
+self-tests unchanged, re-run from step 0. One sample remained (full control, L f048, 0.0008 deg
+off-axis): geometric parallax 2.0e-5 deg against a 1.6e-4 deg residual between its analytic ray
+and its Position-pass hit (check (a)'s residual), so its sign is unmeasurable; `stereo_truth.py`
+now counts the sign on the off-axis mask (i) and (k) already use and reports the near-axis count.
+That is a checker change made after the diagnosis. After both: all four pass, (i) 0.015 s0 p99.9
+(max 0.017), (k) 0.015 s0, (j) 100.000%, (h) truth within 0.0009 m (0.005 quanta) small and
+0.0005 m (0.006 q) full of the hit and of the target on verged runs, naive exact on verged and
+inf on 42/42 cards of both controls; visible 93.0 / 91.1 / 94.9 / 94.7%, occluded 4.7 / 5.6 /
+3.9 / 4.0%, inconsistent 1.70 / 2.85 / 0.72 / 0.89%; axis-excluded 7,214 (small) and 29,057
+(full) per run. B1's check_pairs re-run after the rig.py change: identical.
+
+Step 2, per-eye small references (batch; justified: the per-eye (b) cannot be read against the
+cyclopean reference, parallax 0.9 deg at 2 m): L 60.55 s, R 61.08 s, OptiX; meta.json eye
+(-/+0.0315, 0, 1.6), head (0, 0, 1.6); inspect: no holes, no backface, nadir 1.6002 m. Pinned as
+reference_small_L (md5 fdcbe57f7f0d575b532984dc1a8183e4) and reference_small_R
+(5e268d470f70aa34f57625465daca306) with backface md5s; copied to
+/home/lvelho/data/reference/reference_small_{L,R}/calib_room, md5 verified (that tree held only
+the two full references; the small cyclopean ones and the shifts are not in it). Card centroids
+from each pano's Depth pass land within 0.5 px of the offset centre's prediction, e = 0 card at
+1808.8 / 1790.6 vs 1800.3 cyclopean (the 9 px parallax).
+
+Step 3, check_sequence L and R against their references: on the B1 run (no seed pair) origin,
+(a) 0.018 px, (c), (d) pass, (b) unjudged as the checker says. Re-rendered verged small with
+--seed-pair as previews/pairs/calib_room_sp (4.5 s; check_pairs and truth identical to
+calib_room); against the per-eye references: (b) 36/50 L, 35/50 R (Phase A cyclopean 40/50),
+cards 30/42 both (32/42), wires 6/8 L, 5/8 R (8/8), bound median 0.046 (0.043), control 50/50
+fails as required. Wire failures by 3-43% (scores 0.015-0.030 vs bounds 0.014-0.025); Phase A's
+wire passes had 1.5-3% margins and its full-profile note showed the wire score moving
+0.003-0.030 under a 1 px shift, so read as sub-pixel lattice phase from a different centre, not a
+reference error (centres verified above). No tolerance changed. Full per-eye references not
+rendered (overnight, unscheduled). Results in `docs/b2-stereo-truth.md`.

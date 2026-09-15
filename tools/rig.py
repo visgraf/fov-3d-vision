@@ -154,7 +154,10 @@ def pair_for_point(p: np.ndarray, head_origin: np.ndarray, head_rot3: np.ndarray
 def epipolar(d_head: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """(theta_deg, phi_deg) of head-frame unit directions."""
     d = np.asarray(d_head, dtype=np.float64)
-    theta = np.degrees(np.arccos(np.clip(d[..., 0], -1.0, 1.0)))
+    # atan2 form, not arccos(d_x): arccos is ill-conditioned at the axis, where a float32
+    # direction's x is quantised (-0.99999994 next to -1) and the error reaches 0.02 deg, more
+    # than the parallax there; hypot(y, z) keeps the small components' full relative precision.
+    theta = np.degrees(np.arctan2(np.hypot(d[..., 1], d[..., 2]), d[..., 0]))
     phi = np.degrees(np.arctan2(d[..., 1], -d[..., 2]))
     return theta, phi
 
