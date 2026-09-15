@@ -142,3 +142,16 @@ the gaze (D2), so a torsion of the eye changes which raster pixel sampled which 
 nothing a consumer of the record can see; epipolar geometry is set by the two centres alone.
 Overturned if: D2 is overturned by an anisotropic warp, in which case torsion sets its
 orientation and rig.py's gaze composition must model it.
+
+## D15 — A reference matcher lives here as an instrument; D5 stands (2026-09-15)
+
+`tools/stereo_instrument.py` is a block matcher (NCC, winner-take-all, Lucas-Kanade sub-cell
+step) on the two foveal maps at s_eval in epipolar coordinates, plus the matcher-free bound
+(Fisher information of disparity from gradient² over noise²). It exists so the E₂ sweep has a
+number; it is not the research matcher and never sees the non-uniform lattice.
+Why: D11's objective is a disparity error, and an error needs an estimate; waiting on
+`active-stereo` couples closing E₂ to a research pace and to a matcher tuned to the warp it
+would judge. The bound is reported beside the instrument so the ranking of E₂ can be read
+without trusting the matcher.
+Overturned if: the sweep's ranking differs between the instrument and the bound, in which case
+the instrument is the suspect and the sweep waits on a better one; or D5 is overturned.

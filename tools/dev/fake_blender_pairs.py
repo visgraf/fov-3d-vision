@@ -74,7 +74,14 @@ class Scene:
             ok = (t > 1e-6) & np.isfinite(t) & (np.abs(rel @ rc) <= half) & (np.abs(rel @ uc) <= half)
             t_best = np.where(ok & (t < t_best), t, t_best)
         pos = o[None, :] + t_best[:, None] * D
-        rgb = 0.2 + 0.6 * (((np.floor(pos * 20).sum(-1)) % 2)[:, None]) * np.array([[1.0, 0.9, 0.8]])
+        # non-periodic value noise at three scales (a periodic checker makes every matcher
+        # ambiguous and says nothing about the plumbing): hashed cell values, positive
+        def vnoise(k):
+            c = np.floor(pos * k).astype(np.int64)
+            hsh = (c[:, 0] * 73856093) ^ (c[:, 1] * 19349663) ^ (c[:, 2] * 83492791)
+            return ((hsh * 2654435761) % 4294967296) / 4294967296.0
+        v = 0.3 + 0.4 * vnoise(8.0) + 0.3 * vnoise(40.0)   # 12.5 cm and 2.5 cm cells: 0.29 deg at 5 m, above s_eval
+        rgb = v[:, None] * np.array([[1.0, 0.9, 0.8]])
         return pos, t_best, rgb
 
 
@@ -135,7 +142,10 @@ def install_stubs(scene_geom, n_holder):
         pos, dist, rgb = scene_geom.cast(state["pos"], dw)
         inside = rs["inside"].reshape(-1)
         dist = np.where(inside, dist, 1e10); pos = np.where(inside[:, None], pos, 0.0); rgb = np.where(inside[:, None], rgb, 0.0)
-        rgb = rgb + np.random.default_rng(seed * 1000 + int(abs(state["yaw"]) * 10)).normal(0, 0.01, rgb.shape)
+        # independent noise per render (a seed shared between the two eyes correlates their noise
+        # and a matcher then matches the noise pattern; measured on the stub, 2026-09-15)
+        state["count"] = state.get("count", 0) + 1
+        rgb = rgb + np.random.default_rng(seed * 100003 + state["count"]).normal(0, 0.01, rgb.shape)
         state["frame"] = (rgb.reshape(n, n, 3).astype(np.float32), dist.reshape(n, n).astype(np.float32), pos.reshape(n, n, 3).astype(np.float32))
         return time.perf_counter() - t0
 

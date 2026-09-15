@@ -560,3 +560,31 @@ wire passes had 1.5-3% margins and its full-profile note showed the wire score m
 0.003-0.030 under a 1 px shift, so read as sub-pixel lattice phase from a different centre, not a
 reference error (centres verified above). No tolerance changed. Full per-eye references not
 rendered (overnight, unscheduled). Results in `docs/b2-stereo-truth.md`.
+
+## 2026-09-15 — B3 written: the stereo instrument, the bound, the sweep; not yet run
+
+D15: a reference matcher lives here as an instrument; D5 stands. `tools/stereo_instrument.py`:
+foveal epipolar maps at s_eval (finest-owns, R map wider by the search range), NCC block
+matcher with two Lucas-Kanade sub-cell steps, the Fisher-information bound with the noise's
+own gradient removed, information per ray, checks (l) self-shift, (m) recovery on the fixated
+surface, (n) bound below the error, a sheet (L | R | truth | estimate | error), `--self-test`
+on synthetic shifted textures. `tools/stereo_sweep.py` collects settings into a table, CSV
+and chart. `docs/b3-stereo-instrument.md`; README B3 row.
+
+Found while building, all on the stub (`tools/dev/fake_blender_pairs.py`, itself changed):
+a 3-point parabola on the NCC peak locks to the integer by up to 0.25 cell on an exact
+peak, replaced by LK steps (self-test RMS/bound 4-5x -> under 3x); the LK gather lacked the
+column index (caught by the self-test: median 0.9 cell at every shift); windows at the map
+edge lost their true shift to the valid-count rule (now relative to the window's own valid
+cells, R map padded by S); noise gradients counted as information on a flat card (half-cell
+bound from noise alone; now only gradients above 2 sigma, noise variance subtracted); a
+striped card with no gradient along theta was "matchable" by texture alone (now the bound
+must be below one cell); (m) on a 5x5 centre block failed on cards whose block straddles a
+depth edge (now over the fixated surface's edge-free cells). The stub itself: a periodic
+checker (every matcher ambiguous), then sub-cell texture (aliasing), then noise seeded
+identically for both eyes (the matcher matched the noise pattern) — each replaced. Stub
+results, plumbing only: verged 41 judged pairs, inlier RMS 0.27 cell, gross 17% (8% edge-free),
+RMS/bound 5.8, (l) 100%, (m) 38/42 judged and passing; control (`--search 24`) (m) 42/42
+recovering ~9 cells; negatives: a lazy matcher fails (m) on the control and (l); sigma x3 fails
+(n); sigma x10 leaves nothing matchable and fails on that. Predicted for the workstation: E2 4
+lowest error per pair at 2.5x the rays; information per ray undecided.
