@@ -65,7 +65,7 @@ structure this needs.
 |---|---|---|
 | B1 | The second eye on the EYE rig, verged fixation pairs, the foveae-on-target check and its control | **done** 2026-09-15 — `fixation_pairs.py`, `check_pairs.py`, `rig.py`, `warp.py`; D12; results in `docs/b1-verged-pairs.md`: all checks pass on both profiles, (e) within 0.002 spacings, control matches prediction to 3 µm; 29 ms / 271 ms per pair |
 | B2 | Ground-truth stereo correspondence from the Position pass, epipolar coordinates on the sphere, the triangulation check and its control; per-eye references | **done** 2026-09-15 — `stereo_truth.py`, `preview360.py --eye-offset`; D13, D14; results in `docs/b2-stereo-truth.md`: (i), (k) at 0.015 s₀, (j) 100%, (h) within 0.006 quanta on both profiles, naive control inf on every card; small per-eye references pinned (full ones not rendered); per-eye (b) 36/35 of 50 against Phase A's 40, wires 6/8 and 5/8 read as lattice phase |
-| B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | **run 2026-09-15, D11 left standing** — `stereo_instrument.py`, `stereo_sweep.py`; D15; results in `docs/b3-stereo-instrument.md`: (l), (m) pass everywhere, full profile clean; error per pair ranks E₂ 4 < 2 < 1 on both readings, information per ray ranks the reverse; (n) fails on 3–14 star cards at small, diagnosed as the bound's central-difference gradient, not changed |
+| B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | **done** 2026-09-15, D11 left standing — `stereo_instrument.py`, `stereo_sweep.py`; D15; results in `docs/b3-stereo-instrument.md`: (l), (m), (n) pass on the standard setting at both profiles and the control; the objective at the fixated targets is flat in E₂ at s_eval (0.272 / 0.269 / 0.261 s₀ for E₂ 1 / 2 / 4), per ray the cheaper settings win; one (n) card at e_max 30 (0.97) reported |
 
 ### Phase C — open
 
@@ -98,7 +98,7 @@ grid-aligned render 1.01x to 1.03x its own measured noise; the resampling floor 
 true off-grid renders pinned in the manifest; check thresholds are measured (D10); the
 per-sample validation is closed, its residual at the full profile measured as sub-pixel
 lattice registration and not radiometry. The A6 sweep says the warp's E₂ trades foveal
-accuracy against coverage and leaves the choice to the objective (D11); B3 measured that objective and found the per-pair and per-ray readings disagree, so D11 still stands (`docs/b3-stereo-instrument.md`). A fixation costs
+accuracy against coverage and leaves the choice to the objective (D11); B3 measured that objective: flat in E₂ per pair at s_eval, and favouring the cheaper settings per ray, so D11 still stands (`docs/b3-stereo-instrument.md`). A fixation costs
 15 ms (small) and 140 ms (full) on the RTX 4090 at the uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been

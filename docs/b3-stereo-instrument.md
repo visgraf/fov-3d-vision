@@ -112,27 +112,43 @@ reported profile.
 
 ## Results
 
-First workstation run 2026-09-15 (Blender 5.2.1 LTS, RTX 4090 through OptiX for the renders;
-`.venv` for everything else). Every number is **measured**; sources are `stereo.json`
-(`summary`) of each run, `pairs.json` for render times, `previews/sweep_b3/sweep.csv` for the
-table. Cost classes as measured: a seed-pair small render is interactive (11 s per sequence of
-50 pairs, 0.09 s per pair with the seed pass); the full one is batch (33 s, 0.31 s per pair);
-`stereo_truth.py` 0.6–1.9 s; `stereo_instrument.py` 0.5–1.0 s per run; the whole sweep
-including renders about one minute.
+First workstation run 2026-09-15, instrument re-run the same day after the bound's gradient
+model changed (`gradient_power_theta`: one-sided power instead of a central difference, see the
+log). Every number is **measured**; sources are `stereo.json` (`summary`) of each run,
+`pairs.json` for render times, `previews/sweep_b3/sweep.csv` for the table. The renders are the
+first run's (no re-render was needed); the matcher did not change, so the instrument's numbers
+are those of the first run except where the bound defines the matchable set (E₂ 1 lost 3% of its
+judged cells, 10,948 → 10,608, and its inlier RMS moved 0.282 → 0.272 s₀; the other runs moved
+by under 0.1%). Cost classes as measured: a seed-pair small render is interactive (11 s per
+sequence of 50 pairs, 0.09 s per pair with the seed pass); the full one is batch (33 s, 0.31 s
+per pair); `stereo_truth.py` 0.6–1.9 s; `stereo_instrument.py` 0.5–1.0 s per run.
 
 ### What had to change before the numbers meant anything
 
-The first verged run failed (n) on 10 of 37 cards with the inlier RMS *below* the bound by up to
-4× (p006: 0.0055° against 0.0209°). Diagnosed, not tolerated: both eyes were rendered at Cycles
-seed 0 on the same raster, and on a verged, equidistant, fronto-parallel card L pixel (i, j) and
-R pixel (i, j) see the same card point with the same random numbers, so the two maps shared their
-Monte Carlo noise. Measured on the centre pixels: correlation of (L − L_seed1) with (R − R_seed1)
+1. **Seeds.** The first verged run failed (n) on 10 of 37 cards with the inlier RMS *below* the
+bound by up to 4× (p006: 0.0055° against 0.0209°). Both eyes were rendered at Cycles seed 0 on
+the same raster, and on a verged, equidistant, fronto-parallel card L pixel (i, j) and R pixel
+(i, j) see the same card point with the same random numbers, so the two maps shared their Monte
+Carlo noise. Measured on the centre pixels: correlation of (L − L_seed1) with (R − R_seed1)
 0.95–0.98 on the ring cards and the ladders, RMS(L − R) a quarter of the seed-pair noise; on the
 control (9-cell offset) 0.04. `fixation_pairs.py` now renders the R eye at seeds (2, 3) and the L
 eye at (0, 1), recorded in `pairs.json` and each `meta.json`; after the change the correlation is
-0.004 and RMS(L − R) equals the seed-pair noise. Everything below is from the re-rendered runs.
-(B2's per-eye (b) on the re-rendered R eye: 34/50, cards 29/42, wires 5/8, against 35, 30, 5
-before; L unchanged.)
+0.004 and RMS(L − R) equals the seed-pair noise. (B2's per-eye (b) on the re-rendered R eye:
+34/50, cards 29/42, wires 5/8, against 35, 30, 5 before; L unchanged.)
+
+2. **The bound's gradient.** With independent seeds (n) still failed on 3 of 37 cards at the
+standard setting and on 3–14 per sweep setting, all Siemens-star rings at e = 6°–24°, with the
+edge-free inlier RMS half the bound and 0% gross (p006: 0.0085° against 0.0170° over 50 cells).
+Measured and ruled out: σ too high at the card (the seed-pair noise is *higher* at the star
+centre, 0.039–0.045, than over the map, 0.030–0.039, because sub-cell spokes alias under each
+seed's jitter); LK shrinkage by noise in its denominator (raw over signal-only gradient power
+1.02–1.05). What remained was the bound's derivative: a central difference has a null at the
+grid's Nyquist frequency and reports no gradient on two-cell-period content, which the spokes
+near a star centre have at s_eval, while the matcher's linear model uses the one-sided slopes.
+On the failing cards the one-sided power was 4–9× the central-difference power. The bound now
+takes the mean of the forward and backward squared differences (no null, still below the
+continuous derivative's power) with the matching noise correction; the self-test gained a
+near-Nyquist texture. Everything below is from that re-run.
 
 ### The standard setting (E₂ 2, e_max 45)
 
@@ -141,16 +157,16 @@ before; L unchanged.)
 | maps | 21×21 at 0.200° | same | 41×41 at 0.100° |
 | (l) self-shift | 100.0% | 100.0% | 100.0% |
 | (m) recovery | 37/37 judged pass; not judged: ring_e0_m0, ring_e2.5 ×4 | 36/36 pass (≈9 cells recovered); not judged: those five and ladder_0.5m | 42/42 pass, none excluded |
-| (n) bound ≤ error | **fails on 3**: p006, p012, p013 (ratios 0.75, 0.92, 0.95) | passes | passes |
-| judged cells | 12,607 | 11,325 | 60,507 |
+| (n) bound ≤ error | passes (was 3 failures under the central-difference bound) | passes | passes |
+| judged cells | 12,604 | 11,322 | 60,431 |
 | inlier RMS | 0.0269° = 0.13 cells = 0.27 s₀ | 0.0535° = 0.27 cells = 0.53 s₀ | 0.0208° = 0.21 cells = 0.42 s₀ |
 | edge-free inlier RMS, median per card | 0.0188° | 0.0464° | 0.0190° |
-| gross fraction, all / edge-free / edge cells (medians) | 6.3% / 0.0% / 31% | 16.2% / 13% / 32% | 12.1% / 4.3% / 46% |
+| gross fraction, all / edge-free / edge cells (medians) | 6.2% / 0.0% / 31% | 16.1% / 13% / 32% | 12.0% / 4.3% / 46% |
 | bias | +0.0107° | +0.0335° | +0.0021° |
 | depth RMS via triangulation, median per card | 0.031 m | 0.074 m | 0.028 m |
-| bound RMS | 0.0141° | 0.0144° | 0.0065° |
-| RMS / bound, median per card | 1.62 | 3.14 | 2.68 |
-| information per ray, median | 1.01e-1 | 9.3e-2 | 8.3e-1 |
+| bound RMS | 0.0085° (was 0.0141°) | 0.0094° (was 0.0144°) | 0.0045° (was 0.0065°) |
+| RMS / bound, median per card | 2.54 (was 1.62) | 5.63 (was 3.14) | 3.84 (was 2.68) |
+| information per ray, median | 3.47e-1 (was 1.01e-1) | 3.15e-1 (was 9.3e-2) | 1.63 (was 8.3e-1) |
 | matchable fraction, median | 0.87 | 0.76 | 0.96 |
 | render / truth / instrument seconds | 11.0 / 0.6 / 0.6 | 10.9 / 0.6 / 0.7 | 33.2 / 1.9 / 1.0 |
 
@@ -160,69 +176,56 @@ rise because the card sits in the coarser part of each map. The full profile pas
 checks on all 42 cards; the small cards are judged there because 0.1° cells give them enough
 edge-free cells. The gross errors are almost entirely depth-edge cells (foreground fattening of
 the 5×5 window at the card border, the red rings on the sheets); edge-free gross is 0% at small
-and 4% at full, so the star centres' aliasing does not dominate here (they sit in the inlier RMS).
-
-**The (n) failures, diagnosed and left standing.** On p006, p012, p013 (and 3–14 cards per sweep
-setting, all Siemens-star rings at e = 6°–24°) the edge-free inlier RMS is half the bound
-(p006: 0.0085° against 0.0170°, 50 cells, gross 0%). Three candidates were measured and two
-ruled out: σ is not too high at the card (the seed-pair noise is *higher* at the star centre,
-0.039–0.045, than over the map, 0.030–0.039, because sub-cell spokes alias under each seed's
-jitter); the LK step is not shrunk by noise in its denominator (raw over signal-only gradient
-power 1.02–1.05). What remains is the bound's derivative: it uses a central difference, which
-cancels where adjacent one-sided slopes alternate sign, i.e. on texture at the cell's Nyquist
-limit; the matcher's linear model uses the one-sided slopes. On the failing cards the one-sided
-slope power is 4–9× the central-difference power, and a bound built from it puts every failing
-card at 1.3–2.0× (p006 1.43, p012 1.97, p013 2.04, e2_1's p007 1.29). At full, the same spokes
-span more cells, the factor drops to 1.6–2.0 and (n) passes. So the bound understates the
-information of sub-cell texture by up to 9× and is not a valid lower bound there. Per the
-working rule it was not changed to make the check pass; the change belongs to the bound's
-gradient model and is Luiz's call. Until then the ratios in the table are read with that caveat.
+and 4% at full, so the star centres' aliasing does not dominate here (they sit in the inlier
+RMS). The new bound moved by a factor 1.4–1.7 across the three runs and RMS/bound sits at
+2.5–5.6, where a block matcher is expected (assumed 1.5–3 before the run; the control's 5.6
+is the coarse-map case).
 
 ### The sweep (small, all with seed pair; `previews/sweep_b3/sweep.csv`)
 
 | setting | raster | samples/fix | rays/pair | judged cells | inlier RMS s₀ (deg) | gross | gross edge-free med. | bound s₀ (deg) | RMS/bound med. | info/ray med. (mean) | matchable med. | s/pair | (n) fails |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| E₂ 1, e_max 45 | 77 | 4,669 | 597,632 | 10,948 | 0.282 (0.0281) | 7.2% | 0.0% | 0.193 (0.0192) | 1.30 | 1.083e-1 (1.365e-1) | 0.77 | 0.109 | 14 |
-| E₂ 2, e_max 30 | 111 | 9,689 | 1,240,192 | 14,090 | 0.294 (0.0293) | 10.8% | 0.3% | 0.150 (0.0149) | 1.85 | 1.316e-1 (1.608e-1) | 0.87 | 0.085 | 11 |
-| E₂ 2, e_max 45 | 126 | 12,492 | 1,598,976 | 12,607 | 0.269 (0.0269) | 6.3% | 0.0% | 0.141 (0.0141) | 1.62 | 1.010e-1 (1.073e-1) | 0.87 | 0.082 | 3 |
-| E₂ 2, e_max 60 | 137 | 14,745 | 1,887,360 | 12,142 | 0.284 (0.0285) | 7.8% | 0.0% | 0.145 (0.0145) | 1.66 | 7.80e-2 (8.52e-2) | 0.84 | 0.084 | 5 |
-| E₂ 4, e_max 45 | 200 | 31,428 | 4,022,784 | 13,171 | 0.261 (0.0262) | 10.0% | 0.0% | 0.130 (0.0130) | 1.69 | 5.08e-2 (6.15e-2) | 0.91 | 0.094 | 3 |
+| E₂ 1, e_max 45 | 77 | 4,669 | 597,632 | 10,608 | 0.272 (0.0270) | 7.1% | 0.0% | 0.121 (0.0120) | 1.93 | 4.23e-1 (5.14e-1) | 0.75 | 0.109 | 0 |
+| E₂ 2, e_max 30 | 111 | 9,689 | 1,240,192 | 14,083 | 0.294 (0.0293) | 10.8% | 0.3% | 0.095 (0.0095) | 2.88 | 4.44e-1 (4.54e-1) | 0.87 | 0.085 | 1 |
+| E₂ 2, e_max 45 | 126 | 12,492 | 1,598,976 | 12,604 | 0.269 (0.0269) | 6.2% | 0.0% | 0.085 (0.0085) | 2.54 | 3.47e-1 (3.41e-1) | 0.87 | 0.082 | 0 |
+| E₂ 2, e_max 60 | 137 | 14,745 | 1,887,360 | 12,142 | 0.284 (0.0285) | 7.8% | 0.0% | 0.088 (0.0088) | 2.56 | 2.66e-1 (2.61e-1) | 0.84 | 0.084 | 0 |
+| E₂ 4, e_max 45 | 200 | 31,428 | 4,022,784 | 13,170 | 0.261 (0.0262) | 10.0% | 0.0% | 0.088 (0.0088) | 2.62 | 1.78e-1 (1.89e-1) | 0.91 | 0.094 | 0 |
 
 All five pass (l) at 100% and (m) on 37/37 judged cards (the five small cards not judged in
-each); `stereo_truth.py` passes on all five ((i)/(k) 0.008–0.029 s₀; E₂ 1 has the largest
-residual, 0.028 s₀, and e_max 60 one near-axis sample reported). Nothing complained about E₂ 1's
+each); `stereo_truth.py` passes on all five ((i)/(k) 0.008–0.029 s₀). **One (n) failure
+remains**: e_max 30, p007 ring_e6_m90, bound 0.01253° against inlier RMS 0.01218° (ratio 0.97;
+178 judged cells, 85% of them edge cells, gross 28%). Reported and left as it is: a third gradient
+model needs discussion. Under the old bound this card was at 0.54. E₂ 1's lowest per-card ratio
+is 0.68 on a card (n) does not judge (its fovea is mostly wall). Nothing complained about E₂ 1's
 cap (+1.03% in A6): the instrument does not check it. Chart:
 `docs/reference/b3_sweep_calib_room_small.png` (copy of `previews/sweep_b3/sweep.png`).
 
 `stereo_sweep.py`'s line, verbatim: *lowest instrument error at the fixated cards: E2 4 e_max 45
-(0.261 s0 at 4022784 rays/pair); most information per ray: E2 2 e_max 30 (1.316e-01). They
+(0.261 s0 at 4022784 rays/pair); most information per ray: E2 2 e_max 30 (4.443e-01). They
 disagree: that is the result, not a tie-break.*
 
 ### The decision
 
-The two readings do not rank E₂ the same way, so D11 stands and no decision is added.
+No decision is added; D11 stands. The re-run moved one ranking, and the rule set before it was
+that a moved ranking is written up, not decided on:
 
 - **Instrument, error per pair** at the fixated cards: E₂ 4 (0.261 s₀) < E₂ 2 (0.269) < E₂ 1
-  (0.282). The spread is 8% across a 6.7× range of rays; the error at s_eval is set by the
-  cards' texture and the window, not by the sampling density, once the fovea is sampled at or
-  below the cell.
-- **Bound, per pair**: the same order, E₂ 4 (0.130 s₀) < E₂ 2 (0.141) < E₂ 1 (0.193) — the
-  instrument and the bound agree on what a pair delivers.
-- **Bound per ray** (the cost-normalised reading): E₂ 1 (1.08e-1) ≈ E₂ 2 (1.01e-1) > E₂ 4
-  (5.1e-2), and e_max 30 (1.32e-1) above all. Total information per pair is 6.5e4 / 1.6e5 /
-  2.0e5 for E₂ 1 / 2 / 4: doubling E₂ from 2 to 4 buys 26% more information for 2.5× the rays,
-  while 1 → 2 buys 2.5× for 2.7×. The extra rays at large E₂ go to the fovea, where the cards'
-  texture is already resolved at 0.2° cells.
+  (0.272) — the same order as the first run, now within 4% end to end (was 8%: E₂ 1's judged
+  set shrank by 3% under the new bound and its RMS fell with it).
+- **Bound, per pair**: E₂ 2 (0.085 s₀) < E₂ 4 (0.088) < E₂ 1 (0.121). This is what moved: under
+  the central-difference bound it was E₂ 4 (0.130) < E₂ 2 (0.141) < E₂ 1 (0.193). The E₂ 2 / E₂ 4
+  difference is 3.5% either way; E₂ 1 is 40% above both. Total information per pair: 2.5e5 /
+  5.5e5 / 7.2e5 for E₂ 1 / 2 / 4.
+- **Bound per ray**: E₂ 1 (4.2e-1) > E₂ 2 (3.5e-1) > E₂ 4 (1.8e-1), and e_max 30 (4.4e-1) above
+  all: unchanged, the cheaper settings win per ray.
 
-So: at equal cost the bound prefers a small E₂ and a small e_max (as A6's covered-sphere
-criterion did); per pair both readings prefer E₂ 4 (as A6's fixated-targets criterion did),
-by a margin the instrument cannot call significant. The disagreement is between per-pair and
-per-ray, which is the cost model, not the matcher — and the (n) caveat above applies to the
-information column (the bound's understatement is a property of the cards at 0.2° cells, the
-same across settings: one-sided/central power 8.0 at E₂ 2 and 8.3 at E₂ 1 on the e = 6 cards),
-so it moves all five rows together rather than reordering them, as far as measured. What would
-settle it is a cost the objective actually pays — rays, or pairs — and the Classroom, whose
-texture is not at the cell's Nyquist limit.
+What the numbers say, without the decision they were conditioned on: at s_eval the disparity
+objective at the fixated targets is flat in E₂ — 0.272 / 0.269 / 0.261 s₀ on the instrument,
+0.121 / 0.085 / 0.088 s₀ on the bound (E₂ 1 apart) — and per ray the cheaper settings win,
+with E₂ 1 failing A6's cap check and e_max being Phase C's coverage question. That is the
+content D16 was to carry; its precondition (E₂ 4 < E₂ 2 on the bound) did not hold by 3.5%,
+so it is left for Luiz to write or not. What would give the sweep a slope: a finer s_eval, or
+the Classroom, whose texture is not at the cell's Nyquist limit.
 
 ## What B3 leaves open
 

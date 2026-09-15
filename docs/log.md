@@ -643,3 +643,22 @@ The seed change Code made (L 0/1, R 2/3) is the same fault the stub had on 2026-
 (identically seeded noise in both eyes matched by the matcher); it should have been carried
 into fixation_pairs.py then. Stub after the change: RMS/bound 8.2 (was 5.8), (l), (m), (n) pass.
 No render needed: the instrument re-runs on the eight existing runs in seconds.
+
+## 2026-09-15 — B3 re-run under the one-sided bound: (n) passes on 7 of 8 runs; bound ranking moved; no D16
+
+Instrument only, no rendering (0.5-1.0 s per run). Self-test ok. Standard setting: small verged
+(l) 100%, (m) 37/37, (n) passes (was 3 fails), bound RMS 0.0085 deg (was 0.0141), RMS/bound
+2.54 (1.62), info/ray 0.347 (0.101); control (n) passes, bound 0.0094, RMS/bound 5.63, info/ray
+0.315; full (n) passes, bound 0.0045, RMS/bound 3.84, info/ray 1.63. Instrument numbers
+unchanged except through the matchable set: E2 1 judged cells 10,948 -> 10,608 and inlier RMS
+0.282 -> 0.272 s0; others within 0.1%. Sweep: bound s0 0.121 / 0.095 / 0.085 / 0.088 / 0.088
+(E2 1, e_max 30, E2 2, e_max 60, E2 4), info/ray 0.423 / 0.444 / 0.347 / 0.266 / 0.178, (n)
+fails 0 / 1 / 0 / 0 / 0. The one failure: e_max 30 p007 ring_e6_m90 at 0.97 (bound 0.01253 vs
+RMS 0.01218 deg, 85% edge cells); reported, bound not touched. `[sweep]`: lowest error E2 4
+(0.261 s0), most information per ray e_max 30 (0.444); they disagree. Per pair the bound now
+ranks E2 2 (0.085) < E2 4 (0.088) < E2 1 (0.121), i.e. the 2/4 order flipped by 3.5% relative
+to the first run; the instrument keeps 4 < 2 < 1 (0.261 / 0.269 / 0.272). Per the rule set for
+this re-run (D16 only if the per-pair order was 4 < 2 < 1 on both), no D16: the objective is
+flat in E2 to 4% on the instrument and to 3.5% between E2 2 and 4 on the bound, with E2 1 40%
+above on the bound; per ray the cheaper settings win. Chart re-copied to docs/reference. README
+B3 row -> done with D11 standing. Nothing rendered, nothing pinned, no code changed by Code.
