@@ -5,24 +5,40 @@ this process optimises for cheap recovery rather than for prevention.
 
 ## The loop
 
-    Luiz sets direction  →  Chat thinks, writes, runs, shows  →  Luiz runs what needs
-    the GPU or real assets  →  Luiz decides  →  repeat
+    Luiz sets direction  →  Chat thinks, writes, checks what it can, hands over a zip
+    and a Code prompt  →  Luiz applies the zip and commits  →  Code runs it on the
+    workstation, diagnoses, writes up, commits, reports  →  Luiz decides (Chat reads
+    the report when a decision or a fix is needed)  →  repeat
 
-Chat has a sandbox with Blender as a Python module (CPU, no GPU, no large assets, no
-network to asset sites). So Chat writes the code and runs it there before handing it
-over; what comes back to Luiz has already executed at least once. Some sessions have no
-`bpy` at all (Phase B's first did): then Chat says so, runs what is pure numpy, exercises
-the Blender-side script through a stub, and the first real run is on the workstation.
+This is the protocol as it ran through Phase B. Chat writes the code and the docs for a
+step and runs what it can: pure-numpy parts with their `--self-test`, negatives that show
+each check can fail, and the Blender-side script through a stub Blender
+(`tools/dev/fake_blender_pairs.py`) when the sandbox has no `bpy`, which it may not (the
+sandbox has no GPU, no real assets, no network to asset sites; some sessions have no
+Blender at all, and Chat says so). What Chat hands over at each iteration is one zip of
+the changed files with its sha256, a four-line shell block to apply and commit it, and the
+prompt for Code. The prompt lists the commands in order with the cost class of each, what
+each check is expected to show, the likely failures in order of likelihood with where the
+fix would belong, what must not be changed to make a check pass, and exactly what to
+report back. Luiz's part is only the first: apply the zip, check the sum, commit, push.
 
-Claude Code enters only when a job is too big for a chat turn: a multi-file refactor,
-a long run, a large sweep. No specification relay, no review levels, no PR gate.
-Push to main; revert if wrong.
+Claude Code, in VS Code on the workstation, does the execution: it runs the commands, reads
+the console (`blender -b -P` exits 0 on failure), diagnoses a failing check before changing
+anything, makes a fix only outside the checks and describes it, fills the step's Results
+section and the log with measured numbers, updates the README row, commits and pushes to
+main, and returns a paste-block report — summary lines verbatim, every FAIL line, the
+numbers with the file they came from, code changes with one sentence each. Code does not
+take decisions the prompt did not delegate: when a decision rule is not met, it stops and
+says so (B3's D16 was left for Chat and Luiz that way). Luiz sends the report back to Chat
+only when a decision, a diagnosis or the next step needs it. No specification relay, no
+review levels, no PR gate. Push to main; revert if wrong.
 
 Chat calls the handoff. When a conversation's context stops being reconstructible
 from this repository, Chat says so, writes whatever is missing into `docs/log.md`,
 and prepares the instructions to carry over. A new conversation starts by cloning
 and reading, never from a summary: a summary is a second source of truth and starts
-drifting immediately.
+drifting immediately. Each closed phase gets `docs/phase-<x>-summary.md`, written after
+the last commit of the phase from the committed Results and log entries.
 
 ## Two hard rules
 
