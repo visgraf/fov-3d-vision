@@ -16,7 +16,8 @@ five grids of a few hundred to a thousand cells each, because a log-polar warp h
 same number of cells per octave. Level 0 within 2 deg is the B3 instrument's map exactly.
 
 Per level: both eyes' samples are integrated finest-owns onto a local epipolar grid about each
-eye's own gaze (rows phi, columns theta), the L map is NCC-matched against the R map along the
+eye's own gaze (rows phi, columns theta), smoothed along theta from level --smooth-from (2) up
+(see smooth_theta), the L map is NCC-matched against the R map along the
 row over shifts within --search-deg (B3's matcher, ncc_match + two Lucas-Kanade steps), and the
 R map against the L map; a cell is CONSISTENT when the two shifts agree within
 --lr-tol cells (left-right consistency, bioeye's validity test). Parallax = (theta_gaze_R -
@@ -39,9 +40,12 @@ and <run>/field.json with the per-pair and per-level statistics and the checks.
 Checks (host side, truth.npz present), each of which can fail (exit 1):
   (o) ownership   every covered cell of the disc within e_max - margin is owned by exactly one
                   level; owned fraction >= --own-min of covered.
-  (p) regression  level 0's inlier RMS at the fixated cards is within --fovea-tol of
-                  stereo.json's instrument inlier RMS on the same run (skipped, and said so,
-                  without stereo.json): the field is the instrument where they overlap.
+  (p) regression  level 0's inlier RMS, pooled over the LR-consistent inlier cells within 2 deg
+                  of the L gaze on the instrument's judged pairs, is not worse than stereo.json's
+                  pooled instrument inlier RMS by more than --fovea-tol (skipped, and said so,
+                  without stereo.json): the field is the instrument where they overlap. Better
+                  is reported, not failed (at full it is: the LR test removes what the
+                  instrument keeps).
   (q) bound       per level with >= --level-min-cells judged cells, bound RMS <= inlier RMS
                   (a bound that is a bound); the measured RMS/bound per level is REPORTED as the
                   kappa C2 should use.
@@ -113,7 +117,11 @@ def smooth_theta(X: np.ndarray) -> np.ndarray:
     map as piecewise linear between cells, recovers only about half of a fractional shift
     (measured on the synthetic wall: bias +0.09 cells at level 4 for true shifts of -0.16, none
     on a wall at 20 m where the shift is ~0). One pass of smoothing halves that bias and lowers
-    the level-0 RMS as well (0.14 -> 0.06 cells on the same wall)."""
+    the level-0 RMS as well on that wall (0.14 -> 0.06 cells) — but on the rendered room it
+    costs level 0 (C1 first run: 0.29 -> 0.39 s0, gross 8.9 -> 14.6%; the cards' texture is at
+    the cell scale there and smoothing removes what the instrument matches on) while the
+    coarse levels gain (levels 3-4: 0.45/0.27 -> 0.40/0.23 cells). So it is applied from
+    `smooth_from_level` (2) up: the fovea stays the instrument, the periphery is de-biased."""
     v = np.isfinite(X); Xz = np.where(v, X, 0.0); w = v.astype(float)
     P = np.pad(Xz, [(0, 0), (1, 1)]); Pw = np.pad(w, [(0, 0), (1, 1)])
     num = P[:, :-2] + 2.0 * P[:, 1:-1] + P[:, 2:]
@@ -132,7 +140,7 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
                   texture_min: float = 0.03, bound_max_cells: float = 1.0, kappa: float = 2.5,
                   lr_tol_cells: float = 1.0, finest_factor: float = 1.5, noise_rel: float | None = None,
                   margin_deg: float = 2.0, axis_deg: float = 5.0, min_valid: float = 0.6,
-                  smooth: bool = True, floor_cells: float = 0.3, lr: bool = True, extras: dict | None = None) -> dict:
+                  smooth_from_level: int = 2, floor_cells: float = 0.3, lr: bool = True, extras: dict | None = None) -> dict:
     """L, R: dicts with 'theta', 'phi' (epipolar, deg), 'val' (N,), 'fp' (N,) sr, optional
     'val_b' (seed pair). gazeL/R: head-frame unit gaze directions. Returns the measurement rows
     (see module docstring) plus per-level diagnostics under 'levels' and, if extras is given
@@ -171,7 +179,7 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         # the centre J x J of each wide map is the grid proper; the wide map is the search partner
         J, W = gL.J, gL.W
         c0 = S
-        if smooth:
+        if l >= smooth_from_level:
             ML, MR = smooth_theta(ML), smooth_theta(MR)
             sigL, sigR = sigL * math.sqrt(6.0) / 4.0, sigR * math.sqrt(6.0) / 4.0     # [1,2,1]/4 on white noise
         AL, AR = ML[:, c0:c0 + J], MR[:, c0:c0 + J]
@@ -367,8 +375,9 @@ def main():
     ap.add_argument("--noise-rel", type=float, default=None)
     ap.add_argument("--axis-deg", type=float, default=5.0)
     ap.add_argument("--no-lr", action="store_true", help="negative for (r): no left-right consistency test")
+    ap.add_argument("--smooth-from", type=int, default=2, help="smooth the maps along theta from this level up (99: never)")
     ap.add_argument("--own-min", type=float, default=0.9, help="(o): owned solid angle over the disc's")
-    ap.add_argument("--fovea-tol", type=float, default=0.25)
+    ap.add_argument("--fovea-tol", type=float, default=0.25, help="(p): level 0 may not be worse than the instrument by more than this; better passes")
     ap.add_argument("--level-min-cells", type=int, default=200)
     ap.add_argument("--sheet", action="store_true")
     ap.add_argument("--sheet-pairs", type=int, default=4)
@@ -387,7 +396,7 @@ def main():
     if os.path.exists(sp):
         stereo = json.load(open(sp))
     os.makedirs(os.path.join(run, "field"), exist_ok=True)
-    fails, per, panels = [], [], []
+    fails, per, panels, p_errs = [], [], [], []
     nlev = n_levels_for(E2, args.eval_factor, emax)
     acc = [{"err": [], "sig": [], "rho_err": [], "sig_rho": [], "d_err": [], "gross_match": [], "gross_cons": [], "bnd": [], "n_match": 0, "n_cons": 0, "covered": 0, "owned": 0, "bound": [], "z": []} for _ in range(nlev)]
     cell0 = args.eval_factor * s0
@@ -402,7 +411,7 @@ def main():
                       "dist": np.linalg.norm(L["hit_world"] - centres[0], axis=-1)}
         f = field_of_pair(L, R, gaze[0], gaze[1], s0, E2, emax, ipd, eval_factor=args.eval_factor, search_deg=args.search_deg,
                           window=args.window, texture_min=args.texture_min, bound_max_cells=args.bound_max, kappa=args.kappa,
-                          lr_tol_cells=args.lr_tol, noise_rel=args.noise_rel, axis_deg=args.axis_deg, floor_cells=args.floor_cells, lr=not args.no_lr, extras=extras)
+                          lr_tol_cells=args.lr_tol, noise_rel=args.noise_rel, axis_deg=args.axis_deg, floor_cells=args.floor_cells, lr=not args.no_lr, smooth_from_level=args.smooth_from, extras=extras)
         rec = {"pair_id": pid, "name": pair["name"], "kind": pair["kind"], "judged": pair["kind"] in JUDGED_KINDS,
                "cells": int(len(f["rho"])), "consistent": int(f["consistent"].sum()),
                "levels": [{k: v for k, v in lv.items() if k != "maps"} for lv in f["levels"]]}
@@ -439,9 +448,11 @@ def main():
                         "rho_inlier_rms": float(np.sqrt(np.mean((f["rho"] - t_rho)[inl_all] ** 2))) if inl_all.any() else None,
                         "depth_inlier_rms_m": float(np.sqrt(np.mean(((f["rho"] - t_rho) / t_rho ** 2)[inl_all] ** 2))) if inl_all.any() else None,
                         "z_rms": float(np.sqrt(np.mean((err[inl_all] / f["sigma_p_deg"][inl_all]) ** 2))) if inl_all.any() else None})
-            # level-0 at the fixated card, for (p)
+            # level-0 at the fixated card, for (p): pooled over the instrument's judged pairs
             m0 = (f["level"] == 0) & inl_all & (f["ecc_deg"] <= 2.0)
             rec["level0_inlier_rms_deg"] = float(np.sqrt(np.mean(err[m0] ** 2))) if m0.any() else None
+            if rec["judged"] and m0.any():
+                p_errs.append(err[m0])
         np.savez_compressed(os.path.join(run, "field", f"p{pid:03d}.npz"), **out)
         per.append(rec)
         if args.sheet and len(panels) < args.sheet_pairs:
@@ -489,13 +500,13 @@ def main():
                     fails.append(f"(r) level {lv}: LR consistency rejects nothing")
         if stereo is not None:
             ref = stereo["summary"].get("inlier_rms_deg")
-            l0 = [r["level0_inlier_rms_deg"] for r in per if r["judged"] and r.get("level0_inlier_rms_deg")]
-            if ref and l0:
-                mine = float(np.sqrt(np.mean(np.square(l0))))
-                rel = abs(mine - ref) / ref
+            if ref and p_errs:
+                e0 = np.concatenate(p_errs)
+                mine = float(np.sqrt(np.mean(e0 ** 2)))
+                rel = (mine - ref) / ref
                 if rel > args.fovea_tol:
-                    fails.append(f"(p) level 0 at the fixated cards {mine:.4f} deg vs the instrument's {ref:.4f} ({100 * rel:.0f}% apart, tol {100 * args.fovea_tol:.0f}%)")
-                p_note = f"(p) level 0 {mine:.4f} vs instrument {ref:.4f} deg ({100 * rel:.0f}%)"
+                    fails.append(f"(p) level 0 at the fixated cards {mine:.4f} deg vs the instrument's {ref:.4f} ({100 * rel:+.0f}%, tol +{100 * args.fovea_tol:.0f}%)")
+                p_note = f"(p) level 0 {mine:.4f} vs instrument {ref:.4f} deg ({100 * rel:+.0f}%, {len(e0)} cells pooled)"
             else:
                 p_note = "(p) not judged: no level-0 cells at the cards"
         else:

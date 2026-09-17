@@ -30,13 +30,18 @@ B2). A pair's field is ~3000 cells, 0.17 s on the stub.
 
 Both eyes' samples are integrated finest-owns onto a local epipolar grid about each eye's own
 gaze (rows φ, columns θ; B3's `FoveaGrid` and `accumulate`), the R map wider by the search
-range, `--search-deg` (3°) converted to cells per level. Both maps are then smoothed along θ by
-[1, 2, 1]/4 — measured on a synthetic wall (see the self-test): at the coarse levels a cell holds
-one or two samples, the map has power up to the grid's Nyquist, and the Lucas–Kanade step,
-which models the map as piecewise linear between cells, recovers only half of a fractional
-shift (bias +0.09 cells at level 4 for true shifts of −0.16; none on a wall at 20 m where the
-shift is ~0); one pass of smoothing halves that bias and lowers the level-0 RMS from 0.14 to
-0.06 cells on the same wall. Then B3's matcher unchanged: NCC over a 5×5 window along the row,
+range, `--search-deg` (3°) converted to cells per level. From level 2 up (`--smooth-from`)
+both maps are smoothed along θ by [1, 2, 1]/4 — measured on a synthetic wall (see the
+self-test): at the coarse levels a cell holds one or two samples, the map has power up to the
+grid's Nyquist, and the Lucas–Kanade step, which models the map as piecewise linear between
+cells, recovers only half of a fractional shift (bias +0.09 cells at level 4 for true shifts
+of −0.16; none on a wall at 20 m where the shift is ~0); one pass of smoothing halves that
+bias. Not at levels 0–1: the first workstation run measured that on the rendered room the
+smoothing costs level 0 (0.29 → 0.39 s₀, gross 8.9 → 14.6%: the cards' texture is at the cell
+scale and smoothing removes what the instrument matches on) while the coarse levels gain
+(levels 3–4: 0.45/0.27 → 0.40/0.23 cells). The synthetic wall had said the opposite for level
+0 because its texture was oversampled there — the instrument's lesson about instruments,
+again. Then B3's matcher unchanged: NCC over a 5×5 window along the row,
 winner-take-all, two LK steps. Parallax = (θ_gaze,R − θ_gaze,L) + shift × cell.
 
 **Left–right consistency.** The R map is matched back against the L map; a cell is
@@ -86,9 +91,13 @@ in cells | σ in cells.
   LK shrinkage at coarse levels, and the missing floor.
 - **(o) ownership** — the levels' owned solid angle covers ≥ 90% of the disc's 2π(1 − cos e_max)
   (the rest: band quantisation and the axis exclusion). Stub: 0.986.
-- **(p) regression** — level 0's inlier RMS at the fixated cards is within 25% of `stereo.json`'s
-  instrument RMS on the same run: the field *is* the instrument where they overlap. Stub: 0%
-  apart (0.0512 vs 0.0510°). Negative: `--eval-factor 4` fails it at 134%.
+- **(p) regression** — level 0's inlier RMS, pooled over the LR-consistent inlier cells within
+  2° of the L gaze on the instrument's judged pairs, is not worse than `stereo.json`'s pooled
+  instrument RMS by more than 25%: the field *is* the instrument where they overlap. Better
+  passes and is reported (at `full` it is 27% better: the LR test removes what the instrument
+  keeps). The first run's (p) was the RMS of per-pair RMS against a pooled number, which alone
+  cost 15%, and it pooled the wire pairs the instrument never judges (Code's fix). Stub: −11%
+  (0.0452 vs 0.0510°). Negative: `--eval-factor 4` fails it at +61%.
 - **(q) bound** — per level with ≥ 200 judged cells, bound RMS ≤ inlier RMS. The measured
   RMS/bound and the floor at the assumed κ are reported per level.
 - **(r) consistency** — per level, the LR-consistent subset's gross fraction is below the
@@ -112,6 +121,18 @@ for s in e2_1 e2_2 e2_4 emax_30 emax_60; do .venv/bin/python tools/stereo_field.
 .venv/bin/python tools/stereo_field.py previews/pairs/calib_room_sp --no-lr ; echo "exit $?"
 .venv/bin/python tools/stereo_field.py previews/pairs/calib_room_sp --eval-factor 4 ; echo "exit $?"
 ```
+
+## After the first run (2026-09-17)
+
+Three of the four checks passed on all eight runs and both negatives failed as designed; (p)
+failed on seven. Two causes, both measured by Code: the check pooled pairs the instrument never
+judges (fixed), and the θ-smoothing, which the synthetic wall had recommended for every level,
+costs level 0 on the rendered room. Decision: smooth from level 2 up, keep levels 0–1 as the
+instrument; make (p) pooled like for like and one-sided. Predicted for the second run, from
+Code's diagnostics: (p) at `small` within 10% (0.0250 vs 0.0269 pooled, unsmoothed), `full`
+27% better and passing, level-0 κ and floor to be read fresh for C2 — the first run's level-0
+values are the smoothed matcher's and do not apply. The first run's record follows as Code
+wrote it.
 
 ## Results
 

@@ -737,3 +737,22 @@ full: 0.16/0.23/0.26/0.33/0.34 cells, kappa 7.21/4.22/4.35/7.58/9.29, floor
 (+0.15 deg at level 2, +0.4-0.5 at 3-4), red over the cards on the sheet. Left for Chat: the
 smoothing at level 0, (p)'s aggregation and tolerance; C2 should not take level-0 kappa/floor
 until then. README C1 row -> run, (p) open. Sheet copied to docs/reference.
+
+## 2026-09-17 — C1 after the first run: smoothing from level 2, (p) pooled and one-sided; not yet re-run
+
+Read Code's report (repo `main` at 22e4e76). (o), (q), (r) pass everywhere; negatives fail as
+designed; (p) fails on 7 of 8 because (i) the wire pairs were pooled in (Code fixed the
+`judged` collision) and (ii) the theta-smoothing costs level 0 on the renders — measured by
+Code with the keyword patched: `calib_room_sp` level 0 0.39 -> 0.29 s0 without it, gross
+14.6% -> 8.9%, pooled like-for-like 0.0250 vs the instrument's 0.0269 (7%); levels 3-4 lose
+without it (0.40/0.23 -> 0.45/0.27 cells). The synthetic wall had predicted a gain at level 0
+because its texture was oversampled there; the room's cards are at the cell scale. Changes:
+`field_of_pair(smooth_from_level=2)` / `--smooth-from` (levels 0-1 are the instrument, 2-4 are
+de-biased); (p) pools the level-0 LR-consistent inliers within 2 deg over the instrument's
+judged pairs against the instrument's pooled RMS and fails only when worse by > 25% — at full
+the field is 27% BETTER (LR consistency removes 5% of cells the instrument keeps), which the
+old two-sided check called a failure. Stub: (p) -11%, all checks pass, `--eval-factor 4` fails
+(p) at +61%, `--no-lr` fails (r) x10. Predicted for the re-run: (p) passes on all eight;
+level-0 kappa near 3 and floor ~0.1 cell at small (Code's unsmoothed level 0), coarse levels
+unchanged from the first run. C2 reads kappa and floor per level from the re-run's
+`field.json`. Also: the apply block now uses the repo's real path and `sha256sum -c`.
