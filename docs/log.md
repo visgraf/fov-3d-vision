@@ -1088,3 +1088,19 @@ gross down by a third or error by 10% at full on the classroom, coverage-first, 
 — a gross-error term in the fusion only if needed (D2), the 500-fixation run to decide next
 week (D3). `scenes/manifest.json`: `reference_full_L` for the classroom (md5
 de47b7629026782015ede6cdaeaefb65, 2137 s) and `reference_small_L` (md5 to be filled by Code).
+
+## 2026-09-17 — the picture by confidence on the renders; manifest md5s filled
+
+Measured. sphere_views with the weighted median and the sigma fade: class_coverage_full vs the
+full L panorama — 2589422 shared cells, median |rho err| 0.0822 /m, |depth err| 0.359 m; solid
+on 1.1% of the sphere, half-confident or better on 5.5% (solid sigma <= 0.020, grey >= 0.089
+/m); 58.6% seen, 40.9% with a depth; 35.0 s. class_coverage (small) — 650208 cells, 0.1458 /m,
+0.629 m; solid 0.9%, half 5.1% (0.046 / 0.187); 9.5 s. calib_info — 887754 cells, 0.1247 /m,
+0.862 m; solid 1.1%, half 8.0% (0.048 / 0.162); 8.1 s. The predicted "solid ~8-9%, the fine
+band" mixed the cap and the sphere: the fine band is 9.4% of the 60-degree cap = 2.3% of the
+sphere, and solid (1.1%) is half of it, half-confident (5.5%) 2.3x it. The speckle is gone:
+solid colour only along the fixated desks, the far wall faint, the periphery grey. md5s:
+reference_small_L/classroom pano 17bdfa4a8dab7260fd95926b9a61aa9e, backface
+06038dd4afbc5a0c7be885e1d1e05fa7; reference_full_L/classroom backface
+ac86e5f65f40d69d9b3658821ad79de8 — in the manifest. Figures replaced/added in docs/reference.
+No code changed.

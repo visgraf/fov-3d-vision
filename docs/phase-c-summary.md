@@ -206,3 +206,8 @@ The 0.358 m is C3b's number for the same run (0.351 m over all measured cells) j
 the panorama instead of the L eye's own rays. At `small` the same policy gives 0.630 m on
 640 534 cells (60.6% of the sphere seen, 42.1% with a depth); the calib room's info run 0.869 m
 on 878 315 cells (64.0% seen, 54.5% with a depth).
+
+Drawn by confidence (a precision-weighted 3×3 median faded toward grey by σ_ρ), the engine's
+depth at `full` is solid on 1.1% of the sphere and at half confidence or better on 5.5% (solid at
+σ ≤ 0.020, grey at ≥ 0.089 /m); the fine band alone is `docs/reference/views_classroom_full_fine.png`.
+At `small` 0.9% / 5.1%; the calib room's info run 1.1% / 8.0%. Measured, 2026-09-17.
