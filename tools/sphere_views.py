@@ -18,10 +18,18 @@ Sources:
                   looked). Depth: 1 / the belief's inverse-depth mean from belief.npz — the
                   stereo reconstruction, on the cells the belief measured.
 
-Output, <run>/views/: {truth,engine}_{equirect,sphere}_{rgb,depth}.png, the depths also as
-.npy (metres, NaN where unknown), and sheet.png — two rows (as it is / as the engine saw it),
-four columns (equirect RGB, equirect depth, sphere RGB, sphere depth), the scanpath drawn on
-the engine's equirect RGB, one shared depth scale.
+The engine's depth is drawn as the belief knows it: a precision-weighted 3 x 3 median on the
+sphere first (a block matcher's isolated wrong peak at a depth edge gives way to its
+neighbours), then faded toward the unknown grey by confidence — solid where sigma_rho is at
+the fine band's level, grey where it is the periphery's (--conf-sigma; --raw for every cell at
+full opacity, the first cherry's picture). The fine band alone (levels 0-1) is a panel of its
+own, and so is the confidence map.
+
+Output, <run>/views/: {truth,engine}_{equirect,sphere}_{rgb,depth}.png, engine_*_depth_fine.png,
+engine_sphere_confidence.png, the depths and sigma also as .npy (metres / 1/m, NaN where
+unknown), and sheet.png — two rows (as it is / as the engine saw it), four columns (equirect
+RGB, equirect depth, sphere RGB, sphere depth), the scanpath drawn on the engine's equirect
+RGB, one shared depth scale.
 """
 from __future__ import annotations
 
@@ -138,12 +146,16 @@ def load_engine(run: str, cell: float):
     ti = np.clip(((np.arange(nth) + 0.5) * cell / bcell).astype(int), 0, dep_belief.shape[0] - 1)
     pj = np.clip(((np.arange(nph) + 0.5) * cell / bcell).astype(int), 0, dep_belief.shape[1] - 1)
     dep = dep_belief[np.ix_(ti, pj)]
+    sig = bz["sigma"].astype(np.float64)[np.ix_(ti, pj)]                                  # sigma_rho per cell, 1/m
+    P = np.where(np.isfinite(dep), 1.0 / np.maximum(sig, 1e-6) ** 2, 0.0)
+    fine = (bz["best_level"][np.ix_(ti, pj)] <= 1)
     truth_rho = bz["truth"].astype(np.float64)
     with np.errstate(divide="ignore", invalid="ignore"):
         dep_truth_b = np.where(np.isfinite(truth_rho) & (truth_rho > 0), 1.0 / truth_rho, np.nan)[np.ix_(ti, pj)]
     scan = [np.array(st["dir_head"]) for st in lj["steps"]]
-    return {"rgb": rgb, "depth": dep, "depth_rays": dep_rays, "depth_truth_belief": dep_truth_b, "finest": finest,
-            "scan": scan, "policy": lj["policy"], "profile": lj["settings"].get("profile"), "fixations": len(lj["steps"])}
+    return {"rgb": rgb, "depth": dep, "sigma": sig, "precision": P, "fine": fine, "depth_rays": dep_rays, "depth_truth_belief": dep_truth_b, "finest": finest,
+            "scan": scan, "policy": lj["policy"], "profile": lj["settings"].get("profile"), "fixations": len(lj["steps"]),
+            "level_sigma": lj.get("level_sigma_final")}
 
 
 def load_truth(pano_dir: str):
@@ -186,6 +198,44 @@ def depthmap(dep: np.ndarray, z_lo: float, z_hi: float) -> np.ndarray:
     return a
 
 
+def weighted_median3(rho: np.ndarray, w: np.ndarray, sin_theta: np.ndarray | None = None) -> np.ndarray:
+    """Precision-weighted median of inverse depth over each cell's 3 x 3 neighbourhood on the
+    sphere map (rows theta, columns phi, phi wrapping). Isolated wrong cells — a block matcher's
+    wrong peak at a depth edge — are replaced by their neighbours' consensus; a cell whose
+    neighbours agree with it is unchanged. Cells with no finite neighbour stay NaN."""
+    vals, wts = [], []
+    for di in (-1, 0, 1):
+        for dj in (-1, 0, 1):
+            r = np.roll(rho, dj, axis=1); ww = np.roll(w, dj, axis=1)
+            if di == -1:
+                r = np.vstack([r[:1], r[:-1]]); ww = np.vstack([np.zeros_like(ww[:1]), ww[:-1]])
+            elif di == 1:
+                r = np.vstack([r[1:], r[-1:]]); ww = np.vstack([ww[1:], np.zeros_like(ww[-1:])])
+            ok = np.isfinite(r) & (ww > 0)
+            vals.append(np.where(ok, r, 0.0)); wts.append(np.where(ok, ww, 0.0))
+    V = np.stack(vals); W = np.stack(wts)
+    order = np.argsort(V, axis=0)
+    Vs = np.take_along_axis(V, order, 0); Ws = np.take_along_axis(W, order, 0)
+    C = np.cumsum(Ws, 0); tot = C[-1]
+    k = (C >= 0.5 * tot[None]).argmax(0)
+    out = np.take_along_axis(Vs, k[None], 0)[0]
+    return np.where(tot > 0, out, np.nan)
+
+
+def confidence(sigma: np.ndarray, s_fine: float, s_coarse: float) -> np.ndarray:
+    """1 where sigma_rho <= s_fine, 0 where >= s_coarse, log-linear between: the alpha the
+    engine's depth is drawn with, so the fovea's cells are solid and the periphery's fade."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        a = 1.0 - (np.log(sigma) - math.log(s_fine)) / max(math.log(s_coarse) - math.log(s_fine), 1e-9)
+    return np.clip(np.nan_to_num(a, nan=0.0), 0.0, 1.0)
+
+
+def blend(panel: np.ndarray, alpha: np.ndarray, floor: float = 0.12) -> np.ndarray:
+    """Fade a colour panel toward the unknown grey by 1 - alpha (never below `floor`)."""
+    a = np.clip(alpha, floor, 1.0)[..., None]
+    return (panel.astype(np.float64) * a + np.array([40.0, 40.0, 40.0]) * (1 - a)).astype(np.uint8)
+
+
 def to_equirect(sphere_map: np.ndarray, cell: float, width: int) -> np.ndarray:
     """Sample a (theta rows, phi columns) sphere map into an equirect image (nearest)."""
     d = equirect_dirs(width)
@@ -210,6 +260,10 @@ def main():
     ap.add_argument("--width", type=int, default=1800, help="equirect width (height is half)")
     ap.add_argument("--white", type=float, default=None, help="radiance mapped to white; default the 99th percentile of the truth (or the engine)")
     ap.add_argument("--z-range", type=float, nargs=2, default=None, metavar=("ZLO", "ZHI"), help="depth colour scale, m (log); default the 2nd and 98th percentiles of the truth depth")
+    ap.add_argument("--conf-sigma", type=float, nargs=2, default=None, metavar=("FINE", "COARSE"),
+                    help="engine depth is drawn solid at sigma_rho <= FINE (1/m) and fades to the unknown grey at >= COARSE; default the run's own level-1 and level-3 sigma_rho from loop.json")
+    ap.add_argument("--no-median", action="store_true", help="draw the belief's depth cell by cell (default: a precision-weighted 3x3 median on the sphere first)")
+    ap.add_argument("--raw", action="store_true", help="the first cherry's panels: every measured cell at full opacity, no median")
     args = ap.parse_args()
     from PIL import Image, ImageDraw
 
@@ -232,7 +286,19 @@ def main():
         t_sp_rgb, t_sp_dep = E["rgb"], E["depth_rays"]
         t_eq_rgb, t_eq_dep = to_equirect(t_sp_rgb, cell, args.width), to_equirect(t_sp_dep, cell, args.width)
     e_sp_rgb, e_sp_dep = E["rgb"], E["depth"]
+    if not (args.no_median or args.raw):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rho = np.where(np.isfinite(e_sp_dep) & (e_sp_dep > 0), 1.0 / e_sp_dep, np.nan)
+        rho_m = weighted_median3(rho, E["precision"])
+        with np.errstate(divide="ignore", invalid="ignore"):
+            e_sp_dep = np.where(np.isfinite(rho_m) & (rho_m > 0), 1.0 / rho_m, np.nan)
+    ls_ = E["level_sigma"] or [0.035, 0.105, 0.134, 0.240, 0.367]
+    conf = tuple(args.conf_sigma) if args.conf_sigma else (float(ls_[min(1, len(ls_) - 1)]), float(ls_[min(3, len(ls_) - 1)]))
+    e_alpha = np.ones_like(e_sp_dep) if args.raw else confidence(E["sigma"], *conf)
+    e_alpha = np.where(np.isfinite(e_sp_dep), e_alpha, 0.0)
     e_eq_rgb, e_eq_dep = to_equirect(e_sp_rgb, cell, args.width), to_equirect(e_sp_dep, cell, args.width)
+    e_eq_alpha = to_equirect(e_alpha, cell, args.width)
+    fine_sp = np.where(E["fine"], e_sp_dep, np.nan); fine_eq = to_equirect(fine_sp, cell, args.width)
 
     white = args.white or float(np.nanpercentile(t_eq_rgb, 99))
     zref = t_eq_dep[np.isfinite(t_eq_dep) & (t_eq_dep > 0)]
@@ -241,11 +307,13 @@ def main():
 
     panels = {"truth_equirect_rgb": tonemap(t_eq_rgb, white), "truth_equirect_depth": depthmap(t_eq_dep, z_lo, z_hi),
               "truth_sphere_rgb": tonemap(t_sp_rgb, white), "truth_sphere_depth": depthmap(t_sp_dep, z_lo, z_hi),
-              "engine_equirect_rgb": tonemap(e_eq_rgb, white), "engine_equirect_depth": depthmap(e_eq_dep, z_lo, z_hi),
-              "engine_sphere_rgb": tonemap(e_sp_rgb, white), "engine_sphere_depth": depthmap(e_sp_dep, z_lo, z_hi)}
+              "engine_equirect_rgb": tonemap(e_eq_rgb, white), "engine_equirect_depth": blend(depthmap(e_eq_dep, z_lo, z_hi), e_eq_alpha),
+              "engine_sphere_rgb": tonemap(e_sp_rgb, white), "engine_sphere_depth": blend(depthmap(e_sp_dep, z_lo, z_hi), e_alpha),
+              "engine_equirect_depth_fine": depthmap(fine_eq, z_lo, z_hi), "engine_sphere_depth_fine": depthmap(fine_sp, z_lo, z_hi),
+              "engine_sphere_confidence": (np.stack([e_alpha] * 3, -1) * 255).astype(np.uint8)}
     for k, a in panels.items():
         Image.fromarray(a).save(os.path.join(out, k + ".png"))
-    for k, a in (("truth_equirect_depth", t_eq_dep), ("truth_sphere_depth", t_sp_dep), ("engine_equirect_depth", e_eq_dep), ("engine_sphere_depth", e_sp_dep)):
+    for k, a in (("truth_equirect_depth", t_eq_dep), ("truth_sphere_depth", t_sp_dep), ("engine_equirect_depth", e_eq_dep), ("engine_sphere_depth", e_sp_dep), ("engine_sphere_sigma_rho", E["sigma"])):
         np.save(os.path.join(out, k + ".npy"), a.astype(np.float32))
 
     # the scanpath on the engine's equirect RGB
@@ -272,7 +340,8 @@ def main():
     widths = [im.width for im in row_t]
     band = 40
     sheet = Image.new("RGB", (sum(widths) + 6 * 5, 2 * (ph_ + band) + 22), (30, 30, 30)); d2 = ImageDraw.Draw(sheet)
-    labels = ["equirectangular RGB (yaw across, pitch down)", f"equirectangular depth ({z_lo:.2f}-{z_hi:.1f} m, log; warm near)", "epipolar sphere map RGB (phi across, theta down)", "epipolar sphere map depth"]
+    conf_note = "" if args.raw else f"; engine depth: 3x3 weighted median, faded by confidence (solid at sigma <= {conf[0]:.3f}, grey at >= {conf[1]:.3f} /m)"
+    labels = ["equirectangular RGB (yaw across, pitch down)", f"equirectangular depth ({z_lo:.2f}-{z_hi:.1f} m, log; warm near){conf_note}", "epipolar sphere map RGB (phi across, theta down)", "epipolar sphere map depth"]
     for ri, (row, title) in enumerate(((row_t, f"as it is — {truth_src}"), (row_e, f"as the engine saw it — {E['policy']}, {E['fixations']} fixations at {E['profile']}; RGB: the fixations integrated; depth: the belief"))):
         y = 22 + ri * (ph_ + band); x = 6
         d2.text((6, y - 16), title, fill=(230, 230, 230))
@@ -288,6 +357,8 @@ def main():
         err = np.abs(1.0 / e_sp_dep[both] - 1.0 / t_sp_dep[both])
         print(f"[views] engine vs truth on {both.sum()} shared cells: median |rho err| {np.median(err):.4f} /m, median |depth err| {np.median(np.abs(e_sp_dep[both] - t_sp_dep[both])):.3f} m")
     seen = np.isfinite(e_sp_rgb).all(-1).mean(); measured = np.isfinite(e_sp_dep).mean()
+    solid = float((e_alpha >= 0.999).mean()); half = float((e_alpha >= 0.5).mean())
+    print(f"[views] engine depth drawn solid on {100 * solid:.1f}% of the sphere, at half confidence or better on {100 * half:.1f}% (solid at sigma <= {conf[0]:.3f}, grey at >= {conf[1]:.3f} /m)")
     print(f"[views] sphere at {cell:g} deg: {100 * seen:.1f}% of it seen by the L eye, {100 * measured:.1f}% with a depth from the belief; white {white:.3f}, depth scale {z_lo:.2f}-{z_hi:.2f} m")
     print(f"[views] -> {out}/sheet.png (+ 8 panels, 4 depth .npy, the scanpath)")
 

@@ -46,7 +46,7 @@ methodology notes it cites.
 | field | `stereo_field.py` (`stereo_instrument.py` beneath it) | a pair → inverse depth per cell with a two-part variance, at five scales from 0.2° to 3.2°, with left–right consistency |
 | loop | `belief.py`, `active_loop.py`, `active_eval.py` | the belief on the head sphere, the policies (targets, random, coverage, info, oracle), the loop in one Blender session, the replay and the figures |
 | integration | `integrate_sphere.py`, `preview360.py`, `noise_floor.py` | finest-owns integration of a sequence, the references and the noise floor Phase A judged against |
-| views | `sphere_views.py` | (RGB, depth) of a scene as it is and as the engine saw it, equirectangular and on the epipolar sphere, from a loop run and a `preview360` panorama at the eye |
+| views | `sphere_views.py` | (RGB, depth) of a scene as it is and as the engine saw it, equirectangular and on the epipolar sphere, from a loop run and a `preview360` panorama at the eye; the engine's depth drawn by confidence |
 
 Every tool has a check that can fail and most have a control; `--self-test` on the numpy
 ones. `DECISIONS.md` holds the nineteen decisions and what would overturn each;
@@ -128,11 +128,13 @@ matters more than the objective.
 
 ## State
 
-Closed. Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the
-engine above and the finding that, at equal rays, the policy that does not look twice is as
-good as the principled one (D19). What is left open is listed at the end of
-`docs/phase-c-summary.md`: gross errors outside the variance model, the warp as an action,
-the fixed head, truth beyond what the eyes sampled.
+Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the engine
+above and the finding that, at equal rays, the policy that does not look twice is as good as
+the principled one (D19). Phase D is planned (D20, `docs/phase-d-plan.md`): coarse-to-fine
+matching in the field, against the gross errors at depth edges that the picture
+(`docs/reference/views_classroom_full.png`) shows and the summary lists first among what is
+open. Still open beyond it: the warp as an action, the fixed head, truth beyond what the eyes
+sampled.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

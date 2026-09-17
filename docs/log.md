@@ -1074,3 +1074,17 @@ calib_info vs B2's small L reference — 878315 cells, 0.1257 /m, 0.869 m, 64.0%
 Rows agree in orientation on both scenes (lamp, windows, near desks in the same places; the
 engine's row sharp at the fixations, blurred in the periphery, dark outside the cap). Sheet
 copied to docs/reference/views_classroom_full.png; "The picture" added to the Phase C summary.
+
+## 2026-09-17 — the picture drawn by confidence; Phase D planned (D20); manifest entries for the L-eye panoramas
+
+`sphere_views.py`: the engine's depth is now a precision-weighted 3x3 median of inverse depth
+on the sphere (a wrong peak at a depth edge gives way to its neighbours), faded toward the
+unknown grey by confidence — solid at sigma_rho <= the run's level-1 sigma, grey at >= its
+level-3 sigma (`--conf-sigma` overrides; `--raw` is the first picture); the fine band alone
+and the confidence map are panels of their own; sigma saved as .npy. Stub: solid on 3.7% of
+the sphere, half-confident on 13.6%, 18 s. Not re-run on the renders yet. `docs/phase-d-plan.md`
+and D20: coarse-to-fine in the field (D1) with the decision rule written before the run —
+gross down by a third or error by 10% at full on the classroom, coverage-first, 50 fixations
+— a gross-error term in the fusion only if needed (D2), the 500-fixation run to decide next
+week (D3). `scenes/manifest.json`: `reference_full_L` for the classroom (md5
+de47b7629026782015ede6cdaeaefb65, 2137 s) and `reference_small_L` (md5 to be filled by Code).

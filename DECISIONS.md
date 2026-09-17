@@ -224,3 +224,19 @@ Overturned if: a variance model that carries gross errors (a mixture, an edge-aw
 lets expected information beat coverage-first by more than the fixation-to-fixation spread
 on the classroom at `full`; or a scene where the field of regard is not fully coverable in
 the budget, where the objective has room to matter.
+
+## D20 — Phase D opened: coarse-to-fine in the field, the gross fraction as its number (2026-09-17)
+
+Phase D asks one question the picture put plainly: whether initialising each level's search
+from the level above it cuts the gross fraction at every level and improves the loop's depth
+at equal rays. Its plan is `docs/phase-d-plan.md`; its decision rule is written there before
+the run; its scope is the matcher (D1), a gross-error term in the fusion only if D1 leaves
+gross above 20% (D2), and a long run to see saturation, to be decided next week (D3).
+Why: at `full` a third of the measured cells are wrong by more than 25%, all at depth edges,
+all from a block matcher searching ±3-6 deg on every level independently while the levels
+above it already know the answer to a cell. That is engineering with a known remedy and a
+number to move; D19's default policy stands until D2 gives expected information a model
+that contains what it is wrong about.
+Overturned if: D1 does not move the gross fraction at `full` by a third or the error by the
+run-to-run spread — then the edges are the window's, not the search's, and the next step is a
+smaller window or an edge-aware one, not a deeper pyramid.
