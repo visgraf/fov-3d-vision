@@ -136,6 +136,41 @@ equal rays. Vergence from the periphery: median error 0.5–0.9 m at 2–4 m, in
 range. Coarse-band gross fractions are 35–40%: at 3° cells the periphery does not measure
 depth to 25%; it says roughly how far, and the fovea has to come.
 
+## After the first run (2026-09-17)
+
+The loop closed at 0.3–0.5 s per fixation, the refactor was exact and the record replayed;
+coverage, info and oracle locked onto one direction at the cap's edge (coverage: the same
+direction 49 times) and (t), (v) failed on them. Code's two diagnoses were right and both fixes
+are in the model, not the thresholds:
+
+1. **The noise carried from fixation 0 was 2.4× too high** (0.177 relative at level 0 against
+   the manifest's 0.073), which made the walls unmatchable at the fine levels — the same
+   records judged host-side at 0.07 found thousands of fine cells at 2% gross. Cause, measured
+   on the stub: the equivalence assumed four samples per level-0 cell; the wide level-0 map
+   holds 1.2 on average and the owned band 1–4. The field now works per cell: the constant is
+   the per-sample relative RMS (the Monte Carlo noise per pixel, the manifest's quantity),
+   measured from the seed pair as a robust median over cells, and σ_cell = nr × mean_cell /
+   √count_cell — for the bound, for the texture gate, in the assumed path too. On the stub
+   nr comes out 0.0097–0.0101 at every level (it should be one number; the old equivalence
+   gave 0.0185 → 0.0073 across levels, the artefact).
+2. **The gain model never learned that a surface is unmeasurable.** `coverage` scored "not
+   yet measured", so an unmeasurable direction stayed uncovered; `info`'s zero-gain rule fired
+   only on never-measured cells, so a cell measured coarsely from afar and then foveated
+   without result kept its coarse σ and its large gain. Now `coverage` scores the visit map
+   (not yet *looked at* finely), and for `info`/`oracle` a look counts only where the cell is
+   known measurable (measured at any level) or where the fixation would look at it at least
+   two levels finer than the finest look that found nothing (levels 0 and 1 are one class: a
+   blank wall fails both). The self-test has the three cases; a blank-walls stub
+   (`FAKE_BLANK_WALLS=1`, only the cards matchable — the lock scenario) gives info 27 distinct
+   directions of 30 and coverage 30 of 30, with info finding the cards (fine coverage 0.074
+   against random's 0.058).
+
+Also: `stereo_field.py` on a loop run now writes to `field_check/`, not the record's `field/`
+(Code's hazard). Predicted for the re-run: no lock; fine coverage of the spreading policies
+above random's on the room's walls; z RMS back inside the band as σ falls with the noise;
+`info` and `coverage` within 20% of each other and ahead of target order on median ρ error,
+as on the stub. The first run's record follows as Code wrote it.
+
 ## Results
 
 Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), calibration room at `small`, 50

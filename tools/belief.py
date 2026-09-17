@@ -25,7 +25,8 @@ belief's estimate along that direction (or the target's, for the target-order ba
   targets    the target list in order (Phase B's runs; the baseline)
   random     uniform over the field of regard (a cap of --regard-deg about the primary gaze)
   coverage   the candidate whose foveal disc (levels 0-1, 6 deg) holds the most cells not yet
-             foveated; bio-3d-vision's "not looking twice" and nothing else
+             looked at finely (the visit map, measurable or not); bio-3d-vision's "not looking
+             twice" and nothing else
   info       expected information: sum over the cells a pair would measure, out to
              --policy-levels, of 1/2 log(1 + sigma_c^2 I(e)), with I(e) the precision the
              field delivers at eccentricity e (the running median sigma_rho per level of this
@@ -253,6 +254,7 @@ class Policy:
         self.name, self.b = name, belief
         self.edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
         self.R = float(min(self.edges[min(policy_levels, len(self.edges)) - 1], e_max))
+        self.R_fine = float(self.edges[min(1, len(self.edges) - 1)])          # levels 0-1: 6 deg at the standard warp
         self.regard = regard_deg
         self.cand = candidates(regard_deg, cand_deg)
         self.rng = np.random.default_rng(seed)
@@ -280,34 +282,50 @@ class Policy:
         b = self.b
         var = b.sigma() ** 2
         if self.name == "coverage":
-            return np.where(b.best_level <= 1, 0.0, 1.0)
+            return np.where(b.visited <= 1, 0.0, 1.0)            # not yet LOOKED AT finely, measurable or not
         if self.name == "oracle":
             t = b.truth(); m = b.mean()
             err2 = np.where(np.isfinite(t) & np.isfinite(m), (m - t) ** 2, np.nan)
             var = np.where(np.isfinite(err2), err2, var)
-        # looked at finely and nothing measurable: no gain (the validity mask)
-        var = np.where((b.visited <= 1) & (b.P == 0), 0.0, var)
         return var
 
-    def _score(self, var_map: np.ndarray, d: np.ndarray) -> float:
-        """var_map on the policy grid."""
+    def _allowed_maps(self):
+        """On the policy grid: the finest level that has looked at each cell (block min) and
+        whether any measurement exists there (block max). A cell looked at finely and never
+        measured at that level is not measurable by looking again (the first loop run: three
+        policies re-fixated one such direction up to 49 times); a cell measured only coarsely
+        may still be worth a finer look."""
+        b = self.b; f = self.f
+        vis = b.visited[:self.nth * f, :self.nph * f].reshape(self.nth, f, self.nph, f).min((1, 3)).astype(np.int16)
+        meas = (b.best_level[:self.nth * f, :self.nph * f].reshape(self.nth, f, self.nph, f).min((1, 3))).astype(np.int16)
+        return vis, meas
+
+    def _score(self, var_map: np.ndarray, vis: np.ndarray, meas: np.ndarray, d: np.ndarray) -> float:
+        """Maps on the policy grid. The radius is the fine disc (6 deg) for coverage, the policy
+        radius (levels 0..policy_levels-1) for the others."""
+        R = self.R_fine if self.name == "coverage" else self.R
         th, ph = epipolar(d)
-        i0 = max(0, int((th - self.R) / self.cell)); i1 = min(self.nth, int((th + self.R) / self.cell) + 1)
-        hp = self.R / max(math.sin(math.radians(th)), 1e-3)
+        i0 = max(0, int((th - R) / self.cell)); i1 = min(self.nth, int((th + R) / self.cell) + 1)
+        hp = R / max(math.sin(math.radians(th)), 1e-3)
         j = (np.arange(int((ph - hp + 180.0) / self.cell), int((ph + hp + 180.0) / self.cell) + 1) % self.nph)
         if len(j) >= self.nph:
             j = np.arange(self.nph)
         D = self.dirs[i0:i1][:, j]
         cosang = D @ d.astype(np.float32)
         e = np.degrees(np.arccos(np.clip(cosang, -1.0, 1.0)))
-        inside = e <= self.R
+        inside = e <= R
         v = var_map[i0:i1][:, j][inside]
         A = self.area[i0:i1][:, j][inside]
         if self.name == "coverage":
             return float((v * A).sum())
         lev = self.level_of(e[inside])
+        # a look counts where the cell is known measurable (measured at any level) or where this
+        # fixation would look at it at least two levels finer than the finest look that found
+        # nothing (levels 0 and 1 are one class: a blank wall fails both)
+        vi = vis[i0:i1][:, j][inside]; me = meas[i0:i1][:, j][inside]
+        allowed = (me < UNVISITED) | (lev + 1 < vi)
         I = 1.0 / (np.array(self.ls.vals)[np.minimum(lev, len(self.ls.vals) - 1)] ** 2)
-        g = 0.5 * np.log1p(v * I)
+        g = np.where(allowed, 0.5 * np.log1p(v * I), 0.0)
         return float((g * A).sum())
 
     def choose(self) -> tuple[np.ndarray, dict]:
@@ -315,7 +333,8 @@ class Policy:
             d = self.cand[self.rng.integers(len(self.cand))]
             return d, {"score": None}
         var_map = self._reduce(self._gain_field())
-        scores = np.array([self._score(var_map, d) for d in self.cand])
+        vis, meas = self._allowed_maps()
+        scores = np.array([self._score(var_map, vis, meas, d) for d in self.cand])
         k = int(np.argmax(scores))
         return self.cand[k], {"score": float(scores[k]), "score_median": float(np.median(scores))}
 
@@ -366,9 +385,24 @@ def self_test() -> list[str]:
     b4 = SphereBelief(1.0)
     b4.visit({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([0], np.int8)})
     pol4 = Policy("info", b4, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
-    g = pol4._gain_field(); i, j = b4.index(th, ph)
-    if g[i, j] != 0.0:
-        fails.append("visited-unmeasured cell still counts as gain")
+    vm = pol4._reduce(pol4._gain_field()); vis, meas = pol4._allowed_maps()
+    s_here = pol4._score(vm, vis, meas, FORWARD.copy())
+    s_away = pol4._score(vm, vis, meas, candidates(40.0, 4.0)[0])
+    if not s_here < s_away:
+        fails.append(f"a direction looked at finely and found unmeasurable still scores ({s_here:.2f} vs {s_away:.2f} elsewhere)")
+    # ... but a cell measured only coarsely (level 3) still invites a finer look
+    b5 = SphereBelief(1.0)
+    b5.fuse({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([8.0]), "level": np.array([3], np.int8),
+             "rho": np.array([0.5]), "sigma_rho": np.array([0.3]), "consistent": np.array([True])})
+    pol5 = Policy("info", b5, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
+    vm5 = pol5._reduce(pol5._gain_field()); vis5, meas5 = pol5._allowed_maps()
+    if not pol5._score(vm5, vis5, meas5, FORWARD.copy()) > 0:
+        fails.append("a coarsely measured direction scores nothing for a fine look")
+    # coverage scores the visit map, not the measurement map
+    polc = Policy("coverage", b4, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
+    vmc = polc._reduce(polc._gain_field())
+    if not polc._score(vmc, vis, meas, FORWARD.copy()) < polc._score(vmc, vis, meas, candidates(40.0, 4.0)[0]):
+        fails.append("coverage still wants a direction already looked at finely")
     # candidates lie within the cap
     c = candidates(30.0, 5.0)
     if (c @ FORWARD).min() < math.cos(math.radians(30.0)) - 1e-9 or len(c) < 50:

@@ -164,33 +164,43 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         gR = FoveaGrid(thR, phi_c, theta_mid, half, cell, extra_cols=S)
         ex = {k: v for k, v in (extras or {}).items()}
         ML, covL, exL = accumulate(gL, L["theta"], L["phi"], L["val"], L["fp"], finest_factor, ex)
-        MR, covR, _ = accumulate(gR, R["theta"], R["phi"], R["val"], R["fp"], finest_factor)
-        # noise per level: measured from the seed pair, else assumed from --noise-rel and the
-        # samples per cell in this level's owned band (at least one spacing per cell by construction)
-        if L.get("val_b") is not None and R.get("val_b") is not None:
-            MLb, _, _ = accumulate(gL, L["theta"], L["phi"], L["val_b"], L["fp"], finest_factor)
-            MRb, _, _ = accumulate(gR, R["theta"], R["phi"], R["val_b"], R["fp"], finest_factor)
-            sigL = float(np.sqrt(np.nanmean((ML - MLb) ** 2) / 2.0)); sigR = float(np.sqrt(np.nanmean((MR - MRb) ** 2) / 2.0))
-            noise = "measured"
-        else:
-            if noise_rel is None:
-                raise ValueError("no seed pair in the run: pass noise_rel (assumed per-pixel relative RMS)")
-            spc = max(1.0, (cell / (s0 * (1.0 + e_lo / E2))) ** 2)
-            nr = noise_rel[min(l, len(noise_rel) - 1)] if isinstance(noise_rel, (list, tuple, np.ndarray)) else noise_rel
-            sigL = float(nr * np.nanmean(ML) / math.sqrt(spc)); sigR = float(nr * np.nanmean(MR) / math.sqrt(spc))
-            noise = "assumed"
+        MR, covR, exR = accumulate(gR, R["theta"], R["phi"], R["val"], R["fp"], finest_factor)
+        cntL, cntR = exL["_count"], exR["_count"]
+        # noise per CELL (C2): a cell holds between one and four owning samples across a level's
+        # band (1.2 on average over the wide level-0 map at small), so one sigma per level is
+        # wrong by up to 2x — that carried noise made the walls unmatchable in the first loop
+        # run. The per-sample relative RMS nr (Monte Carlo noise per pixel, the manifest's
+        # quantity) is what is constant; sigma_cell = nr x mean_cell / sqrt(count_cell). With a
+        # seed pair nr is measured here (median over covered cells); else assumed (noise_rel).
+        with np.errstate(divide="ignore", invalid="ignore"):
+            if L.get("val_b") is not None and R.get("val_b") is not None:
+                MLb, _, _ = accumulate(gL, L["theta"], L["phi"], L["val_b"], L["fp"], finest_factor)
+                MRb, _, _ = accumulate(gR, R["theta"], R["phi"], R["val_b"], R["fp"], finest_factor)
+                est = np.concatenate([(np.abs(ML - MLb) / math.sqrt(2.0) * np.sqrt(cntL) / ML)[covL & (ML > 0)],
+                                      (np.abs(MR - MRb) / math.sqrt(2.0) * np.sqrt(cntR) / MR)[covR & (MR > 0)]])
+                nr = float(np.median(est) / 0.6745) if len(est) else float("nan")            # median |x| of a Gaussian is 0.6745 sigma
+                noise = "measured"
+            else:
+                if noise_rel is None:
+                    raise ValueError("no seed pair in the run: pass noise_rel (assumed per-pixel relative RMS)")
+                nr = float(noise_rel[min(l, len(noise_rel) - 1)] if isinstance(noise_rel, (list, tuple, np.ndarray)) else noise_rel)
+                noise = "assumed"
+            sigL_c = np.where(covL, nr * ML / np.sqrt(np.maximum(cntL, 1.0)), np.nan)
+            sigR_c = np.where(covR, nr * MR / np.sqrt(np.maximum(cntR, 1.0)), np.nan)
         # the centre J x J of each wide map is the grid proper; the wide map is the search partner
         J, W = gL.J, gL.W
         c0 = S
         if l >= smooth_from_level:
             ML, MR = smooth_theta(ML), smooth_theta(MR)
-            sigL, sigR = sigL * math.sqrt(6.0) / 4.0, sigR * math.sqrt(6.0) / 4.0     # [1,2,1]/4 on white noise
+            sigL_c, sigR_c = sigL_c * math.sqrt(6.0) / 4.0, sigR_c * math.sqrt(6.0) / 4.0     # [1,2,1]/4 on white noise
         AL, AR = ML[:, c0:c0 + J], MR[:, c0:c0 + J]
-        info_cell = signal_information(gradient_power_theta(AL, cell), sigL, sigR, cell)
+        sigL_a, sigR_a = sigL_c[:, c0:c0 + J], sigR_c[:, c0:c0 + J]                         # per L cell; R's at the same column (shift small)
+        info_cell = signal_information(gradient_power_theta(AL, cell), sigL_a, sigR_a, cell)
         I_win = window_sum(info_cell, h)
         with np.errstate(divide="ignore", invalid="ignore"):
             bound = np.where(I_win > 0, 1.0 / np.sqrt(I_win), np.nan)                  # deg
-        tabs = 3.0 * math.sqrt(sigL ** 2 + sigR ** 2)
+        sigL, sigR = float(np.nanmedian(sigL_a)), float(np.nanmedian(sigR_a))
+        tabs = 3.0 * float(np.nanmedian(np.sqrt(sigL_a ** 2 + sigR_a ** 2)))
         sh_lr, _, tx_lr = ncc_match(AL, MR, h, S, texture_min, min_valid=min_valid, texture_abs=tabs)
         sh_rl, _, tx_rl = ncc_match(AR, ML, h, S, texture_min, min_valid=min_valid, texture_abs=tabs)
         matchable = tx_lr & np.isfinite(sh_lr) & np.isfinite(bound) & (bound <= bound_max_cells * cell)
@@ -214,8 +224,7 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         sig_rho_floor = np.abs(jac) * np.radians(floor_cells * cell)             # does not (the same window, the same edge)
         sel = own & matchable
         sr_cell = (math.radians(cell) ** 2) * np.sin(np.radians(th_cells)) / max(math.sin(math.radians(theta_mid)), 1e-6)   # cell solid angle, sr
-        spc_l = max(1.0, (cell / (s0 * (1.0 + e_lo / E2))) ** 2)
-        levels.append({"owned_sr": float(sr_cell[own].sum()), "noise_rel_equiv": float(0.5 * (sigL / max(np.nanmean(ML), 1e-9) + sigR / max(np.nanmean(MR), 1e-9)) * math.sqrt(spc_l) * (4.0 / math.sqrt(6.0) if l >= smooth_from_level else 1.0)),"level": l, "cell_deg": cell, "e_lo_deg": e_lo, "e_hi_deg": float(min(e_hi, e_max)), "grid": [J, W], "search_cells": S,
+        levels.append({"owned_sr": float(sr_cell[own].sum()), "noise_rel_equiv": nr, "level": l, "cell_deg": cell, "e_lo_deg": e_lo, "e_hi_deg": float(min(e_hi, e_max)), "grid": [J, W], "search_cells": S,
                        "sigma_L": sigL, "sigma_R": sigR, "noise": noise,
                        "covered": int(covL[:, c0:c0 + J].sum()), "owned": int(own.sum()), "matchable": int(sel.sum()),
                        "consistent": int((sel & consistent).sum()),
@@ -405,7 +414,8 @@ def main():
     sp = os.path.join(run, "stereo.json")
     if os.path.exists(sp):
         stereo = json.load(open(sp))
-    os.makedirs(os.path.join(run, "field"), exist_ok=True)
+    fdir_name = "field_check" if os.path.exists(os.path.join(run, "loop.json")) else "field"   # a loop run's field/ is its record
+    os.makedirs(os.path.join(run, fdir_name), exist_ok=True)
     fails, per, panels, p_errs = [], [], [], []
     nlev = n_levels_for(E2, args.eval_factor, emax)
     acc = [{"err": [], "sig": [], "rho_err": [], "sig_rho": [], "d_err": [], "gross_match": [], "gross_cons": [], "bnd": [], "n_match": 0, "n_cons": 0, "covered": 0, "owned": 0, "bound": [], "z": []} for _ in range(nlev)]
@@ -463,7 +473,7 @@ def main():
             rec["level0_inlier_rms_deg"] = float(np.sqrt(np.mean(err[m0] ** 2))) if m0.any() else None
             if rec["judged"] and m0.any():
                 p_errs.append(err[m0])
-        np.savez_compressed(os.path.join(run, "field", f"p{pid:03d}.npz"), **out)
+        np.savez_compressed(os.path.join(run, fdir_name, f"p{pid:03d}.npz"), **out)
         per.append(rec)
         if args.sheet and len(panels) < args.sheet_pairs:
             panels.append((f"p{pid:03d} {pair['name']}", f, has_truth))

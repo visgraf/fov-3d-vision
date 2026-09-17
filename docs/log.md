@@ -844,3 +844,27 @@ Phase B tools on calib_info: check_pairs ok (0 judged card pairs), stereo_truth 
 No code changed. README C2 row -> run, open. Figures copied to docs/reference. Decisions for
 Chat: the noise carry, the gain model's use of the visit map, and whether the room's walls are
 the scene to rank policies on.
+
+## 2026-09-17 — C2 after the first run: per-cell noise in the field, the visit map in the policies; not yet re-run
+
+Code's run (repo `main` at 6db42ed): the loop at 0.3-0.5 s per fixation, PairRenderer exact
+to the eighth digit, (s) and (u) pass; coverage/info/oracle lock onto one edge direction (49
+of 50 for coverage), (t) and (v) fail. Two causes, Code's diagnosis confirmed here: (i) the
+carried noise 0.177 vs the manifest's 0.073 — the equivalence assumed 4 samples per level-0
+cell, the wide map has 1.2 (measured on the stub), the walls became unmatchable at fine
+levels; (ii) the gain model scored "not measured" not "not looked at", and the zero-gain rule
+missed coarsely-measured cells. Fixes: `stereo_field.py` — sigma per CELL from the per-sample
+relative RMS nr (measured from a seed pair as a robust median, else assumed) and the owning
+sample count (`accumulate` now returns `_count`), for the bound, the texture gate and the
+assumed path alike (stub: nr 0.0097-0.0101 at every level, one number as it should be);
+`signal_information` carries no information where sigma is unknown; the host-side field on a
+loop run writes `field_check/`. `belief.py` — coverage scores the visit map; info/oracle count
+a cell only where measured at some level or where the look would be two levels finer than the
+finest failed one; coverage's radius is the fine disc (6 deg). Self-test has the three cases.
+Stub with blank walls (`FAKE_BLANK_WALLS=1`, new in the stub): info 27 distinct of 30, coverage
+30 of 30, info's fine coverage 0.074 vs random's 0.058. Textured stub, 20 fixations: coverage
+0.0442 < info 0.0459 < random 0.0536 < oracle 0.0542 < targets 0.0960 /m; (s)-(v) pass.
+Predicted for the re-run: no lock, fine coverage above random's for the spreading policies, z
+RMS in band. On Code's third question — the calib room is the test of the mechanism (only the
+cards are richly textured); the classroom, textured everywhere, is where a ranking means
+something, and C3 runs it.

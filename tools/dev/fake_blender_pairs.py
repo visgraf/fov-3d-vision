@@ -65,6 +65,7 @@ class Scene:
                     t = (v - o[ax]) / dd
                 ok = (t > 1e-6) & np.isfinite(t)
                 t_best = np.where(ok & (t < t_best), t, t_best)
+        on_card = np.zeros(M, bool)
         for c, nrm, rc, uc, half in self.cards:
             dn = D @ nrm
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -72,7 +73,8 @@ class Scene:
             hp = o[None, :] + t[:, None] * D
             rel = hp - c
             ok = (t > 1e-6) & np.isfinite(t) & (np.abs(rel @ rc) <= half) & (np.abs(rel @ uc) <= half)
-            t_best = np.where(ok & (t < t_best), t, t_best)
+            nearer = ok & (t < t_best)
+            t_best = np.where(nearer, t, t_best); on_card |= nearer
         pos = o[None, :] + t_best[:, None] * D
         # non-periodic value noise at three scales (a periodic checker makes every matcher
         # ambiguous and says nothing about the plumbing): hashed cell values, positive
@@ -81,6 +83,8 @@ class Scene:
             hsh = (c[:, 0] * 73856093) ^ (c[:, 1] * 19349663) ^ (c[:, 2] * 83492791)
             return ((hsh * 2654435761) % 4294967296) / 4294967296.0
         v = 0.3 + 0.4 * vnoise(8.0) + 0.3 * vnoise(40.0)   # 12.5 cm and 2.5 cm cells: 0.29 deg at 5 m, above s_eval
+        if os.environ.get("FAKE_BLANK_WALLS"):                # C2: walls without texture, so only the cards are matchable
+            v = np.where(on_card, v, 0.6)
         rgb = v[:, None] * np.array([[1.0, 0.9, 0.8]])
         return pos, t_best, rgb
 

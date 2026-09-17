@@ -98,7 +98,7 @@ def accumulate(grid: FoveaGrid, theta, phi, val, fp, finest_factor: float, extra
     own = fpo <= finest_factor * finest[idx]
     w = np.where(own, 1.0 / fpo, 0.0)
     wsum = np.bincount(idx, weights=w, minlength=n)
-    out = {}
+    out = {"_count": np.bincount(idx, weights=own.astype(float), minlength=n).reshape(grid.J, grid.W)}   # owning samples per cell (C2)
     with np.errstate(invalid="ignore", divide="ignore"):
         m = np.bincount(idx, weights=w * val[ok], minlength=n) / wsum
         for k, arr in (extra or {}).items():
