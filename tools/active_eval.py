@@ -16,8 +16,10 @@ Checks, each of which can fail (exit 1):
                   the record is complete and the figure is of the belief the loop had.
   (t) calibration final z RMS on inliers in [--z-lo, --z-hi] (0.4, 2.5) on every run: the
                   sigma the belief carries is the error it makes, within a factor.
-  (u) learning    coverage_any and, where judged, rho_err_median at the end are no worse than
-                  after fixation 0, on every run.
+  (u) learning    coverage_any does not fall, and the cells measured and judged after
+                  fixation 0 — the same cells at both moments — have a median |rho error| at
+                  the end no worse than then by more than --u-tol (5%): later fixations do not
+                  spoil what the first one measured.
   (v) not twice   with a random run present, every policy run's final coverage_fine is at
                   least --twice x random's (0.5): a policy that re-fixates fails here
                   (bio-3d-vision's lock-up).
@@ -39,17 +41,31 @@ from belief import FORWARD, SphereBelief  # noqa: E402
 from rig import epipolar  # noqa: E402
 
 
-def replay(run: str, lj: dict) -> tuple[SphereBelief, list[dict]]:
+def replay(run: str, lj: dict) -> tuple[SphereBelief, list[dict], dict]:
+    """Rebuild the belief from the record. Also returns the fixed-set learning numbers for (u):
+    the median |rho error| on the cells measured AND judged after fixation 0, at that moment
+    and at the end — the same cells both times. (The first (u) compared the median over all
+    measured cells at the end with the median after fixation 0: two medians over different
+    sets, and on the classroom fifty fixations of coarse periphery raised the second without
+    any measured cell getting worse.)"""
     B = SphereBelief(lj["belief_cell_deg"], sigma_prior=lj["settings"]["sigma_prior"])
     cap = B.cap_mask(lj["settings"]["regard_deg"])
-    steps = []
+    steps = []; fixed = {}
     for k in range(len(lj["steps"])):
         f = dict(np.load(os.path.join(run, "field", f"p{k:03d}.npz")))
         B.fuse(f)
         s = np.load(os.path.join(run, "L", f"f{k:03d}", "samples.npz"))
         B.add_truth(s["direction"], s["distance"], s["footprint"])
         steps.append(B.metrics(cap))
-    return B, steps
+        if k == 0:
+            m0 = cap & (B.P > 0) & (B.tW > 0)
+            e0 = np.abs(B.mean()[m0] - B.truth()[m0])
+            fixed = {"cells": int(m0.sum()), "start": float(np.median(e0)) if m0.any() else None, "mask": m0}
+    if fixed:
+        m0 = fixed.pop("mask")
+        e1 = np.abs(B.mean()[m0] - B.truth()[m0])
+        fixed["end"] = float(np.median(e1)) if m0.any() else None
+    return B, steps, fixed
 
 
 def equirect(B: SphereBelief, X: np.ndarray, regard: float, px_deg: float = 0.5) -> np.ndarray:
@@ -156,7 +172,8 @@ def main():
     ap.add_argument("--z-lo", type=float, default=0.4)
     ap.add_argument("--z-hi", type=float, default=2.5)
     ap.add_argument("--twice", type=float, default=0.5)
-    ap.add_argument("--no-replay", action="store_true", help="skip (s) (it re-fuses every field; seconds per run)")
+    ap.add_argument("--no-replay", action="store_true", help="skip (s) and (u) (they re-fuse every field; seconds per run)")
+    ap.add_argument("--u-tol", type=float, default=0.05, help="(u): the fixation-0 cells may not get worse by more than this fraction")
     args = ap.parse_args()
     fails, rows = [], []
     for run in args.runs:
@@ -171,9 +188,9 @@ def main():
             B.S = np.nan_to_num(bz["mean"].astype(np.float64)) * B.P; B.n = bz["n"].astype(np.int32)
             B.best_level = bz["best_level"]; B.visited = bz["visited"]
             B.tW = (bz["truth_n"] > 0).astype(float); B.tS = np.nan_to_num(bz["truth"].astype(np.float64)) * B.tW
-            rep_note = "(s) skipped"
+            rep_note = "(s) skipped"; fixed = {}
         else:
-            B, steps = replay(run, lj)
+            B, steps, fixed = replay(run, lj)
             r = steps[-1]
             d_cov = abs(r["coverage_any"] - last["coverage_any"]); d_err = abs((r.get("rho_err_median") or 0) - (last.get("rho_err_median") or 0))
             if d_cov > 1e-9 or d_err > 1e-9:
@@ -182,8 +199,13 @@ def main():
         z = last.get("z_rms_inliers")
         if z is None or not (args.z_lo <= z <= args.z_hi):
             fails.append(f"(t) {tag}: final z RMS {z} outside [{args.z_lo}, {args.z_hi}]")
-        if last["coverage_any"] < first["coverage_any"] - 1e-9 or (first.get("rho_err_median") is not None and last.get("rho_err_median") is not None and last["rho_err_median"] > first["rho_err_median"] + 1e-9):
-            fails.append(f"(u) {tag}: worse at the end than after fixation 0 (coverage {first['coverage_any']:.3f} -> {last['coverage_any']:.3f}, rho err {first.get('rho_err_median')} -> {last.get('rho_err_median')})")
+        if last["coverage_any"] < first["coverage_any"] - 1e-9:
+            fails.append(f"(u) {tag}: coverage fell ({first['coverage_any']:.3f} -> {last['coverage_any']:.3f})")
+        u_note = "(u) skipped"
+        if not args.no_replay and fixed.get("start") is not None:
+            u_note = f"(u) fixation-0 cells {fixed['cells']}: rho err median {fixed['start']:.4f} -> {fixed['end']:.4f}"
+            if fixed["end"] > fixed["start"] * (1.0 + args.u_tol):
+                fails.append(f"(u) {tag}: the cells measured after fixation 0 got worse ({fixed['start']:.4f} -> {fixed['end']:.4f} /m, {fixed['cells']} cells, tol {100 * args.u_tol:.0f}%)")
         figure(run, lj, B, os.path.join(run, "loop_fig.png"))
         verr = [st["vergence_err_m"] for st in lj["steps"] if st.get("vergence_err_m") is not None]
         row = {"run": tag, "policy": name, "fixations": len(lj["steps"]), "rays": last["rays_cum"], "wall_s": lj["wall_seconds"],
@@ -192,13 +214,14 @@ def main():
                "rho_err_median": last.get("rho_err_median"), "fine_rho_err_median": last.get("fine_rho_err_median"),
                "depth_err_median_m": last.get("depth_err_median_m"), "fine_depth_err_median_m": last.get("fine_depth_err_median_m"),
                "gross_frac": last.get("gross_frac"), "fine_gross_frac": last.get("fine_gross_frac"), "z_rms": z, "gated": last["gated_total"],
-               "level_sigma": lj["level_sigma_final"], "replay": rep_note, "steps": lj["steps"]}
+               "level_sigma": lj["level_sigma_final"], "replay": rep_note, "learning": u_note,
+               "u_fixed_cells": fixed.get("cells"), "u_start": fixed.get("start"), "u_end": fixed.get("end"), "steps": lj["steps"]}
         rows.append(row)
         def f(v, fmt=".4f"):
             return "-" if v is None else format(v, fmt)
         print(f"[eval] {tag:<22} {name:<8} k {row['fixations']:3d} rays {row['rays']:.3e} | cover any {row['coverage_any']:.3f} fine {row['coverage_fine']:.3f} | "
               f"rho err med {f(row['rho_err_median'])} (fine {f(row['fine_rho_err_median'])}) /m | depth med {f(row['depth_err_median_m'], '.3f')} (fine {f(row['fine_depth_err_median_m'], '.3f')}) m | "
-              f"gross {f(row['gross_frac'], '.3f')} | z {f(z, '.2f')} | verg err med {f(row['vergence_err_median_m'], '.2f')} m | {rep_note} -> loop_fig.png")
+              f"gross {f(row['gross_frac'], '.3f')} | z {f(z, '.2f')} | verg err med {f(row['vergence_err_median_m'], '.2f')} m | {rep_note}; {u_note} -> loop_fig.png")
     rnd = [r for r in rows if r["policy"] == "random"]
     if rnd:
         ref = rnd[0]["coverage_fine"]

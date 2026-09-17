@@ -50,6 +50,38 @@ blender -b $B -P tools/active_loop.py -- --out previews/loop3/class_info_full --
 C2's (s)–(v) on the four `small` runs and on the `full` run (its own, no random to bracket:
 (v) does not apply). Nothing new; C3 adds no check because it adds no code.
 
+## After the run (2026-09-17)
+
+Five runs, no lock, the `full` run in 79 s at 1.6 s per fixation with a 1803 × 3606 belief and
+no memory trouble. Two things to settle before the writing.
+
+**(u) was a wrong check, not a wrong loop.** It compared the median error over all measured
+cells at the end with the median after fixation 0 — two medians over different sets; fifty
+fixations of coarse periphery raise the second without any measured cell getting worse (on the
+calib room the sets happened to order the other way, which is why it passed there). (u) now
+takes the cells measured and judged after fixation 0 and asks whether *those same cells* are
+worse at the end, with 5% tolerance; on the stub they improve from 0.114 to 0.07 /m, which is
+what "the loop learns" should mean. No loop run is re-done for it; the eval re-judges the
+records.
+
+**The classroom at `small` is at the sensor's noise limit.** Its per-pixel noise is 2.5× the
+calib room's at the same spp (0.18 relative; the manifest records 0.092 at 256 spp and it
+scales as expected), fields have half the matchable cells, the fine band is 4–7% of the cap
+against the calib room's 8–20%, and half of the measured cells are gross — depth edges
+everywhere, in a scene where the fovea barely resolves the texture. In that regime the
+variance-driven policy loses to the two that ignore the model: info last on error and on fine
+coverage, random first, coverage second, the spread among random / coverage / oracle inside
+the fine band's fixation-to-fixation noise. The reading: `info` optimises a variance model
+that is wrong for half the cells it scores (gross errors are not in it), so its looks go where
+the model says the gain is, not where the error is; `coverage` and `random` do not consult the
+model and are robust to it. The objective costs when the error model is wrong; it bought
+nothing when it was right (the calib room, within 3% of coverage). Either way the
+predecessors' finding holds, now with a mechanism.
+
+`full` is this scene's profile: noise 0.09, gross 0.355, median ρ error 0.0435 /m (0.0186 on the
+fine band, 14 cm at 2.7 m). To rank the policies where the sensor works, the four run again at
+`full` — four more runs of eighty seconds. The summary and the front page are written on that.
+
 ## Results
 
 Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), Classroom (`classroom_eye.blend`),

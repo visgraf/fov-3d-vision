@@ -997,3 +997,18 @@ separates from coverage here, downward — last on error and fine coverage with 
 is best on error; the spread among random/coverage/oracle (25%) is within the fine band's
 +-30% noise between fixations. Phase B tools on class_info: check_pairs ok (0 card pairs),
 stereo_truth ok. No code changed. README C3 row -> run. Three figures in docs/reference.
+
+## 2026-09-17 — C3 after the run: (u) redefined on a fixed cell set; the classroom at small is noise-limited; four policies at full next
+
+Code's run (repo `main` at 55fb184): five runs, no lock; classroom small — random 0.0808 <
+coverage 0.0852 < oracle 0.0940 < info 0.1006 /m, fine coverage 4-7% of the cap, gross
+49-55%, noise 0.18 relative (2.5x the calib room, as the manifest says); info full 0.0435 /m
+(fine 0.0186), gross 0.355, 79 s. (u) failed on all five by its own definition (median over a
+growing set); redefined in `active_eval.py`: the cells measured and judged after fixation 0,
+the same cells at the end, may not get worse by more than 5% (stub: 0.114 -> 0.07 /m). No
+loop re-run needed. Reading of the small runs: with half the measured cells gross, the
+variance-driven policy optimises a model that is wrong where it matters and loses to the two
+policies that do not consult it; the objective bought nothing where the model was right
+(calib room) and costs where it is wrong. Next: random, coverage, oracle at full on the
+classroom beside the info run, evals of the five with the new (u); then the summary and the
+front page.
