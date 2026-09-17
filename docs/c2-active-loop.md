@@ -354,6 +354,56 @@ re-look never falls. The decision on the rule is Chat's. Scanpaths:
 No code was changed in this step. Figures replaced.
 
 
+### Third run (2026-09-17, after `e157d32`: fine-level measurability, gain masked to the cap, IOR 3° for the oracle)
+
+`info` and `oracle` re-run into `previews/loop2/`; `targets`, `random`, `coverage` are the second
+run's (repeated below so the table stands alone). Banner: `IOR 0 deg` for info, `IOR 3 deg` for
+oracle. `belief.py --self-test` ok. All measured.
+
+| policy | rays | wall | distinct dirs | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) | gated |
+|---|---|---|---|---|---|---|---|---|---|---|
+| targets | 7.995e7 | 16.7 s | 50 | 0.993 / 0.201 | 0.1397 / 0.0149 | 1.128 / 0.059 | 0.609 | 0.57 | 0.01 | 28939 |
+| random | 7.995e7 | 16.2 s | 49 | 0.996 / 0.116 | 0.1111 / 0.0253 | 0.864 / 0.153 | 0.555 | 0.51 | 0.39 | 34582 |
+| coverage | 7.995e7 | 18.9 s | 50 | 0.994 / 0.138 | 0.1052 / 0.0249 | 0.836 / 0.127 | 0.557 | 0.49 | 0.51 | 41465 |
+| info | 7.995e7 | 24.1 s | 28 | 0.989 / 0.053 | 0.1006 / 0.0252 | 0.774 / 0.239 | 0.531 | 0.44 | 0.51 | 48162 |
+| oracle | 7.995e7 | 23.1 s | 50 | 0.993 / 0.074 | 0.1462 / 0.0882 | 1.201 / 0.789 | 0.628 | 0.50 | 2.66 | 25433 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): info 0.156 + 0.082 + 0.225 +
+0.036; oracle 0.175 + 0.083 + 0.147 + 0.037 (the other three as in the second run).
+
+Rankings (reported, not judged): by median ρ error, **info 0.1006 < coverage 0.1052 < random
+0.1111 < targets 0.1397 < oracle 0.1462**; by fine coverage, **targets 0.201 > coverage 0.138 >
+random 0.116 > oracle 0.074 > info 0.053**. On the fine band's own error targets 0.0149, then
+coverage 0.0249 ≈ info 0.0252 ≈ random 0.0253, as predicted.
+
+**Checks.** (s) exact, (t) and (u) pass on all five; (v) passes on targets, random, coverage and
+now oracle (50 distinct directions, IOR 3°). **(v) fails on info** (fine coverage 0.053 against
+half of random's 0.116). Eval exits 1 with 1 failure. Reported and stopped, per the prompt.
+
+**Info's third lock, measured.** 28 distinct directions: the first 26 spread over the cap (only
+4 of the first ten at ≥ 50° from forward; cover any 0.989 by k024), then (yaw +48°, pitch −10°)
+23 times from k026 on. At that direction ẑ is 3.61–3.71 m from the belief within 2° and the
+surface is at 4.12 m (vergence error 0.4–0.5 m, inside the search range); the field there is
+the same every time (1840 cells; consistent rows by level 0 / 93 / 535 / 728 / 332 — no
+level-0 cells, 93 level-1 cells on a weakly textured wall), fine coverage stays at 0.053, and the
+score is 0.031–0.041 (it was 0.51 at k001). `visited_fine_unmeasured` at the end is 0.0012 of
+the cap. This is not the earlier lock: the direction *is* finely measurable (level 1), so the
+new rule admits it, and the fovea keeps re-measuring the same 93 cells. Their variance is
+floor-limited (1/P_noise + β²·cell², the floor does not average down), so the expected gain of
+looking again, ½ log(1 + σ²I), never falls below that of any other direction once the cap has
+no unseen cells left — the argmax is a fixed point. The oracle escapes it only by its IOR. The
+decision is Chat's: whether info's gain should count only the reducible (noise) part of the
+variance, or retire a direction whose fine look yielded fewer cells than some count, or carry
+an IOR as the oracle does.
+
+Scanpath (yaw, pitch): (0,0) (−46,2) (48,2) (−12,−46) (4,48) (34,−36) (−32,44) (38,42)
+(−50,−18) (50,−18) (−48,28) (50,24) (−30,−12) (30,−12) (16,30) (−28,14) (−12,30) (32,14)
+(−40,−40) (18,−52) (12,−28) (−10,−24) (−44,−12) (−46,−6) (12,10) (42,−14) then (48,−10) ×22
+with one (48,−12).
+
+No code was changed in this step. Figures replaced.
+
+
 ## What C2 leaves open
 
 - The policies are one-step greedy over a 60° cap; there is no cost to a saccade's length

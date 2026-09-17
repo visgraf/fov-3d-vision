@@ -79,7 +79,7 @@ matters more than the objective.
 | | Step | State |
 |---|---|---|
 | C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
-| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | **run, open** — second run with per-cell noise and the visit map in the policies: (s) and (u) pass on all five, coverage fixed (50 distinct directions, fine coverage 0.138 > random's 0.116, lowest error 0.105 /m); **(t) fails on info** (z 0.32) and **(v) fails on info and oracle** (fine 0.013, 0.039), which still re-fixate a coarsely-measured but finely-unmeasurable direction; `docs/c2-active-loop.md` |
+| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | **run, open** — third run: (s), (t), (u) pass on all five, (v) on four; **(v) fails on info** (28 distinct directions; from fixation 26 it re-measures one finely-measurable wall whose floor-limited variance never falls). Error: info 0.101 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > oracle 0.074 > info 0.053; `docs/c2-active-loop.md` |
 | C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
 
 ## State
@@ -118,13 +118,14 @@ variance carries; the maps are smoothed along θ only from level 2, where it de-
 fovea cannot afford it. κ and floor per level are in each run's `field.json` for C2
 (`docs/c1-stereo-field.md`, Results, Second run).
 
-C2 has run twice: the loop closes in one Blender session at 0.3–0.5 s per fixation, the record
-replays exactly, and with the field's noise measured per cell the room's walls yield fine cells off
-the cards; coverage-first with the visit map spreads over the whole field of regard and has the
-lowest error of the five policies at equal rays (0.105 /m against random's 0.111 and target
-order's 0.140). The expected-information policy and the oracle still return to one direction a
-coarse level measured from afar and the fovea cannot, which is the open question for the gain
-model (`docs/c2-active-loop.md`).
+C2 has run three times: the loop closes in one Blender session at 0.3–0.5 s per fixation, the
+record replays exactly, the field's noise is measured per cell, and the policies score the visit map
+within the field of regard. Coverage-first and expected information have the lowest error of the
+five at equal rays (0.105 and 0.101 /m against random's 0.111 and target order's 0.140); target
+order keeps the fine band because the cards are where it looks. What stays open is the gain model's
+fixed point: once the cap has no unseen cells, expected information re-measures one finely
+measurable wall whose floor-limited variance cannot fall, and only an explicit inhibition of
+return (the oracle's) escapes it (`docs/c2-active-loop.md`).
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

@@ -905,3 +905,24 @@ fixation 0 enters the history. Self-test adds the coarse-plus-empty-fine case. B
 stub: info 30/30 distinct, oracle 30/30. Textured stub, 20 fixations: coverage 0.0464 < info
 0.0482 < random 0.0536 < oracle 0.0713 < targets 0.0960; fine coverage coverage 0.204 ~ info
 0.203. Predicted for the third run: info >= 40 distinct, (t) and (v) pass on all five.
+
+## 2026-09-17 — C2 third run: oracle fixed, (t) passes everywhere; info locks a third way, on a finely-measurable wall; (v) open on info
+
+All measured, `previews/loop2/` (info and oracle re-run; the other three from the second run).
+Self-test ok. Banners IOR 0 (info), 3 deg (oracle). info: 24.1 s, 28 distinct of 50, cover any
+0.989, fine 0.053, rho err median 0.1006 /m, z RMS 0.44, vergence median 0.51 m; oracle: 23.1 s,
+50 distinct, cover any 0.993, fine 0.074, rho err 0.1462, z 0.50, vergence median 2.66 m. Eval:
+(s) exact, (t) 0.44-0.57 and (u) pass on all five; (v) passes on four and FAILS on info (0.053 <
+0.5 x 0.116). Rankings: rho err info 0.1006 < coverage 0.1052 < random 0.1111 < targets 0.1397 <
+oracle 0.1462; fine coverage targets 0.201 > coverage 0.138 > random 0.116 > oracle 0.074 >
+info 0.053; fine-band error targets 0.0149, coverage 0.0249 ~ info 0.0252 ~ random 0.0253. Info's
+lock: 26 spread fixations (cap covered by k024), then (+48, -10) deg x23 from k026: z_hat
+3.61-3.71 m vs centre 4.12 (vergence fine), field identical each time (1840 cells; consistent
+rows 0/93/535/728/332 by level: no level-0, 93 level-1 on a weak-texture wall), fine coverage
+constant, score 0.031-0.041 (0.51 at k001), visited_fine_unmeasured 0.0012 at the end. The
+direction is finely measurable, so the new rule admits it; its 93 cells' variance is floor-
+limited and does not fall with re-measurement, so once no unseen cell remains the gain
+landscape is flat and its argmax a fixed point; the oracle escapes only by its IOR. Stopped per
+the prompt; the gain model (noise-only variance in the gain, a minimum cell yield to retire a
+direction, or an IOR for info) is Chat's. No code changed. README C2 row stays run, open.
+Figures replaced.
