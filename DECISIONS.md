@@ -168,3 +168,21 @@ cap check (A6, +1.03%) and e_max is Phase C's coverage question, not this object
 standard setting is the middle of a flat optimum at 40% of E₂ = 4's cost.
 Overturned if: a finer s_eval or the Classroom scene shows a slope in E₂ larger than the
 3.5% measured here, or Phase C's gaze policy prices coverage into the objective.
+
+## D17 — The active loop lives here: matcher, belief and gaze policy; supersedes D5 (2026-09-16)
+
+Phase C builds the closed loop in this repository — a stereo matcher that works over the whole
+field a pair covers (`tools/stereo_field.py`, the D15 instrument at the scale the samples
+support, level by level), a belief on the head sphere fused across pairs, and the policy that
+chooses the next fixation — and ends with a foveated stereo rendering engine for Blender that
+runs that loop in one command. `active-stereo` is not a dependency and receives nothing;
+bio-3d-vision's ledger of foreclosures is the prior for the policy (no revisiting first, the
+objective second, coverage is the likely result).
+Why: D5 kept a research-paced matcher out of an engineering-paced project. The matcher Phase C
+needs is not that one: the instrument extended to every eccentricity is engineering, and it is
+what the loop needs to close. Four repositories in, the loop that ran was the smallest one
+(bioeye); the framework that was to receive the samples never ran its loop. The samples stay
+the interface (D1), so a research matcher can still consume them from anywhere.
+Overturned if: the field matcher cannot recover parallax where the fovea has not been, in which
+case the loop has no periphery to guide it and the non-uniform-lattice matcher is back on the
+line — as a step here, not a boundary.

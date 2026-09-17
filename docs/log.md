@@ -673,3 +673,39 @@ the bound, and the cost spans 7x. D16 keeps E₂ = 2, e_max = 45 as the middle o
 optimum, with a finer s_eval or the Classroom as what could overturn it. The one remaining
 (n) failure (emax_30 p007, ratio 0.97, 85% edge cells) is within the label fuzz at a card
 whose fovea is mostly depth edge; recorded, not acted on. Phase B's three steps are done.
+
+## 2026-09-16 — Phase C opened: D17, the review filed, C1 written and checked on the stub; not yet run
+
+Phase C starts from a third-party review (`docs/reviews/2026-09-16-phase-c-suggestions.md`,
+with the reading) and Luiz's three decisions: the loop lives here, a matcher that works lives
+here (no D5 boundary), the policy is open-ended; close fast, end with a practical engine. D17
+supersedes D5. Read for context: bioeye (the loop that ran, 432 lines), active-stereo (the
+framework whose loop never ran), bio-3d-vision (thirteen foreclosures on a uniform sensor;
+od-004 named the variable-resolution sensor as the untested form — this project). The prior
+those give the policy: not looking twice beats the objective; coverage is the gain.
+
+C1: `tools/stereo_field.py`, numpy-only (imports rig, stereo_instrument; PIL only for the
+sheet), so C2 can call `field_of_pair` inside the Blender session. Levels l = 0..4 with cell
+2^l s_eval owning eccentricity (E2 (2 2^(l-1) - 1), E2 (2 2^l - 1)]: 2, 6, 14, 30, 62 deg at the
+standard warp; per level B3's maps, NCC + LK, plus the R->L match for left-right consistency,
+the bound, and a variance sigma_p^2 = (kappa bound)^2 + (floor cell)^2; inverse depth by the
+sine rule with the exact Jacobian; record per pair `field/p<NNN>.npz`, `field.json`, `--sheet`.
+Checks (o) ownership, (p) level 0 = the instrument to 25%, (q) bound below the error per
+level, (r) LR consistency rejects and lowers gross; `--self-test` with a synthetic verged
+pair on a textured wall at 2 m and a card at 1 m.
+
+Found while building, on the synthetic pair (numbers measured there, not on renders): a
+periodic synthetic texture gave 75% gross at level 0 (a stimulus is an instrument — replaced
+by 60 random sinusoids); at the coarse levels the LK step recovered about half of a
+fractional shift (bias +0.09 cells at level 4 for true shifts of -0.16, none at a 20 m wall
+where the shift is ~0; not the warp: the same on uniform sampling; not the window model: a
+2-parameter shift-plus-gradient LK did not change it) — one pass of [1,2,1]/4 along theta
+halves it and improves level 0 from 0.14 to 0.06 cells RMS; a floor in the variance was needed
+because the coarse levels' error (0.32-0.39 cells at levels 1-4 on the stub) is 15-30x the
+bound. Stub (`fake_blender_pairs.py`, plumbing and geometry only): 50 pairs in 8.3 s, ~2950
+cells per pair (2640 consistent), owned/covered 0.986, level 0 inlier RMS 0.0512 deg vs the
+instrument's 0.0510 (0%), gross 13.6% -> 6.2% after LR at level 0; control run (`--search-deg
+4`): (p) 11%, all checks pass. Negatives: `--no-lr` fails (r) on every level; `--eval-factor
+4` fails (p) at 134%. Predicted for the workstation: level 0 within 10% of B3's 0.269 s0 on
+`calib_room_sp`; floor per level 0.2-0.4 cells on the room's walls; kappa near B3's 2.5 at
+level 0 and above it at the coarse levels.

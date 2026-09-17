@@ -67,12 +67,20 @@ structure this needs.
 | B2 | Ground-truth stereo correspondence from the Position pass, epipolar coordinates on the sphere, the triangulation check and its control; per-eye references | **done** 2026-09-15 — `stereo_truth.py`, `preview360.py --eye-offset`; D13, D14; results in `docs/b2-stereo-truth.md`: (i), (k) at 0.015 s₀, (j) 100%, (h) within 0.006 quanta on both profiles, naive control inf on every card; small per-eye references pinned (full ones not rendered); per-eye (b) 36/35 of 50 against Phase A's 40, wires 6/8 and 5/8 read as lattice phase |
 | B3 | The E₂ / e_max sweep with the disparity error as the objective (D11): a reference matcher as an instrument, and the matcher-free information bound beside it | **done** 2026-09-15 — `stereo_instrument.py`, `stereo_sweep.py`; D15; D16 closes D11: E₂ = 2, e_max = 45 as the middle of a flat optimum (instrument 0.272 / 0.269 / 0.261 s₀, bound 0.121 / 0.085 / 0.088 s₀ for E₂ 1 / 2 / 4); `docs/b3-stereo-instrument.md` |
 
-### Phase C — open
+### Phase C — the active loop
 
-Candidates, in the order they currently look attractive: a matcher operating on a
-non-uniform lattice (research rather than engineering); a gaze policy that chooses the next
-fixation from what has been sampled so far; reconstruction quality as a function of the
-declared budget. Not yet chosen.
+Observe a pair, infer depth with an uncertainty everywhere the pair looked, choose the next
+fixation from what is known, observe again (D17). The loop lives here, on the Phase B rig and
+record; the end of the phase is a foveated stereo rendering engine for Blender that runs it in
+one command. bioeye is the model — a running loop and a four-panel figure — and
+bio-3d-vision's foreclosures are the prior: coverage is what a loop buys, not looking twice
+matters more than the objective.
+
+| | Step | State |
+|---|---|---|
+| C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **written**, not yet run — `stereo_field.py`; D17; `docs/c1-stereo-field.md` |
+| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | — |
+| C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
 
 ## State
 
@@ -100,6 +108,12 @@ per-sample validation is closed, its residual at the full profile measured as su
 lattice registration and not radiometry. The A6 sweep says the warp's E₂ trades foveal
 accuracy against coverage and leaves the choice to the objective (D11); B3 measured that objective: flat in E₂ per pair at s_eval, and favouring the cheaper settings per ray, so D11 still stands (`docs/b3-stereo-instrument.md`). A fixation costs
 15 ms (small) and 140 ms (full) on the RTX 4090 at the uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
+
+Phase C is open (D17). C1, the stereo field, is written and checked on the stub and the
+synthetic wall: five levels of 2, 6, 14, 30 and 62° at the standard warp, about 3000 cells per
+pair in 0.17 s, level 0 reproducing the instrument to 0%, LR consistency halving the gross
+fraction; the periphery's parallax error is set by a model floor of ~0.3 cell, not by noise,
+which the variance carries. Numbers from the workstation go in `docs/c1-stereo-field.md`.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.
