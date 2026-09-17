@@ -433,7 +433,7 @@ def main():
                 a["z"].append(err[inl] / f["sigma_p_deg"][inl])
                 a["covered"] += f["levels"][lv]["covered"]; a["owned"] += f["levels"][lv]["owned"]
             inl_all = judged & f["consistent"] & ~gross
-            rec.update({"judged": int(judged.sum()), "gross_frac_matchable": float(gross[judged].mean()) if judged.any() else None,
+            rec.update({"judged_cells": int(judged.sum()), "gross_frac_matchable": float(gross[judged].mean()) if judged.any() else None,
                         "gross_frac_consistent": float(gross[judged & f["consistent"]].mean()) if (judged & f["consistent"]).any() else None,
                         "inlier_rms_deg": float(np.sqrt(np.mean(err[inl_all] ** 2))) if inl_all.any() else None,
                         "rho_inlier_rms": float(np.sqrt(np.mean((f["rho"] - t_rho)[inl_all] ** 2))) if inl_all.any() else None,

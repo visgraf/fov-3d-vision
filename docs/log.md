@@ -709,3 +709,31 @@ instrument's 0.0510 (0%), gross 13.6% -> 6.2% after LR at level 0; control run (
 4` fails (p) at 134%. Predicted for the workstation: level 0 within 10% of B3's 0.269 s0 on
 `calib_room_sp`; floor per level 0.2-0.4 cells on the room's walls; kappa near B3's 2.5 at
 level 0 and above it at the coarse levels.
+
+## 2026-09-17 — C1 run on the workstation: (o), (q), (r) pass everywhere, (p) fails on 7 of 8 runs; the smoothing costs level 0
+
+All measured (`field.json` per run; `stereo.json` for the instrument), host side, nothing rendered.
+Self-test ok (0.2 s). Runs: calib_room_sp 5.0 s, control 5.4 s, full 16.5 s, sweep 3.6–8.4 s;
+cells/pair median 2100 (consistent 2002) at small, 9848 (8536) at full; owned/covered 0.984–0.990
+(1.029 on E2 1). Negatives: `--no-lr` fails (r) on all five levels, `--eval-factor 4` fails (p) at
+428%; both exit 1. (p) as shipped: 0.0505 vs 0.0269 deg (87%) on calib_room_sp, field worse.
+Found: `main()` overwrote the per-pair `judged` flag with the judged-cell count, so the 8 wire
+pairs the instrument does not judge entered (p); fixed (count now `judged_cells`), the only code
+change. After it, (p) field vs instrument in deg: calib_room_sp 0.0460 vs 0.0269 (71%, FAIL);
+control 0.0652 vs 0.0535 (22%, pass); full 0.0152 vs 0.0208 (27%, FAIL, field better); e2_1
+0.0396 vs 0.0270 (46%); e2_4 0.0456 vs 0.0262 (74%); emax_30 0.0406 vs 0.0293 (38%); emax_60
+0.0425 vs 0.0285 (49%), all FAIL. Diagnosed with `field_of_pair(smooth=False)` from a scratch
+harness, nothing else changed: calib_room_sp level 0 0.0394 -> 0.0291 deg (0.39 -> 0.29 s0 vs
+the instrument's 0.269), gross before LR 14.6 -> 8.9%, pooled like-for-like 0.0250 vs 0.0269 (7%),
+(p) 0.0278 (3%, would pass); control (p) 7%; full unchanged (level 0 0.0156 vs 0.0160 deg, (p)
+28%). Coarse levels without smoothing: levels 3-4 RMS 0.40/0.23 -> 0.45/0.27 cells, bias
++0.42/+0.48 -> +0.51/+0.61 deg. The wider level-0 grid is not the cause (margin 0: same to
+0.0001 deg). Also: (p) compares an RMS of per-pair RMS against the instrument's pooled RMS; the
+instrument's own per-pair aggregate is 0.0308 vs its pooled 0.0269 (15%). Per level on
+calib_room_sp: inlier RMS 0.20/0.26/0.39/0.40/0.23 cells, kappa measured 3.25/3.75/5.34/6.28/5.35,
+floor 0.13/0.20/0.34/0.37/0.20 cells, z RMS 0.57/0.73/1.12/1.20/0.71, depth RMS 0.35 -> 5.6 m;
+full: 0.16/0.23/0.26/0.33/0.34 cells, kappa 7.21/4.22/4.35/7.58/9.29, floor
+0.13/0.10/0.13/0.29/0.31, depth RMS 0.08 -> 3.8 m. Coarse levels carry a positive bias
+(+0.15 deg at level 2, +0.4-0.5 at 3-4), red over the cards on the sheet. Left for Chat: the
+smoothing at level 0, (p)'s aggregation and tolerance; C2 should not take level-0 kappa/floor
+until then. README C1 row -> run, (p) open. Sheet copied to docs/reference.

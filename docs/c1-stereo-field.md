@@ -115,7 +115,145 @@ for s in e2_1 e2_2 e2_4 emax_30 emax_60; do .venv/bin/python tools/stereo_field.
 
 ## Results
 
-*(filled by Code from the workstation run)*
+Run 2026-09-17 on the workstation, host side in the venv, on Phase B's existing runs (nothing
+rendered). All numbers below are measured, from each run's `field.json` (per level) and
+`stereo.json` (the instrument's reference for (p)), unless marked assumed. Wall times are
+`time` on the command. Sheet: `docs/reference/c1_field_calib_room_small.png` (first four
+pairs of `calib_room_sp`).
+
+**Summary.** Self-test ok. (o), (q) and (r) pass on all eight runs at every level; both
+negatives fail as designed with the named lines and exit 1. **(p) fails on 7 of 8 runs**, in
+the direction the prediction did not anticipate on `small` (the field's level 0 is *worse*
+than the instrument, 38–74% apart) and in the anticipated direction on `full` (the field 27%
+*better*). Only the control passes, at 22%. Diagnosis below; no threshold, κ, floor or the
+smoothing was changed. One plumbing fix in the check's pair selection (item 1 below): the per-pair `judged` flag is no
+longer overwritten, the judged-cell count is now `judged_cells` in `field.json`.
+
+**Diagnosis of (p), measured on `calib_room_sp` unless noted.**
+
+1. *Pair selection (fixed).* `main()` overwrote the per-pair `judged` flag (kind in
+   ring/ladder/point, the instrument's set) with the judged-cell count before (p) read it, so
+   the 8 `wire` pairs, which the instrument reports but never judges (level-0 per-pair RMS
+   0.026–0.104°), were pooled into the field's number. As shipped (p) read 0.0505 vs 0.0269
+   (87%); over the instrument's pairs it reads 0.0460 (71%). Same on every run: control 27% → 22%,
+   full 15% → 27%, e2_1 89% → 46%, e2_4 98% → 74%, emax_30 66% → 38%, emax_60 80% → 49%.
+2. *Aggregation (not changed).* (p) is the RMS of per-pair RMS; `stereo.json`'s
+   `inlier_rms_deg` is pooled over cells. The instrument's own per-pair RMS over its judged
+   pairs is 0.0308, 15% above its pooled 0.0269, so the two aggregations alone use most of the
+   tolerance. Pooled like for like (level-0 LR-consistent inliers within 2° of the L gaze, the
+   instrument's pairs): field **0.0362 vs 0.0269 (35%)** on `calib_room_sp`; control 0.0580 vs
+   0.0535 (8%); full 0.0152 vs 0.0208 (27%).
+3. *The θ-smoothing costs level 0 at `small` (not changed: a reading for Chat).* With
+   `smooth=False` (field_of_pair's keyword, patched from a harness; the tool has no flag) and
+   nothing else changed, `calib_room_sp` level 0 goes from 0.0394 to 0.0291° over all cells
+   (0.39 → 0.29 s₀ against the instrument's 0.269), gross before LR 14.6% → 8.9%, pooled
+   like-for-like **0.0250 vs 0.0269 (7%)**, and (p) as coded 0.0278 vs 0.0269 (3%, pass).
+   Control: (p) 0.0574 vs 0.0535 (7%, pass; pooled 0.0523 vs 0.0535). Full: level 0 unchanged
+   (0.0160 vs 0.0156°), (p) 0.0150 vs 0.0208 (28%, still the field better). The coarse levels
+   go the other way without smoothing, as the synthetic wall predicted, but modestly: levels
+   3–4 inlier RMS 0.40/0.23 → 0.45/0.27 cells, bias +0.42/+0.48 → +0.51/+0.61°. The wider
+   level-0 grid (σ measured over ±4.6° rather than the instrument's ±2°) is not the cause:
+   `margin_deg=0` moves level 0 by 0.0000°.
+
+So at `small` the field is the instrument at level 0 only without the smoothing; at `full`
+the field is 27% better than the instrument with or without it (LR consistency removes 5% of
+its cells; the instrument has no LR test). Whether to smooth only the coarse levels, or
+change (p) to the pooled comparison, or both, is Chat's call; C2 should not read κ or floor
+from level 0 until it is made.
+
+**Per level, all runs.** κ and floor are the measured values at the assumed κ (2.5 small,
+3.8 full) and floor 0.3 cells. The predicted floor of 0.2–0.4 cells at levels 1–4 holds at
+levels 2–3 (0.29–0.40 cells on every run) and is lower at levels 1 and 4 (0.10–0.22); at
+level 0 it is 0.12–0.27. RMS/bound is 3.2–3.7 at level 0 on `small` (predicted near 2.5) and
+7.2 at level 0 on `full` (predicted near 3.8); 4–9 at the coarse levels. z RMS is 0.5–0.6 at
+level 0 (σ too large by ~2×) and 1.0–1.2 at levels 2–3 on `small`; the model is right within
+3× everywhere. The coarse levels carry a positive bias (+0.15° at level 2, +0.4–0.5° at
+levels 3–4, i.e. 0.15–0.3 cells) visible on the sheet as red over the cards: the estimate
+overshoots toward the nearer surface where the window straddles a depth edge. Depth RMS (1st
+order): 0.35 m at level 0 and 5.6 m at level 4 on `small`; 0.08 m and 3.8 m on `full`.
+Level edges scale with E₂ as designed (E₂ 1: six levels, cells 0.20–6.36°; e_max 30: four).
+`owned/covered` is 1.029 on e2_1 (>1: the level bands overrun the disc's solid angle at the
+band quantisation with E₂ 1; harmless for (o), noted).
+
+**`calib_room_sp`** — verged, seed pair; κ 2.5; 50 pairs, 5 levels, cells/pair median 2100 (consistent 2002), owned/covered 0.986; wall 5.0 s. (p): field 0.0460 vs instrument 0.0269 deg (71%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 9997 | 10.6 | 14.6% → 10.0% | 0.0394 / 0.20 / 0.39 | +0.0116 | 0.0121 | 3.25 | 0.13 | 0.0440 | 0.351 | 0.57 / 0.29 |
+| 1 | 0.40 | 19110 | 7.9 | 25.3% → 22.1% | 0.1062 / 0.26 / 1.06 | +0.0302 | 0.0284 | 3.75 | 0.20 | 0.0922 | 0.890 | 0.73 / 0.29 |
+| 2 | 0.80 | 24617 | 3.2 | 17.0% → 16.7% | 0.3109 / 0.39 / 3.10 | +0.1516 | 0.0582 | 5.34 | 0.34 | 0.1342 | 2.086 | 1.12 / 0.38 |
+| 3 | 1.60 | 29386 | 2.1 | 0.5% → 0.2% | 0.6458 / 0.40 / 6.44 | +0.4229 | 0.1028 | 6.28 | 0.37 | 0.2401 | 4.879 | 1.20 / 0.68 |
+| 4 | 3.21 | 13334 | 2.3 | 0.3% → 0.2% | 0.7433 / 0.23 / 7.42 | +0.4832 | 0.1389 | 5.35 | 0.20 | 0.3666 | 5.569 | 0.71 / 0.49 |
+
+**`calib_room_control_sp`** — vergence off, `--search-deg 4`; κ 2.5; 50 pairs, 5 levels, cells/pair median 2090 (consistent 1898), owned/covered 0.985; wall 5.4 s. (p): field 0.0652 vs instrument 0.0535 deg (22%, tol 25%) — pass. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 9133 | 32.1 | 32.2% → 13.9% | 0.0599 / 0.30 / 0.60 | +0.0313 | 0.0104 | 5.77 | 0.27 | 0.0470 | 0.377 | 0.91 / 0.63 |
+| 1 | 0.40 | 18725 | 13.9 | 27.6% → 21.6% | 0.1117 / 0.28 / 1.11 | +0.0299 | 0.0293 | 3.81 | 0.21 | 0.0854 | 0.833 | 0.77 / 0.35 |
+| 2 | 0.80 | 24444 | 3.4 | 17.3% → 16.6% | 0.2992 / 0.37 / 2.99 | +0.1343 | 0.0570 | 5.25 | 0.33 | 0.1175 | 1.923 | 1.08 / 0.34 |
+| 3 | 1.60 | 28742 | 1.6 | 0.3% → 0.2% | 0.6232 / 0.39 / 6.22 | +0.3833 | 0.1033 | 6.03 | 0.35 | 0.2046 | 4.704 | 1.16 / 0.57 |
+| 4 | 3.21 | 12608 | 2.0 | 0.1% → 0.1% | 0.6453 / 0.20 / 6.44 | +0.2628 | 0.1633 | 3.95 | 0.16 | 0.2332 | 4.665 | 0.63 / 0.35 |
+
+**`calib_room_full_sp`** — full profile, `--kappa 3.8`; 50 pairs, 5 levels, cells/pair median 9848 (consistent 8536), owned/covered 0.988; wall 16.5 s. (p): field 0.0152 vs instrument 0.0208 deg (27%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.10 | 47904 | 5.2 | 11.7% → 8.1% | 0.0156 / 0.16 / 0.31 | +0.0008 | 0.0022 | 7.21 | 0.13 | 0.0113 | 0.079 | 0.49 / 0.19 |
+| 1 | 0.20 | 80689 | 13.8 | 26.1% → 19.9% | 0.0451 / 0.23 / 0.90 | +0.0065 | 0.0107 | 4.22 | 0.10 | 0.0393 | 0.384 | 0.63 / 0.27 |
+| 2 | 0.40 | 120535 | 13.3 | 23.2% → 18.0% | 0.1048 / 0.26 / 2.10 | +0.0296 | 0.0241 | 4.35 | 0.13 | 0.0773 | 0.807 | 0.78 / 0.28 |
+| 3 | 0.80 | 135732 | 8.7 | 18.9% → 16.4% | 0.2670 / 0.33 / 5.35 | +0.1159 | 0.0352 | 7.58 | 0.29 | 0.1086 | 1.750 | 1.04 / 0.29 |
+| 4 | 1.60 | 56946 | 2.5 | 2.3% → 1.3% | 0.5408 / 0.34 / 10.83 | +0.2722 | 0.0582 | 9.29 | 0.31 | 0.1955 | 3.844 | 1.06 / 0.48 |
+
+**`sweep_b3/e2_1`** — E₂ 1; 50 pairs, 6 levels, cells/pair median 740 (consistent 714), owned/covered 1.029; wall 3.6 s. (p): field 0.0396 vs instrument 0.0270 deg (46%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 2027 | 15.4 | 19.0% → 13.9% | 0.0482 / 0.24 / 0.48 | +0.0159 | 0.0136 | 3.56 | 0.17 | 0.0687 | 0.543 | 0.72 / 0.41 |
+| 1 | 0.40 | 5282 | 10.7 | 24.6% → 20.1% | 0.1058 / 0.27 / 1.06 | +0.0317 | 0.0289 | 3.67 | 0.19 | 0.0856 | 0.783 | 0.73 / 0.37 |
+| 2 | 0.80 | 7161 | 3.8 | 20.7% → 20.3% | 0.3130 / 0.39 / 3.15 | +0.1584 | 0.0580 | 5.40 | 0.35 | 0.1263 | 1.996 | 1.10 / 0.40 |
+| 3 | 1.59 | 7360 | 2.8 | 0.1% → 0.1% | 0.7014 / 0.44 / 7.05 | +0.4956 | 0.1147 | 6.11 | 0.40 | 0.2490 | 5.222 | 1.26 / 0.85 |
+| 4 | 3.18 | 8055 | 2.1 | 0.2% → 0.1% | 0.7875 / 0.25 / 7.92 | +0.5542 | 0.1908 | 4.13 | 0.20 | 0.4593 | 6.645 | 0.73 / 0.59 |
+| 5 | 6.36 | 3371 | 1.4 | 0.8% → 0.5% | 0.9371 / 0.15 / 9.42 | +0.3612 | 0.3394 | 2.76 | 0.06 | 1.2779 | 12.152 | 0.44 / 0.26 |
+
+**`sweep_b3/e2_2`** — E₂ 2 (= calib_room_sp); 50 pairs, 5 levels, cells/pair median 2100 (consistent 2002), owned/covered 0.986; wall 4.7 s. (p): field 0.0460 vs instrument 0.0269 deg (71%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 9997 | 10.6 | 14.6% → 10.0% | 0.0394 / 0.20 / 0.39 | +0.0116 | 0.0121 | 3.25 | 0.13 | 0.0440 | 0.351 | 0.57 / 0.29 |
+| 1 | 0.40 | 19110 | 7.9 | 25.3% → 22.1% | 0.1062 / 0.26 / 1.06 | +0.0302 | 0.0284 | 3.75 | 0.20 | 0.0922 | 0.890 | 0.73 / 0.29 |
+| 2 | 0.80 | 24617 | 3.2 | 17.0% → 16.7% | 0.3109 / 0.39 / 3.10 | +0.1516 | 0.0582 | 5.34 | 0.34 | 0.1342 | 2.086 | 1.12 / 0.38 |
+| 3 | 1.60 | 29386 | 2.1 | 0.5% → 0.2% | 0.6458 / 0.40 / 6.44 | +0.4229 | 0.1028 | 6.28 | 0.37 | 0.2401 | 4.879 | 1.20 / 0.68 |
+| 4 | 3.21 | 13334 | 2.3 | 0.3% → 0.2% | 0.7433 / 0.23 / 7.42 | +0.4832 | 0.1389 | 5.35 | 0.20 | 0.3666 | 5.569 | 0.71 / 0.49 |
+
+**`sweep_b3/e2_4`** — E₂ 4; 50 pairs, 4 levels, cells/pair median 4872 (consistent 4429), owned/covered 0.984; wall 8.4 s. (p): field 0.0456 vs instrument 0.0262 deg (74%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 33897 | 8.5 | 18.8% → 14.3% | 0.0416 / 0.21 / 0.41 | +0.0066 | 0.0114 | 3.65 | 0.15 | 0.0387 | 0.331 | 0.60 / 0.28 |
+| 1 | 0.40 | 59138 | 10.8 | 26.6% → 23.2% | 0.1215 / 0.30 / 1.21 | +0.0385 | 0.0327 | 3.72 | 0.22 | 0.0966 | 0.951 | 0.86 / 0.38 |
+| 2 | 0.80 | 85376 | 6.3 | 17.5% → 15.9% | 0.2868 / 0.36 / 2.86 | +0.1227 | 0.0628 | 4.57 | 0.30 | 0.1225 | 1.844 | 1.05 / 0.36 |
+| 3 | 1.60 | 50934 | 3.4 | 1.5% → 0.7% | 0.5571 / 0.35 / 5.56 | +0.3094 | 0.0787 | 7.08 | 0.33 | 0.2084 | 3.985 | 1.09 / 0.53 |
+
+**`sweep_b3/emax_30`** — e_max 30; 50 pairs, 4 levels, cells/pair median 1813 (consistent 1736), owned/covered 0.989; wall 4.4 s. (p): field 0.0406 vs instrument 0.0293 deg (38%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 9471 | 11.1 | 17.3% → 11.5% | 0.0360 / 0.18 / 0.36 | +0.0072 | 0.0110 | 3.28 | 0.12 | 0.0427 | 0.344 | 0.54 / 0.25 |
+| 1 | 0.40 | 18911 | 8.1 | 24.9% → 21.7% | 0.1077 / 0.27 / 1.08 | +0.0312 | 0.0285 | 3.78 | 0.20 | 0.0862 | 0.837 | 0.74 / 0.32 |
+| 2 | 0.80 | 24689 | 3.1 | 17.2% → 16.8% | 0.3093 / 0.39 / 3.10 | +0.1457 | 0.0578 | 5.35 | 0.34 | 0.1266 | 2.043 | 1.11 / 0.39 |
+| 3 | 1.60 | 30638 | 2.5 | 1.0% → 0.6% | 0.6517 / 0.41 / 6.52 | +0.4100 | 0.0922 | 7.07 | 0.38 | 0.2482 | 4.913 | 1.24 / 0.72 |
+
+**`sweep_b3/emax_60`** — e_max 60; 50 pairs, 5 levels, cells/pair median 2471 (consistent 2311), owned/covered 0.990; wall 4.9 s. (p): field 0.0425 vs instrument 0.0285 deg (49%, tol 25%) — **FAIL**. Other fails: none.
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 9237 | 11.1 | 16.6% → 11.1% | 0.0379 / 0.19 / 0.38 | +0.0090 | 0.0117 | 3.25 | 0.12 | 0.0451 | 0.368 | 0.55 / 0.27 |
+| 1 | 0.40 | 19080 | 8.0 | 24.4% → 21.2% | 0.1089 / 0.27 / 1.09 | +0.0289 | 0.0282 | 3.86 | 0.21 | 0.0863 | 0.846 | 0.75 / 0.31 |
+| 2 | 0.80 | 24590 | 3.0 | 16.9% → 16.6% | 0.3098 / 0.39 / 3.09 | +0.1430 | 0.0574 | 5.40 | 0.34 | 0.1277 | 2.044 | 1.11 / 0.38 |
+| 3 | 1.60 | 28865 | 2.3 | 0.6% → 0.3% | 0.6458 / 0.40 / 6.44 | +0.4273 | 0.1043 | 6.19 | 0.37 | 0.2500 | 4.941 | 1.19 / 0.69 |
+| 4 | 3.21 | 28434 | 4.6 | 0.9% → 0.3% | 0.7085 / 0.22 / 7.07 | +0.3445 | 0.1614 | 4.39 | 0.18 | 0.3556 | 4.852 | 0.66 / 0.39 |
+
 
 ## What C1 leaves open
 
