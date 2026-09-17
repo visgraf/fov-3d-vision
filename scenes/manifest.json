@@ -432,7 +432,7 @@
     "path": "previews/reference_full_L/classroom/pano.exr",
     "backface": "previews/reference_full_L/classroom/backface.exr",
     "md5": "de47b7629026782015ede6cdaeaefb65",
-    "backface_md5": null,
+    "backface_md5": "ac86e5f65f40d69d9b3658821ad79de8",
     "width": 7200,
     "height": 3600,
     "spp": 8192,
@@ -447,7 +447,7 @@
     ],
     "render_seconds": 2137.4,
     "exr_bytes": 2002119181,
-    "note": "the L eye of the 63 mm rig (D12), rendered for sphere_views.py as the scene-as-it-is; backface md5 to be filled if that pass was kept. Same class as `reference` (36 min)."
+    "note": "the L eye of the 63 mm rig (D12), rendered for sphere_views.py as the scene-as-it-is; Same class as `reference` (36 min)."
    },
    "reference_small_L": {
     "status": "rendered",
@@ -455,8 +455,8 @@
     "profile": "small",
     "path": "previews/reference_small_L/classroom/pano.exr",
     "backface": "previews/reference_small_L/classroom/backface.exr",
-    "md5": null,
-    "backface_md5": null,
+    "md5": "17bdfa4a8dab7260fd95926b9a61aa9e",
+    "backface_md5": "06038dd4afbc5a0c7be885e1d1e05fa7",
     "width": 3600,
     "height": 1800,
     "spp": 1024,
@@ -466,7 +466,7 @@
      0.0
     ],
     "render_seconds": 70.1,
-    "note": "md5 to be filled from the file (Code: md5sum)"
+    "note": "md5 from the file (Code, 2026-09-17)"
    }
   }
  ]
