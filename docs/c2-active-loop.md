@@ -171,6 +171,27 @@ above random's on the room's walls; z RMS back inside the band as σ falls with 
 `info` and `coverage` within 20% of each other and ahead of target order on median ρ error,
 as on the stub. The first run's record follows as Code wrote it.
 
+## After the second run (2026-09-17)
+
+The noise is now one number across levels at the manifest's value (0.07 small, 0.035 full),
+C1's checks hold with the per-cell σ, the walls yield fine cells, and coverage-first spreads
+over the cap (50 distinct directions) with the lowest error of the five. `info` still locked
+(14 distinct; 37 fixations at (−26°, +56°), the ceiling, where a coarse measurement from afar
+said 11 m and the surface is at 1.9 m), `oracle` half so. Code's reading is right: "known
+measurable" meant measured at *any* level, so a ceiling measured coarsely — and wrongly — from
+afar counted as measurable, the fovea found nothing there, and the gain never fell. Three
+changes in `belief.py`: (1) known measurable means measured at the fine levels (0–1); a fine
+look that finds nothing retires the direction for `info` and `oracle` as it already did for
+`coverage` (self-test: a coarse measurement plus an empty fine visit scores below an unseen
+direction); (2) cells outside the field of regard count for nothing — they were pulling every
+edge candidate, which is why `info`'s first thirteen fixations all sat at ±56–60°; (3) the
+oracle gets an explicit inhibition of return (3°), because "look where you are most wrong" at
+a depth edge the fovea cannot resolve has nowhere else to go; the policies keep none — the
+gain model has to retire a direction on its own, and the record says whether it does. Blank-
+walls stub: info 30 of 30 distinct, oracle 30 of 30. Predicted for the third run: `info` with
+≥ 40 distinct directions and fine coverage near coverage-first's; the ranking coverage ≈ info
+< random < oracle ≈ targets on median ρ error, as on the stub.
+
 ## Results
 
 Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), calibration room at `small`, 50

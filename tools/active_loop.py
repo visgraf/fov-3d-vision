@@ -68,6 +68,7 @@ def main():
     ap.add_argument("--floor-cells", type=float, default=0.3)
     ap.add_argument("--noise-rel", type=float, default=None, help="assumed per-pixel relative RMS; default: calibrated on fixation 0's seed pair")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--ior-deg", type=float, default=None, help="explicit inhibition of return; default 0 for the policies, 3 for the oracle")
     add_profile(ap, script_args(), s0="s0", spp="fix_spp")
     args = ap.parse_args(script_args())
     if args.policy == "targets" and not args.targets:
@@ -84,14 +85,14 @@ def main():
     B = SphereBelief(cell_b, sigma_prior=args.sigma_prior)
     ls = LevelSigma(nlev)
     pol = Policy(args.policy, B, E2, args.eval_factor, emax, regard_deg=args.regard_deg, cand_deg=args.cand_deg,
-                 policy_levels=args.policy_levels, seed=args.seed, level_sigma=ls)
+                 policy_levels=args.policy_levels, seed=args.seed, level_sigma=ls, ior_deg=args.ior_deg)
     cap = pol.cap
     rays_per_pair = 2 * R.n_inside * args.spp
     targets = load_points(args.targets, None, R.head_origin) if args.policy == "targets" else None
     n_fix = min(args.fixations, len(targets)) if targets else args.fixations
     R.banner(n_fix)
     print(f"[loop] policy {args.policy}; belief {B.nth}x{B.nph} cells of {cell_b:.3f} deg; regard {args.regard_deg} deg, "
-          f"{len(pol.cand)} candidates at {args.cand_deg} deg; policy radius {pol.R:.0f} deg; rays/pair {rays_per_pair}", flush=True)
+          f"{len(pol.cand)} candidates at {args.cand_deg} deg; policy radius {pol.R:.0f} deg; IOR {pol.ior_deg:g} deg; rays/pair {rays_per_pair}", flush=True)
 
     def fwd_world(d_head):
         return R.head_rot3 @ np.asarray(d_head, np.float64)
@@ -115,6 +116,7 @@ def main():
         else:
             if k == 0:
                 d_head, info = FORWARD.copy(), {"score": None}
+                pol.history.append(d_head)
             else:
                 d_head, info = pol.choose()
             z = B.rho_along(d_head, 2.0)

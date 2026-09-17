@@ -34,7 +34,9 @@ belief's estimate along that direction (or the target's, for the target-order ba
              looked at finely and found unmeasurable at zero (the reviewer's policy, with the
              visit map)
   oracle     the same sum with the belief's actual squared error where truth exists ("look
-             where you are most wrong"); the upper bracket, not a policy
+             where you are most wrong"), with an explicit inhibition of return (3 deg) because a
+             depth edge the fovea cannot resolve is "wrong" forever; the upper bracket, not a
+             policy
 """
 from __future__ import annotations
 
@@ -250,8 +252,9 @@ def candidates(regard_deg: float, step_deg: float) -> np.ndarray:
 class Policy:
     def __init__(self, name: str, belief: SphereBelief, E2: float, eval_factor: float, e_max: float, regard_deg: float = 60.0,
                  cand_deg: float = 2.0, policy_levels: int = 3, seed: int = 0, level_sigma: LevelSigma | None = None,
-                 policy_cell_deg: float = 1.0):
+                 policy_cell_deg: float = 1.0, ior_deg: float | None = None):
         self.name, self.b = name, belief
+        self.ior_deg = float(ior_deg if ior_deg is not None else (3.0 if name == "oracle" else 0.0))
         self.edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
         self.R = float(min(self.edges[min(policy_levels, len(self.edges)) - 1], e_max))
         self.R_fine = float(self.edges[min(1, len(self.edges) - 1)])          # levels 0-1: 6 deg at the standard warp
@@ -269,6 +272,8 @@ class Policy:
         th = (np.arange(self.nth) + 0.5) * self.cell; ph = (np.arange(self.nph) + 0.5) * self.cell - 180.0
         self.dirs = direction_of(th[:, None] + np.zeros((1, self.nph)), ph[None, :] + np.zeros((self.nth, 1))).astype(np.float32)
         self.area = (np.radians(self.cell) ** 2) * np.sin(np.radians(th))[:, None] + np.zeros((1, self.nph))
+
+        self.cap_c = (self._reduce(self.cap.astype(float)) > 0.5).astype(float)
 
     def _reduce(self, X: np.ndarray) -> np.ndarray:
         f = self.f
@@ -319,11 +324,13 @@ class Policy:
         if self.name == "coverage":
             return float((v * A).sum())
         lev = self.level_of(e[inside])
-        # a look counts where the cell is known measurable (measured at any level) or where this
+        # a look counts where the cell is known measurable AT THE FINE LEVELS or where this
         # fixation would look at it at least two levels finer than the finest look that found
-        # nothing (levels 0 and 1 are one class: a blank wall fails both)
+        # nothing (levels 0 and 1 are one class: a blank wall fails both). "Measured at any
+        # level" was the second run's lock: a ceiling measured coarsely, and wrongly, from
+        # afar counted as measurable, the fovea found nothing there, and the gain never fell
         vi = vis[i0:i1][:, j][inside]; me = meas[i0:i1][:, j][inside]
-        allowed = (me < UNVISITED) | (lev + 1 < vi)
+        allowed = (me <= 1) | (lev + 1 < vi)
         I = 1.0 / (np.array(self.ls.vals)[np.minimum(lev, len(self.ls.vals) - 1)] ** 2)
         g = np.where(allowed, 0.5 * np.log1p(v * I), 0.0)
         return float((g * A).sum())
@@ -331,12 +338,24 @@ class Policy:
     def choose(self) -> tuple[np.ndarray, dict]:
         if self.name == "random":
             d = self.cand[self.rng.integers(len(self.cand))]
+            self.history.append(d)
             return d, {"score": None}
-        var_map = self._reduce(self._gain_field())
+        var_map = self._reduce(self._gain_field()) * self.cap_c          # no gain from cells outside the field of regard
         vis, meas = self._allowed_maps()
         scores = np.array([self._score(var_map, vis, meas, d) for d in self.cand])
+        if self.ior_deg > 0 and self.history:
+            # explicit inhibition of return: a candidate within ior_deg of a past fixation is out.
+            # Off for the policies (the gain model has to retire a direction on its own, and the
+            # loop's record says whether it does); on for the oracle, which is a bracket, not a
+            # policy, and whose "look where you are most wrong" has nowhere else to go at a
+            # depth edge the fovea cannot resolve
+            H = np.stack(self.history)
+            near = (self.cand @ H.T) >= math.cos(math.radians(self.ior_deg))
+            scores = np.where(near.any(1), -np.inf, scores)
         k = int(np.argmax(scores))
-        return self.cand[k], {"score": float(scores[k]), "score_median": float(np.median(scores))}
+        d = self.cand[k]
+        self.history.append(d)
+        return d, {"score": float(scores[k]), "score_median": float(np.median(scores[np.isfinite(scores)]))}
 
 
 # ----------------------------------------------------------------------------------------
@@ -398,6 +417,15 @@ def self_test() -> list[str]:
     vm5 = pol5._reduce(pol5._gain_field()); vis5, meas5 = pol5._allowed_maps()
     if not pol5._score(vm5, vis5, meas5, FORWARD.copy()) > 0:
         fails.append("a coarsely measured direction scores nothing for a fine look")
+    # a coarse (wrong) measurement plus a fine look that found nothing: retired for info too
+    b6 = SphereBelief(1.0)
+    b6.fuse({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([8.0]), "level": np.array([3], np.int8),
+             "rho": np.array([0.09]), "sigma_rho": np.array([0.3]), "consistent": np.array([True])})
+    b6.visit({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([0], np.int8)})
+    pol6 = Policy("info", b6, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
+    vm6 = pol6._reduce(pol6._gain_field()); vis6, meas6 = pol6._allowed_maps()
+    if not pol6._score(vm6, vis6, meas6, FORWARD.copy()) < pol6._score(vm6, vis6, meas6, candidates(40.0, 4.0)[0]):
+        fails.append("a direction measured coarsely and foveated without result still scores")
     # coverage scores the visit map, not the measurement map
     polc = Policy("coverage", b4, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
     vmc = polc._reduce(polc._gain_field())

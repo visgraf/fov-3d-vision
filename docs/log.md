@@ -891,3 +891,17 @@ the prompt; the rule is Chat's. Coverage: 50 distinct, fine above random, lowest
 yield fine cells (visited_fine_unmeasured 0.0046). Record check: field_check/ 50 files, field/
 50 files untouched, single-run eval (s) ok. No code changed. README C2 row stays run, open.
 Figures replaced in docs/reference.
+
+## 2026-09-17 — C2 after the second run: fine-level measurability, the cap as the gain's domain, IOR for the oracle; not yet re-run
+
+Code's second run (repo `main` at 943ba88): noise 0.07 at every level, C1 holds, coverage
+50 distinct and best (0.1052 /m), info locked on the ceiling (14 distinct, belief 11 m vs 1.9
+m), oracle 25 distinct; (t), (v) fail on those two. Cause, Code's: "measured at any level"
+counted a coarsely mis-measured ceiling as measurable. `belief.py`: allowed = measured at
+levels 0-1, or a look two levels finer than the finest failed one; gain masked to the field
+of regard (edge candidates were scoring cells beyond the cap: info's first 13 fixations at
++-56-60 deg); explicit IOR 3 deg for the oracle only (`--ior-deg`, default 0 for policies);
+fixation 0 enters the history. Self-test adds the coarse-plus-empty-fine case. Blank-walls
+stub: info 30/30 distinct, oracle 30/30. Textured stub, 20 fixations: coverage 0.0464 < info
+0.0482 < random 0.0536 < oracle 0.0713 < targets 0.0960; fine coverage coverage 0.204 ~ info
+0.203. Predicted for the third run: info >= 40 distinct, (t) and (v) pass on all five.
