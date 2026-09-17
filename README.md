@@ -78,8 +78,8 @@ matters more than the objective.
 
 | | Step | State |
 |---|---|---|
-| C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — all checks pass on 8 runs, negatives fail as designed; level 0 (p) 0.0250 vs the instrument's 0.0269° at `small` (−7%), 0.0158 vs 0.0208° at `full` (−24%); measured floor 0.06–0.40 cells (0.29–0.40 at levels 2–3); `docs/c1-stereo-field.md` |
-| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | — |
+| C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
+| C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **written**, not yet run — `docs/c2-active-loop.md` |
 | C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
 
 ## State

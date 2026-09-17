@@ -220,9 +220,11 @@ def main():
     if not verged and summary["control_unresolvable"]:
         print(f"[check_pairs] control not resolvable at this s0 (predicted miss below one spacing), reported only: "
               f"{' '.join(summary['control_unresolvable'])}")
+    def _f(v, fmt=".2f"):
+        return "-" if v is None else format(v, fmt)
     print(f"[check_pairs] {'verged' if verged else 'CONTROL (vergence off)'}: {len(judged)} judged pairs of {len(per)}; "
-          f"miss median {summary['miss_mm_median']:.2f} mm, max {summary['miss_mm_max']:.2f} mm "
-          f"({summary['miss_in_spacings_max']:.2f} spacings); (a) worst {summary['warp_s0_p999_max']:.3f} s0; "
+          f"miss median {_f(summary['miss_mm_median'])} mm, max {_f(summary['miss_mm_max'])} mm "
+          f"({_f(summary['miss_in_spacings_max'])} spacings); (a) worst {summary['warp_s0_p999_max']:.3f} s0; "
           f"cap {summary['cap_ratio_range'][0]:.4f}-{summary['cap_ratio_range'][1]:.4f}")
     for f in fails:
         print("[check_pairs] FAIL", f)

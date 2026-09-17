@@ -255,11 +255,11 @@ def main():
                "visibility": {"visible": int(vis_counts[0]), "occluded": int(vis_counts[1]), "outside_disc": int(vis_counts[2]),
                               "inconsistent": int(vis_counts[3]), "vis_tol_rel": args.vis_tol},
                "h_judged": int(sum(r["judged"] for r in per)),
-               "h_truth_err_vs_hit_m_max": float(max(abs(r["h_truth"]["cyclopean_m"] - r["h_position_pass_cyclopean_m"]) for r in per if r["judged"])),
-               "h_truth_err_vs_target_m_max": float(max(abs(r["h_truth"]["cyclopean_m"] - r["h_target_distance_m"]) for r in per if r["judged"])),
+               "h_truth_err_vs_hit_m_max": float(max(abs(r["h_truth"]["cyclopean_m"] - r["h_position_pass_cyclopean_m"]) for r in per if r["judged"])) if any(r["judged"] for r in per) else None,
+               "h_truth_err_vs_target_m_max": float(max(abs(r["h_truth"]["cyclopean_m"] - r["h_target_distance_m"]) for r in per if r["judged"])) if any(r["judged"] for r in per) else None,
                "h_quantum_target_m_range": [float(min(r["h_depth_quantum_target_m"] for r in per)), float(max(r["h_depth_quantum_target_m"] for r in per))],
                "centre_parallax_minus_vergence_deg_max": float(max(abs(r["centre_parallax_deg"] - (r["vergence_pred_deg"] if verged else r["centre_parallax_deg"]))
-                                                                  for r in per if r["judged"])) if verged else None,
+                                                                  for r in per if r["judged"])) if (verged and any(r["judged"] for r in per)) else None,
                "fails": fails}
     if summary["epi_s0_p999"] > args.epi_tol:
         fails.append(f"(i) epipolar phi disagreement {summary['epi_s0_p999']:.3f} s0 at p99.9")
@@ -287,8 +287,8 @@ def main():
           f"(max {summary['epi_s0_max']:.3f}); (k) triangulation {summary['tri_s0_p999']:.3f} s0; (j) round trip {100 * summary['roundtrip_frac']:.3f}%; "
           f"{summary['axis_excluded']} samples within {args.axis_deg} deg of the axis excluded; "
           f"visible {100 * v['visible'] / tot:.1f}% occluded {100 * v['occluded'] / tot:.1f}% outside {100 * v['outside_disc'] / tot:.1f}% "
-          f"inconsistent {100 * v['inconsistent'] / tot:.2f}%; (h) truth max error {summary['h_truth_err_vs_hit_m_max']:.4f} m vs the hit, "
-          f"{summary['h_truth_err_vs_target_m_max']:.4f} m vs the target (target quantum {summary['h_quantum_target_m_range'][0]:.3f}-"
+          f"inconsistent {100 * v['inconsistent'] / tot:.2f}%; (h) truth max error {summary['h_truth_err_vs_hit_m_max'] if summary['h_truth_err_vs_hit_m_max'] is None else format(summary['h_truth_err_vs_hit_m_max'], '.4f')} m vs the hit, "
+          f"{summary['h_truth_err_vs_target_m_max'] if summary['h_truth_err_vs_target_m_max'] is None else format(summary['h_truth_err_vs_target_m_max'], '.4f')} m vs the target (target quantum {summary['h_quantum_target_m_range'][0]:.3f}-"
           f"{summary['h_quantum_target_m_range'][1]:.3f} m)")
     for f in fails:
         print("[truth] FAIL", f)

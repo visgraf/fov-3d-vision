@@ -776,3 +776,40 @@ identical to the first run (same code path); levels 0-1 are the unsmoothed match
 RMS/bound at small is 4.6, not the predicted ~3, because the bound halves without smoothing
 (0.0121 -> 0.0063 deg) while the error falls less. README C1 row -> done. Sheet replaced.
 C2 reads kappa and floor per level from these field.json files.
+
+## 2026-09-17 — C1 closed (Code's second run, b7ab372); C2 written and run on the stub; not yet run on the workstation
+
+C1: every check on all eight runs; (p) -7% small, -24% full (the LR test); level-0 RMS/bound
+4.6 at small (the bound halves without the smoothing, the error less); floor 0.10-0.37 cells
+per level. C2 reads kappa and floor per level from those runs.
+
+C2, five files. `fixation_pairs.py` refactored into `PairRenderer` (setup once, `render_pair`
+on demand, `seed_pass`, `finish`; `add_render_args`) — stub output identical modulo timings,
+check_pairs passes. `belief.py`: SphereBelief on the epipolar grid at s_eval (898x1796 at
+small), inverse-variance fusion with the measurement splatted over the belief cells it
+covers; the variance split into a noise part that averages across pairs and a model floor
+that does not (found on the stub: with one variance the periphery's sigma went to zero after
+ten overlapping coarse measurements while its error did not); gating of a coarser
+measurement that disagrees by 3 sigma; the visit map (owned cells, matchable or not) so the
+policy tells unseen from unmeasurable; truth from the L eye's own ray distances; metrics
+over the cap (coverage any/fine apart from error on measured cells by band, calibration z).
+Policies targets, random, coverage, info (expected information with the running per-level
+sigma_rho of the run's own fields, out to 14 deg), oracle; candidates every 2 deg in a 60 deg
+cap; scored on a 1 deg grid (2969 candidates in 0.2 s). `active_loop.py` (Blender side): the
+loop in one session; vergence from the belief within 2 deg of the target, else over the cap,
+else z0; fixation 0 rendered twice to calibrate the noise per level; search range 6 deg.
+`active_eval.py` (host): replay check (s), calibration (t), learning (u), not-twice (v);
+bioeye's four panels per run; the comparison chart across runs. `stereo_field.py` now also
+returns the owned cells (the visit map) and the two variance parts per row, and accepts a
+per-level noise_rel. `check_pairs.py` and `stereo_truth.py` report instead of crashing on a
+run with no judged card pairs (three empty-max sites). `tools/dev/fake_blender_loop.py`.
+D18: the evaluation contract.
+
+Stub, 20 fixations each, equal rays: median rho error info 0.0456 < coverage 0.0470 < oracle
+0.0530 < random 0.0549 < targets 0.0959 /m; fine coverage coverage 0.190 > random 0.174 >
+oracle 0.155 ~ info 0.154 > targets 0.078; z RMS 0.66-0.85; vergence error from the
+periphery median 0.5-0.9 m at 2-4 m; (s)-(v) pass on all five. Per fixation 0.7 s on the
+stub. Predicted for the workstation: ~1 s per fixation at small, a minute per run; the
+spreading policies within 20% of each other on error and all well ahead of target order at
+50 fixations; whether info beats coverage on the fine band is the open question, and the
+render's textured walls (not the stub's noise texture) decide the coarse-band gross fraction.

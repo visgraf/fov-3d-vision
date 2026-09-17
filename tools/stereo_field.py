@@ -32,7 +32,8 @@ Output per pair, <run>/field/p<NNN>.npz, one row per owned matchable cell:
     theta_L, phi   (M,)   deg
     level          (M,)   int8;  cell_deg (M,)
     parallax_deg   (M,)   estimate;  sigma_p_deg (M,)  sqrt((kappa bound)^2 + (floor cell)^2);  bound_deg (M,)
-    rho            (M,)   1/m;  sigma_rho (M,)  1/m
+    rho            (M,)   1/m;  sigma_rho (M,)  1/m, and its two parts sigma_rho_noise (kappa bound,
+                          averages across pairs) and sigma_rho_floor (floor x cell, does not)
     consistent     (M,)   bool, LR consistency
     truth_parallax_deg, truth_rho, truth_visible (M,)  when truth.npz exists (NaN / -1 else)
 and <run>/field.json with the per-pair and per-level statistics and the checks.
@@ -149,7 +150,8 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
     phi_c, theta_mid = 0.5 * (phL + phR), 0.5 * (thL + thR)
     edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
     h = window
-    rows = {k: [] for k in ("dir", "theta_L", "phi", "level", "cell_deg", "parallax_deg", "sigma_p_deg", "bound_deg", "rho", "sigma_rho", "consistent", "ecc_deg", "row", "col")}
+    rows = {k: [] for k in ("dir", "theta_L", "phi", "level", "cell_deg", "parallax_deg", "sigma_p_deg", "bound_deg", "rho", "sigma_rho", "sigma_rho_noise", "sigma_rho_floor", "consistent", "ecc_deg", "row", "col")}
+    visits = {k: [] for k in ("theta_L", "phi", "level", "cell_deg")}      # every owned cell, matchable or not (C2: the visit map)
     for k in (extras or {}):
         rows["x_" + k] = []
     levels = []
@@ -174,7 +176,8 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
             if noise_rel is None:
                 raise ValueError("no seed pair in the run: pass noise_rel (assumed per-pixel relative RMS)")
             spc = max(1.0, (cell / (s0 * (1.0 + e_lo / E2))) ** 2)
-            sigL = float(noise_rel * np.nanmean(ML) / math.sqrt(spc)); sigR = float(noise_rel * np.nanmean(MR) / math.sqrt(spc))
+            nr = noise_rel[min(l, len(noise_rel) - 1)] if isinstance(noise_rel, (list, tuple, np.ndarray)) else noise_rel
+            sigL = float(nr * np.nanmean(ML) / math.sqrt(spc)); sigR = float(nr * np.nanmean(MR) / math.sqrt(spc))
             noise = "assumed"
         # the centre J x J of each wide map is the grid proper; the wide map is the search partner
         J, W = gL.J, gL.W
@@ -207,17 +210,23 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         sig_p = np.sqrt((kappa * bound) ** 2 + (floor_cells * cell) ** 2)       # noise term + the model floor
         rho, jac = inverse_depth(th_cells, par, ipd_m)
         sig_rho = np.abs(jac) * np.radians(sig_p)
+        sig_rho_noise = np.abs(jac) * np.radians(kappa * bound)                  # averages across pairs
+        sig_rho_floor = np.abs(jac) * np.radians(floor_cells * cell)             # does not (the same window, the same edge)
         sel = own & matchable
         sr_cell = (math.radians(cell) ** 2) * np.sin(np.radians(th_cells)) / max(math.sin(math.radians(theta_mid)), 1e-6)   # cell solid angle, sr
-        levels.append({"owned_sr": float(sr_cell[own].sum()),"level": l, "cell_deg": cell, "e_lo_deg": e_lo, "e_hi_deg": float(min(e_hi, e_max)), "grid": [J, W], "search_cells": S,
+        spc_l = max(1.0, (cell / (s0 * (1.0 + e_lo / E2))) ** 2)
+        levels.append({"owned_sr": float(sr_cell[own].sum()), "noise_rel_equiv": float(0.5 * (sigL / max(np.nanmean(ML), 1e-9) + sigR / max(np.nanmean(MR), 1e-9)) * math.sqrt(spc_l) * (4.0 / math.sqrt(6.0) if l >= smooth_from_level else 1.0)),"level": l, "cell_deg": cell, "e_lo_deg": e_lo, "e_hi_deg": float(min(e_hi, e_max)), "grid": [J, W], "search_cells": S,
                        "sigma_L": sigL, "sigma_R": sigR, "noise": noise,
                        "covered": int(covL[:, c0:c0 + J].sum()), "owned": int(own.sum()), "matchable": int(sel.sum()),
                        "consistent": int((sel & consistent).sum()),
                        "maps": (AL, AR, own, matchable, consistent, par, sig_p, exL, gL, c0)})
+        visits["theta_L"].append(th_cells[own]); visits["phi"].append(ph_cells[own])
+        visits["level"].append(np.full(int(own.sum()), l, np.int8)); visits["cell_deg"].append(np.full(int(own.sum()), cell))
         rows["dir"].append(d_cells[sel]); rows["theta_L"].append(th_cells[sel]); rows["phi"].append(ph_cells[sel])
         rows["level"].append(np.full(int(sel.sum()), l, np.int8)); rows["cell_deg"].append(np.full(int(sel.sum()), cell))
         rows["parallax_deg"].append(par[sel]); rows["sigma_p_deg"].append(sig_p[sel]); rows["bound_deg"].append(bound[sel])
         rows["rho"].append(rho[sel]); rows["sigma_rho"].append(sig_rho[sel]); rows["consistent"].append(consistent[sel])
+        rows["sigma_rho_noise"].append(sig_rho_noise[sel]); rows["sigma_rho_floor"].append(sig_rho_floor[sel])
         rows["ecc_deg"].append(ecc[sel]); rows["row"].append(rr[sel]); rows["col"].append(cc[sel])
         for k in (extras or {}):
             rows["x_" + k].append(exL[k][:, c0:c0 + J][sel])
@@ -227,6 +236,7 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
     out = {k: (np.concatenate(v) if v else np.zeros((0, 3) if k == "dir" else 0)) for k, v in rows.items()}
     out["levels"] = levels
     out["gaze"] = {"theta_L": float(thL), "theta_R": float(thR), "phi": float(phi_c)}
+    out["visits"] = {k: (np.concatenate(v) if v else np.zeros(0)) for k, v in visits.items()}
     return out
 
 
@@ -420,7 +430,7 @@ def main():
         # (o): owned solid angle over the disc's, 2 pi (1 - cos e_max) less the axis exclusion
         disc_sr = 2.0 * math.pi * (1.0 - math.cos(math.radians(emax)))
         rec["owned_of_covered"] = sum(lv["owned_sr"] for lv in f["levels"]) / disc_sr
-        out = {k: v for k, v in f.items() if k not in ("levels", "gaze") and not k.startswith("x_")}
+        out = {k: v for k, v in f.items() if k not in ("levels", "gaze", "visits") and not k.startswith("x_")}
         if has_truth:
             tp = f["x_parallax"]; tv = f["x_vis"] >= 0.5; td = f["x_dist"]
             t_rho = 1.0 / td

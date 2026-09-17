@@ -186,3 +186,22 @@ the interface (D1), so a research matcher can still consume them from anywhere.
 Overturned if: the field matcher cannot recover parallax where the fovea has not been, in which
 case the loop has no periphery to guide it and the non-uniform-lattice matcher is back on the
 line — as a step here, not a boundary.
+
+## D18 — Phase C's evaluation contract: rays, the L eye's own rays as truth, coverage apart from error (2026-09-17)
+
+The loop is judged at equal cumulative rays (the budget, as in Phase A) over a field of
+regard (a 60 deg cap about the primary gaze). Truth is the L eye's own ray distance from the
+D1 record, on the cells the L eye has sampled; the belief's error is reported on those cells
+(median inverse-depth error, by level band, with a calibration z) and its coverage (any
+level, fine) is reported apart from it — the decomposition bio-3d-vision needed to read its
+own result. Policies are compared against target order and random; the oracle brackets from
+above. The sensor stays at D16 (E2 = 2, e_max = 45) until the policy exists on the renders.
+The vergence distance comes from the belief, not the truth, for every policy but target
+order, so "where to look" and "at what depth to verge" are separate and the vergence error is
+a number of its own.
+Why: the reviewer's C0 asked for this contract first; it is written now that the loop exists
+and the numbers it contains are the loop's own. Whole-cap error with unmeasured cells at a
+prior would need truth the session does not have; coverage beside error says the same thing
+honestly.
+Overturned if: the ranking of the policies changes with the cap's size or with the budget in
+a way the coverage/error split cannot explain.
