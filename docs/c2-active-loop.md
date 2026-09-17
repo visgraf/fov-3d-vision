@@ -425,6 +425,45 @@ with one (48,−12).
 No code was changed in this step. Figures replaced.
 
 
+### Fourth run (2026-09-17, after `2223aa3`: info's gain is the expected reduction of the belief's own variance)
+
+`info` re-run into `previews/loop2/`; the other four rows are the second and third runs',
+repeated so the table stands alone. `belief.py --self-test` ok. All measured.
+
+| policy | rays | wall | distinct dirs | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) | gated |
+|---|---|---|---|---|---|---|---|---|---|---|
+| targets | 7.995e7 | 16.7 s | 50 | 0.993 / 0.201 | 0.1397 / 0.0149 | 1.128 / 0.059 | 0.609 | 0.57 | 0.01 | 28939 |
+| random | 7.995e7 | 16.2 s | 49 | 0.996 / 0.116 | 0.1111 / 0.0253 | 0.864 / 0.153 | 0.555 | 0.51 | 0.39 | 34582 |
+| coverage | 7.995e7 | 18.9 s | 50 | 0.994 / 0.138 | 0.1052 / 0.0249 | 0.836 / 0.127 | 0.557 | 0.49 | 0.51 | 41465 |
+| info | 7.995e7 | 26.3 s | 45 | 0.999 / 0.080 | 0.1027 / 0.0321 | 0.769 / 0.331 | 0.539 | 0.45 | 0.59 | 30237 |
+| oracle | 7.995e7 | 23.1 s | 50 | 0.993 / 0.074 | 0.1462 / 0.0882 | 1.201 / 0.789 | 0.628 | 0.50 | 2.66 | 25433 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): info 0.212 + 0.086 + 0.165 +
+0.036 (the choose step grew from 0.156 with the two-part gain); the others as before.
+
+Rankings (reported, not judged): by median ρ error, **info 0.1027 < coverage 0.1052 < random
+0.1111 < targets 0.1397 < oracle 0.1462**; by fine coverage, **targets 0.201 > coverage 0.138 >
+random 0.116 > info 0.080 > oracle 0.074**. On the fine band's own error: targets 0.0149,
+coverage 0.0249, random 0.0253, info 0.0321, oracle 0.0882.
+
+**Checks: (s), (t), (u) and (v) pass on all five; the eval exits 0.** Info's fine coverage 0.080
+is above half of random's 0.116 (predicted near coverage-first's 0.138: it is 58% of it).
+
+**One repeat above the prompt's limit, reported.** Info visits 45 distinct directions of 50 and
+covers the cap (any-level 0.999). It repeats (yaw −56°, pitch +6°) six times, k042–k047, one
+more than the five the prompt allows, and then leaves it (k048 (+38°, −12°), k049 (−16°, +34°)).
+At that direction ẑ = 3.18 m from the belief within 2° against a surface at 3.61 m; the field
+there has consistent rows by level 3 / 84 / 675 / 721 / 242; the per-level σ parts at k042
+(1/m) are noise 0.0045 / 0.0199 / 0.0352 / 0.0588 / 0.1146 and floor 0.0177 / 0.0392 / 0.0741 /
+0.1445 / 0.3441. Final: `level_sigma_noise_final` 0.0045 / 0.0219 / 0.0385 / 0.0610 / 0.1208,
+`level_sigma_floor_final` 0.0177 / 0.0421 / 0.0763 / 0.1477 / 0.3596. Unlike the third run's
+fixed point this direction retires itself: the expected reduction of its noise part falls with
+each look until another candidate wins. Whether six looks at one wall is a lock is Chat's call;
+by the prompt's rule the step is reported here and not closed by Code.
+
+No code was changed in this step. Figures replaced.
+
+
 ## What C2 leaves open
 
 - The policies are one-step greedy over a 60° cap; there is no cost to a saccade's length

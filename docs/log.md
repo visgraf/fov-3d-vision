@@ -942,3 +942,19 @@ textured 40 fixations (the cap gets covered, which reproduced the lock at 12/40 
 fix) info 37/40, coverage 0.0434 < info 0.0460 < random 0.0476 < targets 0.0673 < oracle
 0.0729 /m, fine coverage coverage 0.407 > info 0.309 ~ random 0.306; (s)-(v) pass. Predicted
 for the fourth run: info >= 40 distinct, (v) passes, C2 closes.
+
+## 2026-09-17 — C2 fourth run: (s)-(v) pass on all five; info 45 distinct, one wall six times then released; closing left to Chat
+
+All measured, `previews/loop2/` (info re-run only). Self-test ok. info: 26.3 s (choose 10.7 s
+of it; 0.21 s per choice), 45 distinct of 50, cover any 0.999, fine 0.080, rho err median
+0.1027 /m, gross 0.539, depth err median 0.769 m, z RMS 0.45, vergence median 0.59 m. Eval ok
+(0 failures): (s) exact, (t) 0.45-0.57, (u), (v) all pass. Rankings: rho err info 0.1027 <
+coverage 0.1052 < random 0.1111 < targets 0.1397 < oracle 0.1462; fine coverage targets 0.201
+> coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074. The prompt's repeat limit (five)
+is exceeded once: (-56, +6) deg at k042-k047 (six), then k048 (+38, -12), k049 (-16, +34) —
+the direction retired itself. There: z_hat 3.18 m vs centre 3.61; field rows by level
+3/84/675/721/242; sigma parts at k042 noise 0.0045/0.0199/0.0352/0.0588/0.1146, floor
+0.0177/0.0392/0.0741/0.1445/0.3441 /m. Final level_sigma_noise 0.0045/0.0219/0.0385/0.0610/
+0.1208, floor 0.0177/0.0421/0.0763/0.1477/0.3596. Reported and stopped per the prompt; README
+C2 row stays run, open with the reason (all checks pass; the six-repeat is Chat's call). No
+code changed. Figures replaced.
