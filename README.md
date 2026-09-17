@@ -80,7 +80,7 @@ matters more than the objective.
 |---|---|---|
 | C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
 | C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **done** — four runs, `docs/c2-active-loop.md`; (s)–(v) pass on all five at 50 fixations; error: info 0.103 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074 |
-| C3 | Closing: the classroom at `small` (four policies) and one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | **written**, not yet run — `docs/c3-closing.md` |
+| C3 | Closing: the classroom at `small` (four policies) and one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | **run** — four policies on the classroom at `small` (29–38 s each) and info at `full` (79 s, 1.6 s per fixation); (s), (t), (v) pass, **(u) fails on all five** (the median over measured cells rises as coverage grows from 0.34 to 0.9 — the check compares two medians over different sets); error at `small`: random 0.081 < coverage 0.085 < oracle 0.094 < info 0.101 /m; fine coverage: coverage 0.066 > random 0.054 > oracle 0.046 > info 0.044; `docs/c3-closing.md` |
 
 ## State
 

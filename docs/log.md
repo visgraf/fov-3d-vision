@@ -971,3 +971,29 @@ floor in the gain — each caught by the record, each fixed in the model, none b
 C3 (`docs/c3-closing.md`): the classroom at small with the four policies that need no target
 list, one `full` run (info), then the summary and the README as the engine's front page. No
 new code.
+
+## 2026-09-17 — C3 run: the classroom at small and info at full; (s), (t), (v) pass, (u) fails on all five by its definition; info last on the textured scene
+
+All measured, `previews/loop3/`. Classroom at small, 50 fixations: random 29.2 s, coverage 31.7,
+info 37.9, oracle 36.4 (render 0.33-0.37 s per pair, the scene's call floor); info at full 78.6 s
+(1.6 s per fixation; belief 1803x3606 cells, no memory issue), kappa 3.8. Distinct directions
+49/50/50/50 and 50 (full): no lock. Final at 8.0e7 rays: rho err median random 0.0808 <
+coverage 0.0852 < oracle 0.0940 < info 0.1006 /m; fine coverage coverage 0.066 > random 0.054
+> oracle 0.046 > info 0.044; cover any 0.84-0.88; gross 0.49-0.55, coarse band 0.54-0.59; z
+0.62-0.69; vergence medians 0.38-0.77 m, 7-9 fixations per run more than 2x off z_hat. Full:
+rho err 0.0435 (fine 0.0186), depth err median 0.375 m (fine 0.140), cover any 0.920 fine
+0.059, gross 0.355 (coarse 0.43), z 0.85, vergence median 0.71 m, level_sigma_final
+0.0118/0.0216/0.0447/0.0922/0.1875. Noise per level calibrated: small 0.176/0.176/0.201/0.222/
+0.231, full 0.083/0.082/0.096/0.101/0.105 — the manifest's 0.092 at 256 spp (0.18 at 64):
+the classroom is 2.5x noisier than the calib room at the same spp, fields 760-1240 cells vs
+~2000, and the fine band is 4-7% of the cap, smaller than the calib room's, not larger. Evals:
+(s) exact, (t) in band on all five; (v) passes on the four small runs, not reported on full (no
+random run in the call, as expected); (u) FAILS on all five: median rho err after fixation 0
+0.0799 (full 0.0397) vs final 0.081-0.101 (full 0.0435) while coverage rose 0.34 -> 0.84-0.92.
+The median is over measured cells, and the set grows from the middle of the room to the whole
+cap, mostly coarse floor-limited cells; two medians over different sets. Reported, not changed;
+whether (u) compares on fixation 0's cells or on the cap at the prior is Chat's. Finding: info
+separates from coverage here, downward — last on error and fine coverage with no lock; random
+is best on error; the spread among random/coverage/oracle (25%) is within the fine band's
++-30% noise between fixations. Phase B tools on class_info: check_pairs ok (0 card pairs),
+stereo_truth ok. No code changed. README C3 row -> run. Three figures in docs/reference.

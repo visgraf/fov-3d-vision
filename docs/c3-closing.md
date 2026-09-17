@@ -52,4 +52,64 @@ C2's (s)–(v) on the four `small` runs and on the `full` run (its own, no rando
 
 ## Results
 
-*(filled by Code from the workstation run)*
+Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), Classroom (`classroom_eye.blend`),
+50 fixations per run, one Blender session each. All numbers measured (`loop.json`,
+`compare.json`, the evals' lines). Figures: `docs/reference/c3_compare_classroom_small.png`,
+`c3_loop_info_classroom_small.png`, `c3_loop_info_classroom_full.png`.
+
+| policy | profile | rays | wall | distinct dirs | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| random | small | 7.995e7 | 29.2 s | 49 | 0.884 / 0.054 | 0.0808 / 0.0416 | 0.626 / 0.292 | 0.492 | 0.64 | 0.38 |
+| coverage | small | 7.995e7 | 31.7 s | 50 | 0.867 / 0.066 | 0.0852 / 0.0534 | 0.706 / 0.387 | 0.521 | 0.62 | 0.77 |
+| info | small | 7.995e7 | 37.9 s | 50 | 0.868 / 0.044 | 0.1006 / 0.0476 | 0.756 / 0.501 | 0.552 | 0.63 | 0.58 |
+| oracle | small | 7.995e7 | 36.4 s | 50 | 0.835 / 0.046 | 0.0940 / 0.0789 | 0.816 / 0.459 | 0.548 | 0.69 | 0.64 |
+| info | full | 1.287e9 | 78.6 s | 50 | 0.920 / 0.059 | 0.0435 / 0.0186 | 0.375 / 0.140 | 0.355 | 0.85 | 0.71 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): random 0.006 + 0.368 + 0.142
++ 0.035; coverage 0.068 + 0.358 + 0.144 + 0.035; info 0.215 + 0.340 + 0.144 + 0.035; oracle 0.174
++ 0.328 + 0.176 + 0.034; info at `full` 0.293 + 0.637 + 0.465 + 0.147 (1.6 s per fixation; the
+belief is 1803 × 3606 cells, no memory trouble). The classroom's render is 0.33–0.37 s per pair
+at `small` against the calib room's 0.08–0.11 (the manifest's per-sample cost is the same; the
+scene's call floor is 0.16 s against 0.06).
+
+Rankings at `small` (reported, not judged): by median ρ error, **random 0.0808 < coverage 0.0852
+< oracle 0.0940 < info 0.1006**; by fine coverage, **coverage 0.066 > random 0.054 > oracle 0.046
+> info 0.044**. On the fine band's own error: random 0.0416 < info 0.0476 < coverage 0.0534 <
+oracle 0.0789.
+
+**Checks.** (s) replay exact and (t) in band (0.62–0.69 small, 0.85 full) on all five; (v) passes
+on the four `small` runs (every policy's fine coverage is at least 0.8 of random's); on the `full`
+run the eval does not report (v), which needs a random run in the same call, as expected.
+**(u) fails on all five**: the final median ρ error over measured cells is above the value after
+fixation 0 (small: 0.0799 → 0.0808 / 0.0852 / 0.1006 / 0.0940; full: 0.0397 → 0.0435) while
+coverage rises from 0.34 to 0.84–0.92. The median is taken over the measured cells, and
+fixation 0's measured set is the fovea and its near periphery at the middle of the room; fifty
+fixations add the whole cap, most of it coarse cells at 1.6–3.2° whose error is a floor of 0.3
+cell, so the median of a larger, more peripheral set rises even though every cell that was
+measured after fixation 0 is at least as well known. The check as written compares two
+medians over different sets; on the calib room the sets happened to order the other way. Not
+changed: reported and stopped, per the prompt; whether (u) should compare on fixation 0's cells
+or on the whole cap at the prior is Chat's.
+
+**What the classroom shows that the calib room did not.** Not what the note predicted. The
+fine band at 50 fixations is 4–7% of the cap, *smaller* than the calib room's 8–14%, not
+larger: the classroom is textured everywhere but it is also dark and its render three times
+noisier at the same spp (the loops calibrate 0.18–0.23 relative RMS per level at 64 spp against
+the calib room's 0.07; the manifest's 0.092 at 256 spp scales to 0.18 at 64, so this is the
+scene's noise, measured), and fields have 760–1240 matchable cells against ~2000. The
+periphery's gross fraction is 0.54–0.59 at the coarse levels (0.43 at `full`) against the calib
+room's 0.67–0.82: depth edges everywhere, but real texture between them. Info does separate from
+coverage, in the direction the note did not expect: it is last of the four on median error
+(0.1006 against coverage's 0.0852 and random's 0.0808) and last on fine coverage. With no lock
+anywhere (50 distinct directions on every scored policy; the fourth-run gain model holds) the
+objective costs rather than buys on this scene at this budget, and random is the best of the
+four on error. The spread is 25% on median error and the fine-band error is noisy at ±30%
+between fixations (the chart), so the ranking among random, coverage and oracle is not
+resolved; info's last place is. Vergence from the periphery: medians 0.38–0.77 m, and 7–9
+fixations per run land more than a factor of two from ẑ (e.g. random k014 ẑ 2.42 m, centre
+5.90 m; coverage k010 ẑ 2.06 m, centre 0.79 m), all inside the 6° search range. At `full` the
+engine runs the same loop at 1.6 s per fixation with a median depth error of 0.375 m over the
+cap (0.14 m on the fine band) and gross 0.355.
+
+The Phase B tools on `class_info`: `check_pairs` ok (0 judged card pairs of 50, reported),
+`stereo_truth` ok ((i) 0.015 s₀, (j) 100%, visible 93.4%).
