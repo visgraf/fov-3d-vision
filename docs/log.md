@@ -926,3 +926,19 @@ landscape is flat and its argmax a fixed point; the oracle escapes only by its I
 the prompt; the gain model (noise-only variance in the gain, a minimum cell yield to retire a
 direction, or an IOR for info) is Chat's. No code changed. README C2 row stays run, open.
 Figures replaced.
+
+## 2026-09-17 — C2 after the third run: info's gain is the expected reduction of the belief's own variance; not yet re-run
+
+Code's third run (repo `main` at e18330f): oracle 50 distinct with IOR, (t) passes on all
+five, info best on error (0.1006 /m) but locked on a finely-measurable wall from k026 (28
+distinct; 93 level-1 cells, floor-limited). Cause, Code's: 1/2 log(1 + sigma^2 I) with sigma
+all floor — the model's own variance cannot fall there, the gain never did. `belief.py`:
+info's gain = 1/2 log(var_before / var_after) with var = 1/P_noise + floor^2, the noise part
+averaged down by the level's noise precision and the floor replaced by the smaller floor;
+`LevelSigma` tracks noise and floor medians per level (in loop.json too); the noise-precision
+map masked to the cap as the variance map was (cells beyond the cap looked unseen — the edge
+pull, found on the stub). Self-test adds the fixed-point case. Stub: blank walls info 30/30;
+textured 40 fixations (the cap gets covered, which reproduced the lock at 12/40 before the
+fix) info 37/40, coverage 0.0434 < info 0.0460 < random 0.0476 < targets 0.0673 < oracle
+0.0729 /m, fine coverage coverage 0.407 > info 0.309 ~ random 0.306; (s)-(v) pass. Predicted
+for the fourth run: info >= 40 distinct, (v) passes, C2 closes.

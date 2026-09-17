@@ -192,6 +192,27 @@ walls stub: info 30 of 30 distinct, oracle 30 of 30. Predicted for the third run
 ≥ 40 distinct directions and fine coverage near coverage-first's; the ranking coverage ≈ info
 < random < oracle ≈ targets on median ρ error, as on the stub.
 
+## After the third run (2026-09-17)
+
+`oracle` fixed by its inhibition of return; (t) passes everywhere; `info` has the lowest error
+of the five (0.1006 /m) and still fails (v): 26 spread fixations that cover the cap, then one
+wall 23 times. Code's diagnosis is exact and it is a third, better bug — the model taken at
+its word. The gain was ½ log(1 + σ²I); on that wall σ² is all floor, which by the belief's own
+construction (σ² = 1/P_noise + floor²) a further measurement cannot reduce. The model said
+"large variance here", the gain said "a look will fix it"; only the first was true, so once no
+unseen cell remained that direction was the argmax forever. The fix is to ask the belief what
+a measurement would do: `info`'s gain is now ½ log(var_before / var_after) under the belief's
+own model — the noise part averaged down by the level's noise precision, the floor replaced
+by the smaller of the two floors (both per level, running medians of the run's own fields,
+which `LevelSigma` now tracks in parts). A floor-limited cell yields nothing and retires
+itself; the self-test has the case. Also found while testing: the gain's cap mask was on the
+variance map but not on the noise-precision map, so cells beyond the cap looked unseen and
+pulled every edge candidate — masked explicitly now, and the 40-fixation textured stub, which
+reproduced the lock (12 distinct of 40) once the cap was covered, gives 37 distinct with
+coverage 0.043 < info 0.046 < random 0.048 /m and (s)–(v) passing. Predicted for the fourth
+run: `info` ≥ 40 distinct, (v) passing; the ranking info ≈ coverage < random < targets ≈ oracle
+on median ρ error stands.
+
 ## Results
 
 Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), calibration room at `small`, 50

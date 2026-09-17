@@ -224,13 +224,16 @@ class SphereBelief:
 
 class LevelSigma:
     """Running median sigma_rho per level from this run's own fields (what the field delivers
-    at each eccentricity), starting from C1's small-profile numbers."""
+    at each eccentricity), starting from C1's small-profile numbers — the total, and its two
+    parts: the noise part (which a further measurement averages down) and the floor (which it
+    does not). The policy's expected gain needs the parts (see Policy._score)."""
 
     DEFAULT = [0.035, 0.105, 0.134, 0.240, 0.367]
 
     def __init__(self, n_levels: int, start=None):
         self.vals = list((start or self.DEFAULT)[:n_levels]) + [self.DEFAULT[-1]] * max(0, n_levels - len(start or self.DEFAULT))
-        self.samples = [[] for _ in range(n_levels)]
+        self.noise = [0.6 * v for v in self.vals]; self.floor = [0.8 * v for v in self.vals]     # assumed split until measured
+        self.samples = [[] for _ in range(n_levels)]; self.s_noise = [[] for _ in range(n_levels)]; self.s_floor = [[] for _ in range(n_levels)]
 
     def update(self, f: dict):
         for l in range(len(self.vals)):
@@ -238,6 +241,9 @@ class LevelSigma:
             if m.sum() >= 20:
                 self.samples[l].append(float(np.median(f["sigma_rho"][m])))
                 self.vals[l] = float(np.median(self.samples[l]))
+                if "sigma_rho_noise" in f:
+                    self.s_noise[l].append(float(np.median(f["sigma_rho_noise"][m]))); self.noise[l] = float(np.median(self.s_noise[l]))
+                    self.s_floor[l].append(float(np.median(f["sigma_rho_floor"][m]))); self.floor[l] = float(np.median(self.s_floor[l]))
 
 
 def candidates(regard_deg: float, step_deg: float) -> np.ndarray:
@@ -275,9 +281,10 @@ class Policy:
 
         self.cap_c = (self._reduce(self.cap.astype(float)) > 0.5).astype(float)
 
-    def _reduce(self, X: np.ndarray) -> np.ndarray:
+    def _reduce(self, X: np.ndarray, how: str = "mean") -> np.ndarray:
         f = self.f
-        return X[:self.nth * f, :self.nph * f].reshape(self.nth, f, self.nph, f).mean((1, 3))
+        B = X[:self.nth * f, :self.nph * f].reshape(self.nth, f, self.nph, f)
+        return B.min((1, 3)) if how == "min" else B.mean((1, 3))
 
     def level_of(self, e):
         return np.searchsorted(self.edges, e, side="left")
@@ -293,6 +300,11 @@ class Policy:
             err2 = np.where(np.isfinite(t) & np.isfinite(m), (m - t) ** 2, np.nan)
             var = np.where(np.isfinite(err2), err2, var)
         return var
+
+    def _prepare_info(self):
+        """Policy-grid copies of the belief's noise precision (block mean) and floor (block min)."""
+        if self.name == "info":
+            self.Pn_c = self._reduce(self.b.Pn) * self.cap_c; self.F_c = self._reduce(self.b.F, "min")
 
     def _allowed_maps(self):
         """On the policy grid: the finest level that has looked at each cell (block min) and
@@ -331,8 +343,25 @@ class Policy:
         # afar counted as measurable, the fovea found nothing there, and the gain never fell
         vi = vis[i0:i1][:, j][inside]; me = meas[i0:i1][:, j][inside]
         allowed = (me <= 1) | (lev + 1 < vi)
-        I = 1.0 / (np.array(self.ls.vals)[np.minimum(lev, len(self.ls.vals) - 1)] ** 2)
-        g = np.where(allowed, 0.5 * np.log1p(v * I), 0.0)
+        li = np.minimum(lev, len(self.ls.vals) - 1)
+        if self.name == "oracle":
+            I = 1.0 / (np.array(self.ls.vals)[li] ** 2)
+            g = np.where(allowed, 0.5 * np.log1p(v * I), 0.0)             # v is already zero outside the cap
+            return float((g * A).sum())
+        # info: the expected information of one more look is what it does to the belief's OWN
+        # variance model, sigma^2 = 1/P_noise + floor^2 — the noise part averages down by the
+        # level's noise precision, the floor becomes the smaller of the two floors:
+        #     gain = 1/2 log(var_before / var_after)
+        # The third run's lock was 1/2 log(1 + sigma^2 I) on a wall whose sigma was all floor:
+        # the model said "large variance" and the gain said "a look will fix it"; only the
+        # first was true. Here a floor-limited cell yields nothing and retires itself.
+        Pn = self.Pn_c[i0:i1][:, j][inside]; F = self.F_c[i0:i1][:, j][inside]
+        In = 1.0 / (np.array(self.ls.noise)[li] ** 2); fl = np.array(self.ls.floor)[li]
+        prior2 = self.b.sigma_prior ** 2
+        with np.errstate(divide="ignore", invalid="ignore"):
+            before = np.where(Pn > 0, 1.0 / Pn + np.where(np.isfinite(F), F, 0.0) ** 2, prior2)
+            after = 1.0 / (Pn + In) + np.minimum(np.where(np.isfinite(F), F, np.inf), fl) ** 2
+            g = np.where(allowed, 0.5 * np.log(np.maximum(before / after, 1.0)), 0.0) * self.cap_c[i0:i1][:, j][inside]
         return float((g * A).sum())
 
     def choose(self) -> tuple[np.ndarray, dict]:
@@ -342,6 +371,7 @@ class Policy:
             return d, {"score": None}
         var_map = self._reduce(self._gain_field()) * self.cap_c          # no gain from cells outside the field of regard
         vis, meas = self._allowed_maps()
+        self._prepare_info()
         scores = np.array([self._score(var_map, vis, meas, d) for d in self.cand])
         if self.ior_deg > 0 and self.history:
             # explicit inhibition of return: a candidate within ior_deg of a past fixation is out.
@@ -404,9 +434,10 @@ def self_test() -> list[str]:
     b4 = SphereBelief(1.0)
     b4.visit({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([0], np.int8)})
     pol4 = Policy("info", b4, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
-    vm = pol4._reduce(pol4._gain_field()); vis, meas = pol4._allowed_maps()
+    vm = pol4._reduce(pol4._gain_field()); vis, meas = pol4._allowed_maps(); pol4._prepare_info()
+    d_else = np.array([math.sin(math.radians(20.0)), 0.0, -math.cos(math.radians(20.0))])     # 20 deg off, well inside the cap
     s_here = pol4._score(vm, vis, meas, FORWARD.copy())
-    s_away = pol4._score(vm, vis, meas, candidates(40.0, 4.0)[0])
+    s_away = pol4._score(vm, vis, meas, d_else)
     if not s_here < s_away:
         fails.append(f"a direction looked at finely and found unmeasurable still scores ({s_here:.2f} vs {s_away:.2f} elsewhere)")
     # ... but a cell measured only coarsely (level 3) still invites a finer look
@@ -414,7 +445,7 @@ def self_test() -> list[str]:
     b5.fuse({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([8.0]), "level": np.array([3], np.int8),
              "rho": np.array([0.5]), "sigma_rho": np.array([0.3]), "consistent": np.array([True])})
     pol5 = Policy("info", b5, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
-    vm5 = pol5._reduce(pol5._gain_field()); vis5, meas5 = pol5._allowed_maps()
+    vm5 = pol5._reduce(pol5._gain_field()); vis5, meas5 = pol5._allowed_maps(); pol5._prepare_info()
     if not pol5._score(vm5, vis5, meas5, FORWARD.copy()) > 0:
         fails.append("a coarsely measured direction scores nothing for a fine look")
     # a coarse (wrong) measurement plus a fine look that found nothing: retired for info too
@@ -423,13 +454,25 @@ def self_test() -> list[str]:
              "rho": np.array([0.09]), "sigma_rho": np.array([0.3]), "consistent": np.array([True])})
     b6.visit({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([0], np.int8)})
     pol6 = Policy("info", b6, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
-    vm6 = pol6._reduce(pol6._gain_field()); vis6, meas6 = pol6._allowed_maps()
-    if not pol6._score(vm6, vis6, meas6, FORWARD.copy()) < pol6._score(vm6, vis6, meas6, candidates(40.0, 4.0)[0]):
+    vm6 = pol6._reduce(pol6._gain_field()); vis6, meas6 = pol6._allowed_maps(); pol6._prepare_info()
+    if not pol6._score(vm6, vis6, meas6, FORWARD.copy()) < pol6._score(vm6, vis6, meas6, d_else):
         fails.append("a direction measured coarsely and foveated without result still scores")
+    # the third run's fixed point: a cell measured finely whose variance is all floor gains
+    # nothing from another look, and the policy goes elsewhere
+    b7 = SphereBelief(1.0)
+    b7.fuse({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([1], np.int8),
+             "rho": np.array([0.24]), "sigma_rho": np.array([0.12]), "sigma_rho_noise": np.array([0.01]), "sigma_rho_floor": np.array([0.12]),
+             "consistent": np.array([True])})
+    b7.visit({"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([6.0]), "level": np.array([1], np.int8)})
+    ls7 = LevelSigma(5); ls7.noise[:2] = [0.01, 0.02]; ls7.floor[:2] = [0.06, 0.12]
+    pol7 = Policy("info", b7, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls7)
+    d7, _ = pol7.choose()
+    if float(d7 @ FORWARD) > math.cos(math.radians(6.0)):
+        fails.append("info returned to a floor-limited direction (the third run's fixed point)")
     # coverage scores the visit map, not the measurement map
     polc = Policy("coverage", b4, 2.0, 2.0, 45.0, regard_deg=40.0, cand_deg=4.0, level_sigma=ls)
     vmc = polc._reduce(polc._gain_field())
-    if not polc._score(vmc, vis, meas, FORWARD.copy()) < polc._score(vmc, vis, meas, candidates(40.0, 4.0)[0]):
+    if not polc._score(vmc, vis, meas, FORWARD.copy()) < polc._score(vmc, vis, meas, d_else):
         fails.append("coverage still wants a direction already looked at finely")
     # candidates lie within the cap
     c = candidates(30.0, 5.0)

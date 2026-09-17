@@ -167,7 +167,7 @@ def main():
                 "centre_depth_m": pair["eyes"][0]["measured_in_session"]["centre_depth_m"],
                 "vergence_err_m": abs(pair["eyes"][0]["measured_in_session"]["centre_depth_m"] - z_hat) if pair["eyes"][0]["measured_in_session"]["centre_hit"] else None,
                 "rays_cum": (k + 1) * rays_per_pair, "field_cells": int(len(f["rho"])), "field_consistent": int(f["consistent"].sum()),
-                "fused_cells": fused["cells_in"], "gated": fused["gated"], "level_sigma": list(ls.vals),
+                "fused_cells": fused["cells_in"], "gated": fused["gated"], "level_sigma": list(ls.vals), "level_sigma_noise": list(ls.noise), "level_sigma_floor": list(ls.floor),
                 "seconds": {"choose": round(t1 - t0, 3), "render": round(t2 - t1, 3), "infer": round(t3 - t2, 3), "judge": round(t4 - t3, 3)}}
         step.update(m)
         steps.append(step)
@@ -184,7 +184,7 @@ def main():
     with open(os.path.join(out, "loop.json"), "w") as fh:
         json.dump({"settings": settings, "policy": args.policy, "s0_deg": s0, "belief_cell_deg": cell_b, "levels": nlev,
                    "rays_per_pair": rays_per_pair, "noise": noise_note, "noise_rel_per_level": noise_rel if isinstance(noise_rel, list) else [noise_rel] * nlev,
-                   "level_sigma_final": list(ls.vals), "candidates": int(len(pol.cand)), "policy_radius_deg": pol.R,
+                   "level_sigma_final": list(ls.vals), "level_sigma_noise_final": list(ls.noise), "level_sigma_floor_final": list(ls.floor), "candidates": int(len(pol.cand)), "policy_radius_deg": pol.R,
                    "wall_seconds": total, "steps": steps}, fh, indent=1)
     last = steps[-1]
     sec = {kk: sum(s["seconds"][kk] for s in steps) for kk in ("choose", "render", "infer", "judge")}
