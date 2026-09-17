@@ -1057,3 +1057,20 @@ depth. Eight panels, four depth .npy, the scanpath, one sheet with a shared log 
 Without --truth the L eye's own rays stand in for the scene, labelled so. Stub: 10 s, 58% of
 the sphere seen, 52% with a depth. To run on the workstation: the classroom L-eye panorama
 (preview360 --eye-offset -0.0315 0 0, B2's convention, a minute at small) and a loop run.
+
+## 2026-09-17 — sphere_views on the renders: the picture; one loader fix; the full L-eye classroom panorama rendered (reference class)
+
+Measured. Panoramas from the L eye (preview360 --eye-offset -0.0315 0 0): classroom small
+70.1 s render; classroom full 2137.4 s (7200x3600 at 8192 spp — the prompt predicted a minute,
+this is A2's reference class, 1940 s in the manifest for the R-eye-free one; kept as an asset,
+md5 de47b7629026782015ede6cdaeaefb65, not in the manifest yet). Fix in sphere_views.py, one
+flag: OpenEXR 3.4 groups RGBA into one 'ViewLayer.Combined' array, so the loader's suffix
+search for 'Combined.R' failed; the file is now opened with separate_channels=True (as the
+channel names in the file already are). Runs: class_coverage_full vs the full panorama —
+2551239 shared cells, median |rho err| 0.0816 /m, median |depth err| 0.358 m (C3b: 0.351 m
+over all measured cells), 58.6% of the sphere seen, 40.3% with a depth, 32.6 s; class_coverage
+(small) vs the small panorama — 640534 cells, 0.1465 /m, 0.630 m, 60.6% / 42.1%, 8.8 s;
+calib_info vs B2's small L reference — 878315 cells, 0.1257 /m, 0.869 m, 64.0% / 54.5%, 7.4 s.
+Rows agree in orientation on both scenes (lamp, windows, near desks in the same places; the
+engine's row sharp at the fixations, blurred in the periphery, dark outside the cap). Sheet
+copied to docs/reference/views_classroom_full.png; "The picture" added to the Phase C summary.

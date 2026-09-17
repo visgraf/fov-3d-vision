@@ -149,7 +149,7 @@ def load_engine(run: str, cell: float):
 def load_truth(pano_dir: str):
     import OpenEXR
     chans = {}
-    with OpenEXR.File(os.path.join(pano_dir, "pano.exr")) as f:
+    with OpenEXR.File(os.path.join(pano_dir, "pano.exr"), separate_channels=True) as f:
         for part in f.parts:
             for name, ch in part.channels.items():
                 chans[name] = np.asarray(ch.pixels)

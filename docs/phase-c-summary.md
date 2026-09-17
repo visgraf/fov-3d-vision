@@ -184,3 +184,25 @@ an option, not a requirement.
   `c3_loop_info_classroom_small.png`, `c3_loop_info_classroom_full.png`.
 - Runs on the workstation under `previews/loop2/` (calib room) and `previews/loop3/`
   (classroom), each a Phase B record plus `field/`, `belief.npz`, `loop.json`, `loop_fig.png`.
+
+## The picture
+
+`tools/sphere_views.py` puts the scene as it is beside the scene as the engine saw it, in two
+formats each: equirectangular, and on the epipolar sphere (φ across, θ down, every epipolar
+line a row), RGB and depth, with the scanpath drawn over the engine's RGB and one shared log
+depth scale taken from the panorama. `docs/reference/views_classroom_full.png` is the
+coverage-first run at `full` on the classroom (50 fixations) against the L-eye panorama
+rendered at the full profile (`previews/reference_full_L/classroom`, 7200 × 3600 at 8192 spp,
+2137.4 s on the RTX 4090, md5 de47b7629026782015ede6cdaeaefb65; the `small` one 70.1 s). The
+engine's RGB is sharp where the fovea has been and blurred in the periphery, dark outside the
+field of regard; its depth shows the room where the belief has it and dark grey elsewhere;
+the two rows agree in orientation on both scenes. The script's two lines for that run,
+measured:
+
+    [views] engine vs truth on 2551239 shared cells: median |rho err| 0.0816 /m, median |depth err| 0.358 m
+    [views] sphere at 0.0998261 deg: 58.6% of it seen by the L eye, 40.3% with a depth from the belief; white 1.922, depth scale 0.54-4.98 m
+
+The 0.358 m is C3b's number for the same run (0.351 m over all measured cells) judged against
+the panorama instead of the L eye's own rays. At `small` the same policy gives 0.630 m on
+640 534 cells (60.6% of the sphere seen, 42.1% with a depth); the calib room's info run 0.869 m
+on 878 315 cells (64.0% seen, 54.5% with a depth).
