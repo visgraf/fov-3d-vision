@@ -1,24 +1,67 @@
 # fov-3d-vision
 
-Variable-resolution rendering of 3D scenes in Blender, for machine vision rather than for
-human viewing. The output is a set of ray-value samples that a downstream stereo
-reconstruction can consume.
+A foveated stereo rendering engine for Blender, and the active loop that uses it.
 
-The premise: a camera samples uniformly and an eye does not. Foveation is a bandwidth
-decision before it is an attention mechanism, so the question is what a controlled,
-gaze-directed sampling of a scene costs and what it buys. The claim we are aiming at is
-*the same posterior for less computation*, which needs a declared computational budget —
-defining that budget is part of the work, not a preliminary to it.
+Two eyes on a fixed head, each a Cycles camera that samples the scene on a log-polar warp —
+dense at the fovea, coarse in the periphery, 51× fewer rays than a uniform image of the same
+field — verged on a point, rendering a pair in 30 ms at the `small` profile and 270 ms at
+`full` on an RTX 4090. On top of it, in one command: a stereo field that turns a pair into
+inverse depth with an uncertainty everywhere the pair looked, a belief on the head sphere that
+fuses the pairs, and a policy that chooses the next fixation from what is known.
 
-Throughout, the head is fixed. Eyes rotate about their own centres. See `DECISIONS.md`.
+    blender -b scenes/classroom/classroom_eye.blend -P tools/active_loop.py -- \
+        --out previews/loop/classroom --profile full --policy coverage --fixations 50
+    .venv/bin/python tools/active_eval.py previews/loop/classroom
+
+Fifty fixations of the Classroom at `full`: 1.3 G rays, 68–79 s, 92% of a 60° field of regard
+measured, 8–9% of it at foveal quality, median inverse-depth error 0.04 /m overall and
+0.015–0.019 /m where the fovea has been (10–14 cm at 2.7 m), the vergence for each fixation
+taken from the periphery of the ones before. The four-panel figure — posterior depth with the
+scanpath, its uncertainty, its error, the curves against rays — is `loop_fig.png` in the run.
+
+The premise: a camera samples uniformly and an eye does not. Foveation is a bandwidth decision
+before it is an attention mechanism, so the question is what a controlled, gaze-directed
+sampling of a scene costs and what it buys. The answer this repository reached, phase by
+phase: at the targets, foveation beats uniform sampling at equal rays at every budget (Phase
+A); the disparity a pair yields is flat in the warp's shape at the scale the samples support,
+so the cheaper warp wins per ray (Phase B); and in the loop, at equal rays, spreading buys
+error and the objective does not — random, coverage-first and expected information end within
+12% of each other and target order well behind, on both scenes and both profiles (Phase C).
+Coverage-first is the default policy for that reason.
+
+This is the fourth of a sequence: `bioeye` (the loop that ran, on a uniform sensor),
+`active-stereo` (the framework, whose loop never ran), `bio-3d-vision` (thirteen experiments
+that found coverage was what a loop buys and named the foveated sensor as the untested
+form), and this. The summaries are `docs/phase-a-summary.md`, `docs/phase-b-summary.md`,
+`docs/phase-c-summary.md`; the reports on the sequence are VISGRAF TR-09-2026 and the
+methodology notes it cites.
+
+## What is here
+
+| | tool | what it does |
+|---|---|---|
+| sensor | `render_foveated.py`, `foveated_camera.osl`, `warp.py` | the log-polar warp as a Cycles camera; `warp.py` is the pure-numpy definition both interpreters import |
+| rig | `rig.py`, `fixation_pairs.py` | two eyes at ±ipd/2 on the head's X; a verged pair at a world point; the epipolar frame on the sphere; `PairRenderer` for a session |
+| record | `fixation_sequence.py`, `check_pairs.py`, `stereo_truth.py` | the D1 sample record (direction, value, footprint, distance per ray), its checks, and the ground-truth correspondence from the Position pass |
+| field | `stereo_field.py` (`stereo_instrument.py` beneath it) | a pair → inverse depth per cell with a two-part variance, at five scales from 0.2° to 3.2°, with left–right consistency |
+| loop | `belief.py`, `active_loop.py`, `active_eval.py` | the belief on the head sphere, the policies (targets, random, coverage, info, oracle), the loop in one Blender session, the replay and the figures |
+| integration | `integrate_sphere.py`, `preview360.py`, `noise_floor.py` | finest-owns integration of a sequence, the references and the noise floor Phase A judged against |
+
+Every tool has a check that can fail and most have a control; `--self-test` on the numpy
+ones. `DECISIONS.md` holds the nineteen decisions and what would overturn each;
+`docs/log.md` the dated record; `docs/<step>.md` one note per step with its Results as the
+run left them.
+
+Throughout, the head is fixed. Eyes rotate about their own centres.
 
 ## Layout
 
     CLAUDE.md       how we work
     DECISIONS.md    what is settled, and what would unsettle it
     docs/log.md     dated record of what was run and what came out
-    docs/           one note per step; docs/phase-a-summary.md and docs/phase-b-summary.md are the phase summaries,
-                    docs/phase-a-result.md the result page; docs/reference/ holds baseline images
+    docs/           one note per step; docs/phase-{a,b,c}-summary.md are the phase summaries,
+                    docs/phase-a-result.md the result page; docs/reference/ holds baseline images;
+                    docs/reviews/ third-party reviews with their reading
     tools/          scripts, all runnable from the repository root; warp.py and rig.py are pure numpy
                 (both interpreters import them; each has --self-test)
     scenes/         scene sources; only manifest.json and asset.json are committed
@@ -34,7 +77,7 @@ Blender 5.2.1 LTS on `PATH` as `blender`, plus a small venv for `inspect_preview
 
     python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
-## Roadmap
+## History — the three phases
 
 ### Phase A — monocular
 
@@ -80,52 +123,15 @@ matters more than the objective.
 |---|---|---|
 | C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
 | C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **done** — four runs, `docs/c2-active-loop.md`; (s)–(v) pass on all five at 50 fixations; error: info 0.103 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074 |
-| C3 | Closing: the classroom at `small` (four policies) and one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | **run** — four policies on the classroom at `small` (29–38 s each) and info at `full` (79 s, 1.6 s per fixation); (s), (t), (v) pass, **(u) fails on all five** (the median over measured cells rises as coverage grows from 0.34 to 0.9 — the check compares two medians over different sets); error at `small`: random 0.081 < coverage 0.085 < oracle 0.094 < info 0.101 /m; fine coverage: coverage 0.066 > random 0.054 > oracle 0.046 > info 0.044; `docs/c3-closing.md` |
+| C3 | Closing: the classroom at both profiles, `docs/phase-c-summary.md`, this front page; D19 | **done** — thirteen runs pass every check; on the classroom at `full` random 0.0385 < coverage 0.0427 < info 0.0435 < oracle 0.0453 /m, coverage-first first on fine coverage everywhere but the calib room; `docs/c3-closing.md` |
 
 ## State
 
-A1 and A3 are complete. Three scenes are gathered and checked — a generated calibration
-room, the Poly Haven `workshop` HDRI, and Blender's Classroom with an `EYE` placed in it —
-and the foveated OSL camera renders on the RTX 4090 through OptiX at 50.8x fewer rays than
-uniform sampling of the same field. Measurements are in `scenes/manifest.json`,
-`docs/a3-foveated-camera.md` and `docs/log.md`.
-
-A2 is complete: both references at 8192 spp (32.3 and 35.8 min on the RTX 4090, the
-uniform-cost baseline at s0 = 0.05), pinned by md5 in `scenes/manifest.json` together with
-the small-profile references (about a minute each). D7 holds on both scenes against the
-profiles' fixation spp.
-
-Phase A and Phase B are closed; D11 was closed by D16 after Phase B's sweep; `docs/phase-a-summary.md` and `docs/phase-b-summary.md` are the summaries (what was built, what
-was learned, what carries into Phase B). The result is one page, `docs/phase-a-result.md`: at the
-targets foveation beats uniform sampling at equal rays at every budget on both scenes (on the
-targets actually fixated, 0.183 against 0.351 at the full profile's largest K, and 0.146
-against 0.365 from the first fixation); over the sphere uniform wins at every budget below
-the largest, where the two are level, because fifty fixations cover 58% of the sphere and
-what they cover between targets is periphery charged for its blur. The metric charges a
-grid-aligned render 1.01x to 1.03x its own measured noise; the resampling floor comes from
-true off-grid renders pinned in the manifest; check thresholds are measured (D10); the
-per-sample validation is closed, its residual at the full profile measured as sub-pixel
-lattice registration and not radiometry. The A6 sweep says the warp's E₂ trades foveal
-accuracy against coverage and leaves the choice to the objective (D11); B3 measured that objective: flat in E₂ per pair at s_eval, and favouring the cheaper settings per ray, so D11 still stands (`docs/b3-stereo-instrument.md`). A fixation costs
-15 ms (small) and 140 ms (full) on the RTX 4090 at the uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
-
-Phase C is open (D17). C1, the stereo field, is done: five levels of 2, 6, 14, 30 and 62° at the
-standard warp, ~2000 cells per pair at `small` and ~9700 at `full` in 5 and 17 s per run, every
-check passing on all eight Phase B runs. Level 0 is the instrument (7% better at `small`, 24% at
-`full`, LR consistency removing cells the instrument keeps); the periphery's error is a model
-floor of 0.1–0.4 cell and a positive bias at depth edges, not noise (RMS/bound 4–9), which the
-variance carries; the maps are smoothed along θ only from level 2, where it de-biases and the
-fovea cannot afford it. κ and floor per level are in each run's `field.json` for C2
-(`docs/c1-stereo-field.md`, Results, Second run).
-
-C2 has run four times: the loop closes in one Blender session at 0.3–0.5 s per fixation, the
-record replays exactly, the field's noise is measured per cell, the policies score the visit map
-within the field of regard, and expected information is the belief's own predicted variance
-reduction, so a floor-limited direction retires itself. All four checks pass on all five policies.
-Expected information and coverage-first have the lowest error at equal rays (0.103 and 0.105 /m
-against random's 0.111 and target order's 0.140); target order keeps the fine band because the
-cards are where it looks. One wall was fixated six times by info before it moved on, one more than
-the run's rule allowed; whether that closes C2 is the open call (`docs/c2-active-loop.md`).
+Closed. Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the
+engine above and the finding that, at equal rays, the policy that does not look twice is as
+good as the principled one (D19). What is left open is listed at the end of
+`docs/phase-c-summary.md`: gross errors outside the variance model, the warp as an action,
+the fixed head, truth beyond what the eyes sampled.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

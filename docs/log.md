@@ -1028,3 +1028,19 @@ Small rankings unchanged (re-judged, not re-rendered). Reading: at full info rec
 last to third, within 2% of coverage, still last on fine coverage; random first on error at
 both profiles (by 10% at full), coverage first on fine coverage at both; spread 18% at full.
 No code changed. README C3 row stays run. Figure c3_compare_classroom_full.png added.
+
+## 2026-09-17 — Phase C closed: the summary, the front page, D19
+
+Code's C3b (repo `main` at 81dff57): thirteen runs, every check under the redefined (u), the
+fixation-0 cells improving on all; classroom at full random 0.0385 < coverage 0.0427 < info
+0.0435 < oracle 0.0453 /m, fine coverage coverage 0.094 > random 0.078 > oracle 0.064 > info
+0.059. `docs/phase-c-summary.md` written in the tradition of A and B (question, what was
+built, the result table over three settings, eight lessons, what is open); the README
+rewritten as the engine's front page (what it is, one command, the numbers at full, the
+sequence of four repositories, a table of the tools; the phase tables kept as history); D19
+closes the phase with coverage-first as the default policy and names what would overturn it.
+The one reading added beyond Code's: the objective bought 2% where the variance model was
+right and cost 3-20% where it was wrong, and a policy that does not consult the model cannot
+be misled by it. Phase C: two days, three steps, eleven handoffs, thirteen loop runs of
+20-80 s; the loop's mechanics unchanged from the first run, its model corrected four times by
+its own record.

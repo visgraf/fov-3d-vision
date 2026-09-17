@@ -205,3 +205,22 @@ prior would need truth the session does not have; coverage beside error says the
 honestly.
 Overturned if: the ranking of the policies changes with the cap's size or with the budget in
 a way the coverage/error split cannot explain.
+
+## D19 — Phase C closed: the engine, and coverage-first as its default policy (2026-09-17)
+
+The repository is a foveated stereo rendering engine for Blender with an active loop on top,
+and Phase C is closed with it. The default policy is coverage-first: the fixation whose
+foveal disc holds the most cells not yet looked at finely. Expected information stays as an
+option; target order and random as baselines; the oracle as a bracket.
+Why: at equal rays, on two scenes and two profiles, random, coverage-first and expected
+information end within 12% of each other on median inverse-depth error and target order 30%
+behind; expected information leads by 2% on the calib room and trails on the classroom at
+both profiles, because its variance model does not contain the gross errors that are half
+the measured cells at the classroom's noise limit. The policy that does not consult the
+model is as good as the one that does and cannot be misled by it — bio-3d-vision's finding
+on a uniform sensor, reproduced on the foveated one with a mechanism. D16's warp stood
+throughout.
+Overturned if: a variance model that carries gross errors (a mixture, an edge-aware floor)
+lets expected information beat coverage-first by more than the fixation-to-fixation spread
+on the classroom at `full`; or a scene where the field of regard is not fully coverable in
+the budget, where the objective has room to matter.
