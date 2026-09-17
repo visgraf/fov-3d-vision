@@ -868,3 +868,26 @@ Predicted for the re-run: no lock, fine coverage above random's for the spreadin
 RMS in band. On Code's third question — the calib room is the test of the mechanism (only the
 cards are richly textured); the classroom, textured everywhere, is where a ranking means
 something, and C3 runs it.
+
+## 2026-09-17 — C2 second run: per-cell noise holds C1's checks and fixes coverage; info still locks, oracle half so; (t) and (v) open
+
+All measured, `previews/loop2/`. Self-tests ok. C1 with the per-cell noise: calib_room_sp all
+pass, (p) -3% (0.0260 vs 0.0269 deg), level-0 RMS/bound 5.82 (bound 0.0051 deg), floor 0.13;
+full all pass, (p) -24%, RMS/bound 9.76. noise_rel_equiv per level: sp p000
+0.0705/0.0751/0.0793/0.0900/0.0893 (median over pairs 0.066-0.081; manifest 0.07), full p000
+0.0340/0.0351/0.0380/0.0413/0.0419 (median 0.032-0.037; manifest 0.036): one number to 25%,
+rising slightly with level. Loops carry 0.0704/0.0748/0.0801/0.0893/0.0893. Runs 16.2-23.3 s
+(0.3-0.5 s per fixation). Final at 8.0e7 rays: rho err median coverage 0.1052 < random 0.1111 <
+info 0.1126 < oracle 0.1386 < targets 0.1397 /m; fine coverage targets 0.201 > coverage 0.138 >
+random 0.116 > oracle 0.039 > info 0.013; coverage any 0.94-0.996; z RMS 0.57/0.51/0.49/0.32/
+0.42; distinct directions 50/49/50/14/25. (s), (u) pass on all five; (t) FAILS info 0.322
+(level_sigma_final 0.0250/0.0637/0.1205/0.1573/0.3783); (v) FAILS info 0.013 and oracle 0.039
+vs 0.5 x 0.116. Info locks on (-26, +56) deg from k013 (37 of 50) with z_hat 11.0 m from the
+belief within 2 deg against 1.93 m (vergence median 9.07 m), fine cells constant, visited_fine_
+unmeasured 0.0128 at the end; oracle repeats (36, 40) x10 and (-46, 36) x12 where its belief is
+wrong (1.58 vs 2.69 m). Both directions were measured coarsely from afar, so the new rule holds
+them "known measurable" while the fovea finds nothing there; the gain never falls. Stopped per
+the prompt; the rule is Chat's. Coverage: 50 distinct, fine above random, lowest error, walls
+yield fine cells (visited_fine_unmeasured 0.0046). Record check: field_check/ 50 files, field/
+50 files untouched, single-run eval (s) ok. No code changed. README C2 row stays run, open.
+Figures replaced in docs/reference.

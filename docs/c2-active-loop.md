@@ -271,6 +271,68 @@ on the info run: `check_pairs` ok (0 judged card pairs, reported), `stereo_truth
 
 No code was changed in this step.
 
+### Second run (2026-09-17, after `cac7712`: per-cell noise, the visit map in the policies)
+
+Same five runs in fresh directories (`previews/loop2/`), all measured. Self-tests ok. **C1's
+checks hold with the per-cell noise**: `calib_room_sp` all pass, (p) 0.0260 vs 0.0269° (−3%,
+9614 cells), level 0 RMS 0.30 s₀, RMS/bound 5.82 (was 4.58: the bound fell from 0.0063 to
+0.0051° with the per-cell σ), floor 0.13; `calib_room_full_sp` all pass, (p) 0.0159 vs 0.0208°
+(−24%), level-0 RMS/bound 9.76 (was 7.70). `noise_rel_equiv` per level is now one number to
+within 25%, rising slightly with level: `sp` p000 0.0705 / 0.0751 / 0.0793 / 0.0900 / 0.0893
+(median over pairs 0.066–0.081), the manifest's 0.07 at 64 spp; `full` p000 0.0340 / 0.0351 /
+0.0380 / 0.0413 / 0.0419 (median 0.032–0.037), the manifest's 0.036 at 256 spp. The loops carry
+0.0704 / 0.0748 / 0.0801 / 0.0893 / 0.0893 (was 0.177 → 0.084).
+
+| policy | rays | wall | distinct dirs | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) | gated |
+|---|---|---|---|---|---|---|---|---|---|---|
+| targets | 7.995e7 | 16.7 s | 50 | 0.993 / 0.201 | 0.1397 / 0.0149 | 1.128 / 0.059 | 0.609 | 0.57 | 0.01 | 28939 |
+| random | 7.995e7 | 16.2 s | 49 | 0.996 / 0.116 | 0.1111 / 0.0253 | 0.864 / 0.153 | 0.555 | 0.51 | 0.39 | 34582 |
+| coverage | 7.995e7 | 18.9 s | 50 | 0.994 / 0.138 | 0.1052 / 0.0249 | 0.836 / 0.127 | 0.557 | 0.49 | 0.51 | 41465 |
+| info | 7.995e7 | 21.4 s | 14 | 0.942 / 0.013 | 0.1126 / 0.0305 | 0.900 / 0.318 | 0.553 | 0.32 | 9.07 | 25073 |
+| oracle | 7.995e7 | 23.3 s | 25 | 0.983 / 0.039 | 0.1386 / 0.0333 | 1.031 / 0.195 | 0.595 | 0.42 | 1.16 | 59530 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): targets 0.000 + 0.133 +
+0.145 + 0.029; random 0.006 + 0.105 + 0.153 + 0.037; coverage 0.067 + 0.100 + 0.159 + 0.034;
+info 0.151 + 0.091 + 0.137 + 0.028; oracle 0.172 + 0.079 + 0.169 + 0.031.
+
+Rankings (reported, not judged): by median ρ error, **coverage 0.1052 < random 0.1111 < info
+0.1126 < oracle 0.1386 < targets 0.1397**; by fine coverage, **targets 0.201 > coverage 0.138 >
+random 0.116 > oracle 0.039 > info 0.013**. On the fine band's own error targets wins (0.0149),
+then coverage 0.0249 ≈ random 0.0253. Coverage and info are within 7% of each other on error
+and both ahead of target order, as predicted; random is not behind but between them.
+
+**Checks.** (s) exact and (u) pass on all five; (t) and (v) pass on targets, random and
+coverage. **(t) fails on info** (z RMS 0.322; `level_sigma_final` 0.0250 / 0.0637 / 0.1205 /
+0.1573 / 0.3783; noise per level as above). **(v) fails on info** (fine 0.013) **and oracle**
+(0.039) against half of random's 0.116. Eval exits 1 with 3 failures. The record check: the
+host-side field on `calib_info` wrote `field_check/` (50 files) and left `field/` (50 files)
+untouched; the single-run eval replays (s) ok afterwards.
+
+**Coverage is fixed.** 50 distinct directions, fine coverage above random's, the lowest error
+of the five, and the walls now yield fine cells off the cards (fine coverage grows at almost
+every fixation; `visited_fine_unmeasured` 0.0046 of the cap at the end).
+
+**Info still locks, oracle half so; reported and stopped, per the prompt.** Info visits 13
+distinct directions, then (yaw −26°, pitch +56°) 37 times from k013 on, with ẑ = 11.0 m from
+the belief within 2° against a surface at 1.93 m (hence the 9 m vergence median); the fine look
+there yields no fine cells (cells 508 at every repeat, fine coverage constant at 0.013) and
+the belief is not corrected. Its `visited_fine_unmeasured` at the end is 0.0128 of the cap,
+about the fine disc of that one direction. Oracle repeats (+36°, +40°) 10 times and (−46°,
++36°) 12 times, where its belief is wrong (ẑ 1.58 m against 2.69 m) and the fine look does not
+fix it. Both directions were measured coarsely from afar, so the new rule counts them as
+"known measurable"; measurable at a coarse level is not measurable finely, and the gain to
+re-look never falls. The decision on the rule is Chat's. Scanpaths:
+
+- info: (0,0) (−22,56) (−58,−14) (28,−54) (56,26) (58,−16) (−56,24) (34,52) (−46,−42) (60,0)
+  (−56,22) (−56,26) (−22,52) then (−26,56) ×37.
+- oracle: (0,0) (−22,56) (−58,−14) (28,−54) (56,26) (58,−16) (−56,24) (34,52) (−46,−42) (60,0)
+  (−60,0) (−36,46) (−54,30) (36,44) (−22,52) (28,−54) (36,−14) (36,40) (−22,52) (36,40)
+  (−34,−10) (36,40) ×2 (60,0) (36,40) ×5 (60,0) (36,40) (30,−8) (−36,28) (−32,−14) (−26,0)
+  (−22,52) (−26,−6) (−16,16) then (−46,36) ×12.
+
+No code was changed in this step. Figures replaced.
+
+
 ## What C2 leaves open
 
 - The policies are one-step greedy over a 60° cap; there is no cost to a saccade's length
