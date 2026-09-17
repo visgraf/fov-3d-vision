@@ -1044,3 +1044,16 @@ right and cost 3-20% where it was wrong, and a policy that does not consult the 
 be misled by it. Phase C: two days, three steps, eleven handoffs, thirteen loop runs of
 20-80 s; the loop's mechanics unchanged from the first run, its model corrected four times by
 its own record.
+
+## 2026-09-17 — sphere_views.py: the scene as it is and as the engine saw it, two formats; not yet run on renders
+
+`tools/sphere_views.py` (host side): from a loop run and, optionally, a preview360 panorama
+rendered at the L eye (`--truth`), (RGB, depth) in equirectangular (preview360's convention)
+and on the epipolar sphere (phi across, theta down: the baseline axis is the top and bottom
+edge, the primary gaze the centre, every epipolar line a row), for two sources — the
+panorama and its Depth pass; the loop's fixations integrated finest-owns with each sample
+painted over its footprint (at s_eval the periphery is otherwise 18% filled) and the belief's
+depth. Eight panels, four depth .npy, the scanpath, one sheet with a shared log depth scale.
+Without --truth the L eye's own rays stand in for the scene, labelled so. Stub: 10 s, 58% of
+the sphere seen, 52% with a depth. To run on the workstation: the classroom L-eye panorama
+(preview360 --eye-offset -0.0315 0 0, B2's convention, a minute at small) and a loop run.

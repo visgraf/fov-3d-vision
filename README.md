@@ -46,6 +46,7 @@ methodology notes it cites.
 | field | `stereo_field.py` (`stereo_instrument.py` beneath it) | a pair → inverse depth per cell with a two-part variance, at five scales from 0.2° to 3.2°, with left–right consistency |
 | loop | `belief.py`, `active_loop.py`, `active_eval.py` | the belief on the head sphere, the policies (targets, random, coverage, info, oracle), the loop in one Blender session, the replay and the figures |
 | integration | `integrate_sphere.py`, `preview360.py`, `noise_floor.py` | finest-owns integration of a sequence, the references and the noise floor Phase A judged against |
+| views | `sphere_views.py` | (RGB, depth) of a scene as it is and as the engine saw it, equirectangular and on the epipolar sphere, from a loop run and a `preview360` panorama at the eye |
 
 Every tool has a check that can fail and most have a control; `--self-test` on the numpy
 ones. `DECISIONS.md` holds the nineteen decisions and what would overturn each;
