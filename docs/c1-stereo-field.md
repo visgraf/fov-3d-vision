@@ -276,6 +276,58 @@ band quantisation with E₂ 1; harmless for (o), noted).
 | 4 | 3.21 | 28434 | 4.6 | 0.9% → 0.3% | 0.7085 / 0.22 / 7.07 | +0.3445 | 0.1614 | 4.39 | 0.18 | 0.3556 | 4.852 | 0.66 / 0.39 |
 
 
+### Second run (2026-09-17, after `64b1dc7`: smoothing from level 2, (p) pooled and one-sided)
+
+Same eight runs, same commands, host side, nothing rendered; all numbers measured, from each
+run's `field.json` and `stereo.json`. **Every check passes on every run**: (o), (q), (r) at
+every level and (p) on all eight, the field's level 0 *better* than the instrument on each
+(−2% to −31%), none between +10% and +25%. Negatives: `--no-lr` fails (r) on all five levels
+(10 lines, exit 1) and now passes (p) at −2%, as allowed; `--eval-factor 4` fails (p) at
++206% (exit 1). Self-test ok. No code changed. Sheet replaced
+(`docs/reference/c1_field_calib_room_small.png`).
+
+Levels 0–1 are the unsmoothed matcher's, as predicted from the first run's diagnostic
+(`calib_room_sp` level 0: inlier RMS 0.29 s₀, gross before LR 8.9%, RMS/bound 4.58, floor
+0.12 cells; the prediction of RMS/bound "near 3" was off: the bound halves without the
+smoothing, 0.0121 → 0.0063°, while the error drops less). Levels 2–4 are identical to the first
+run. The `full` run's level 0 is unchanged to 3% (0.0156 → 0.0160°) and (p) there reads −24%
+(the first run's −27% was per-pair, this is pooled). The measured κ and floor per level are the
+numbers C2 reads: on `small` κ 4.6 / 4.3 / 5.3 / 6.3 / 5.4 and floor 0.12 / 0.20 / 0.34 /
+0.37 / 0.20 cells; on `full` κ 7.7 / 4.3 / 4.4 / 7.6 / 9.3 and floor 0.14 / 0.11 / 0.13 /
+0.29 / 0.31 cells. The floor over all runs and levels spans 0.06–0.40 cells (0.29–0.40 at
+levels 2–3 everywhere). `e2_1`'s owned/covered is still 1.029 (band quantisation at E₂ 1).
+
+| run | (p) field vs instrument (deg) | rel. | cells pooled | cells/pair (consistent) | owned/covered | fails | wall |
+|---|---|---|---|---|---|---|---|
+| `calib_room_sp` | 0.0250 vs 0.0269 | -7% | 9148 | 1984 (1880) | 0.986 | 0 | 5.0 s |
+| `calib_room_control_sp` | 0.0523 vs 0.0535 | -2% | 6554 | 1959 (1780) | 0.985 | 0 | 5.4 s |
+| `calib_room_full_sp` | 0.0158 vs 0.0208 | -24% | 40194 | 9655 (8430) | 0.988 | 0 | 16.7 s |
+| `sweep_b3/e2_1` | 0.0187 vs 0.0270 | -31% | 2426 | 746 (716) | 1.029 | 0 | 3.6 s |
+| `sweep_b3/e2_2` | 0.0250 vs 0.0269 | -7% | 9148 | 1984 (1880) | 0.986 | 0 | 4.7 s |
+| `sweep_b3/e2_4` | 0.0234 vs 0.0262 | -10% | 9027 | 4594 (4208) | 0.984 | 0 | 8.3 s |
+| `sweep_b3/emax_30` | 0.0262 vs 0.0293 | -11% | 8623 | 1686 (1564) | 0.989 | 0 | 4.4 s |
+| `sweep_b3/emax_60` | 0.0261 vs 0.0285 | -8% | 8529 | 2320 (2190) | 0.990 | 0 | 4.9 s |
+
+**`calib_room_sp`, per level** (κ assumed 2.5, floor assumed 0.3 cells):
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound (κ measured) | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.20 | 10752 | 5.9 | 8.9% → 5.7% | 0.0291 / 0.14 / 0.29 | +0.0125 | 0.0063 | 4.58 | 0.12 | 0.0348 | 0.279 | 0.45 / 0.20 |
+| 1 | 0.40 | 15677 | 10.1 | 23.3% → 20.0% | 0.1001 / 0.25 / 1.00 | +0.0420 | 0.0235 | 4.26 | 0.20 | 0.1050 | 0.948 | 0.73 / 0.25 |
+| 2 | 0.80 | 24617 | 3.2 | 17.0% → 16.7% | 0.3109 / 0.39 / 3.10 | +0.1516 | 0.0582 | 5.34 | 0.34 | 0.1342 | 2.086 | 1.12 / 0.38 |
+| 3 | 1.60 | 29386 | 2.1 | 0.5% → 0.2% | 0.6458 / 0.40 / 6.44 | +0.4229 | 0.1028 | 6.28 | 0.37 | 0.2401 | 4.879 | 1.20 / 0.68 |
+| 4 | 3.21 | 13334 | 2.3 | 0.3% → 0.2% | 0.7433 / 0.23 / 7.42 | +0.4832 | 0.1389 | 5.35 | 0.20 | 0.3666 | 5.569 | 0.71 / 0.49 |
+
+**`calib_room_full_sp`, per level** (κ assumed 3.8, floor assumed 0.3 cells):
+
+| level | cell (deg) | judged | LR rej. % | gross → after LR | inlier RMS deg / cells / s₀ | bias (deg) | bound (deg) | RMS/bound (κ measured) | floor (cells) | ρ RMS (1/m) | depth RMS (m) | z RMS / med |z| |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 0.10 | 47371 | 5.0 | 11.4% → 8.0% | 0.0160 / 0.16 / 0.32 | +0.0023 | 0.0021 | 7.70 | 0.14 | 0.0108 | 0.068 | 0.50 / 0.17 |
+| 1 | 0.20 | 73949 | 14.2 | 27.9% → 21.8% | 0.0442 / 0.22 / 0.89 | +0.0106 | 0.0102 | 4.34 | 0.11 | 0.0399 | 0.378 | 0.62 / 0.26 |
+| 2 | 0.40 | 120535 | 13.3 | 23.2% → 18.0% | 0.1048 / 0.26 / 2.10 | +0.0296 | 0.0241 | 4.35 | 0.13 | 0.0773 | 0.807 | 0.78 / 0.28 |
+| 3 | 0.80 | 135732 | 8.7 | 18.9% → 16.4% | 0.2670 / 0.33 / 5.35 | +0.1159 | 0.0352 | 7.58 | 0.29 | 0.1086 | 1.750 | 1.04 / 0.29 |
+| 4 | 1.60 | 56946 | 2.5 | 2.3% → 1.3% | 0.5408 / 0.34 / 10.83 | +0.2722 | 0.0582 | 9.29 | 0.31 | 0.1955 | 3.844 | 1.06 / 0.48 |
+
 ## What C1 leaves open
 
 - The floor β is one number per run; it is probably a function of the surface slant within

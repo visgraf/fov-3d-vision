@@ -78,7 +78,7 @@ matters more than the objective.
 
 | | Step | State |
 |---|---|---|
-| C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **run, (p) open** — (o), (q), (r) pass on all 8 runs and the negatives fail as designed; (p) fails on 7 of 8: level 0 0.0460° vs the instrument's 0.0269° on `calib_room_sp` (71%; 7% with the θ-smoothing off), 0.0152 vs 0.0208 on `full` (27%, field better); measured floor 0.10–0.40 cells across levels (0.29–0.40 at levels 2–3); `docs/c1-stereo-field.md` |
+| C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — all checks pass on 8 runs, negatives fail as designed; level 0 (p) 0.0250 vs the instrument's 0.0269° at `small` (−7%), 0.0158 vs 0.0208° at `full` (−24%); measured floor 0.06–0.40 cells (0.29–0.40 at levels 2–3); `docs/c1-stereo-field.md` |
 | C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | — |
 | C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
 
@@ -109,14 +109,14 @@ lattice registration and not radiometry. The A6 sweep says the warp's E₂ trade
 accuracy against coverage and leaves the choice to the objective (D11); B3 measured that objective: flat in E₂ per pair at s_eval, and favouring the cheaper settings per ray, so D11 still stands (`docs/b3-stereo-instrument.md`). A fixation costs
 15 ms (small) and 140 ms (full) on the RTX 4090 at the uniform per-sample cost. Tier 1 needs no reference: the HDRI is its own.
 
-Phase C is open (D17). C1, the stereo field, has run on the workstation over Phase B's runs: five
-levels of 2, 6, 14, 30 and 62° at the standard warp, ~2100 cells per pair at `small` and ~9800 at
-`full` in 5 and 17 s per run; ownership, the bound and LR consistency pass at every level on all
-eight runs; the periphery's error is a model floor of 0.1–0.4 cell and a positive bias at depth
-edges, not noise (RMS/bound 3–9), which the variance carries. Level 0 does not yet reproduce the
-instrument on `small` (71% apart; 7% with the smoothing along θ off) and is 27% better than it on
-`full`; the check's tolerance, the smoothing and its comparison are open for Chat
-(`docs/c1-stereo-field.md`, Results).
+Phase C is open (D17). C1, the stereo field, is done: five levels of 2, 6, 14, 30 and 62° at the
+standard warp, ~2000 cells per pair at `small` and ~9700 at `full` in 5 and 17 s per run, every
+check passing on all eight Phase B runs. Level 0 is the instrument (7% better at `small`, 24% at
+`full`, LR consistency removing cells the instrument keeps); the periphery's error is a model
+floor of 0.1–0.4 cell and a positive bias at depth edges, not noise (RMS/bound 4–9), which the
+variance carries; the maps are smoothed along θ only from level 2, where it de-biases and the
+fovea cannot afford it. κ and floor per level are in each run's `field.json` for C2
+(`docs/c1-stereo-field.md`, Results, Second run).
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.

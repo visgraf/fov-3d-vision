@@ -756,3 +756,23 @@ old two-sided check called a failure. Stub: (p) -11%, all checks pass, `--eval-f
 level-0 kappa near 3 and floor ~0.1 cell at small (Code's unsmoothed level 0), coarse levels
 unchanged from the first run. C2 reads kappa and floor per level from the re-run's
 `field.json`. Also: the apply block now uses the repo's real path and `sha256sum -c`.
+
+## 2026-09-17 — C1 second run: every check passes on all eight runs; C1 done
+
+All measured (`field.json` per run, `stereo.json` for the instrument), host side, nothing
+rendered, no code changed. Self-test ok (0.2 s). (p) pooled, field vs instrument in deg:
+calib_room_sp 0.0250 vs 0.0269 (-7%, 9148 cells); control 0.0523 vs 0.0535 (-2%); full 0.0158
+vs 0.0208 (-24%, 40194 cells); e2_1 0.0187 vs 0.0270 (-31%); e2_2 = calib_room_sp; e2_4 0.0234 vs
+0.0262 (-10%); emax_30 0.0262 vs 0.0293 (-11%); emax_60 0.0261 vs 0.0285 (-8%). (o) 0.984-0.990
+(1.029 on E2 1), (q) and (r) pass at every level. Negatives: `--no-lr` fails (r) x10, exit 1,
+(p) -2%; `--eval-factor 4` fails (p) at +206%, exit 1. Wall: sp 5.0 s, control 5.4 s, full
+16.7 s, sweep 3.6-8.3 s. calib_room_sp per level: inlier RMS 0.14/0.25/0.39/0.40/0.23 cells
+(0.29/1.00/3.10/6.44/7.42 s0), gross before -> after LR 8.9->5.7 / 23.3->20.0 / 17.0->16.7 /
+0.5->0.2 / 0.3->0.2 %, kappa measured 4.58/4.26/5.34/6.28/5.35, floor
+0.12/0.20/0.34/0.37/0.20 cells, z RMS 0.45/0.73/1.12/1.20/0.71, depth RMS 0.28 -> 5.6 m.
+full: 0.16/0.22/0.26/0.33/0.34 cells, kappa 7.70/4.34/4.35/7.58/9.29, floor
+0.14/0.11/0.13/0.29/0.31, z RMS 0.50/0.62/0.78/1.04/1.06, depth RMS 0.07 -> 3.8 m. Levels 2-4
+identical to the first run (same code path); levels 0-1 are the unsmoothed matcher's; level-0
+RMS/bound at small is 4.6, not the predicted ~3, because the bound halves without smoothing
+(0.0121 -> 0.0063 deg) while the error falls less. README C1 row -> done. Sheet replaced.
+C2 reads kappa and floor per level from these field.json files.
