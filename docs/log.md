@@ -958,3 +958,16 @@ the direction retired itself. There: z_hat 3.18 m vs centre 3.61; field rows by 
 0.1208, floor 0.0177/0.0421/0.0763/0.1477/0.3596. Reported and stopped per the prompt; README
 C2 row stays run, open with the reason (all checks pass; the six-repeat is Chat's call). No
 code changed. Figures replaced.
+
+## 2026-09-17 — C2 closed (Code's fourth run, f19a6a6); C3 written, not yet run
+
+C2: (s)-(v) on all five, info 45 distinct (six looks at one wall, then released — the two-part
+gain retiring a direction on its own, not a lock), error info 0.1027 < coverage 0.1052 <
+random 0.1111 < targets 0.1397 < oracle 0.1462 /m; fine coverage targets 0.201 > coverage
+0.138 > random 0.116 > info 0.080 > oracle 0.074. Four runs to close: the loop's mechanics
+were right the first time (0.3-0.5 s per fixation, the record replays), and each run found
+one hole in the model — the noise carry, the visit map, "measurable at any level", the
+floor in the gain — each caught by the record, each fixed in the model, none by a threshold.
+C3 (`docs/c3-closing.md`): the classroom at small with the four policies that need no target
+list, one `full` run (info), then the summary and the README as the engine's front page. No
+new code.

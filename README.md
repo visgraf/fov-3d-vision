@@ -79,8 +79,8 @@ matters more than the objective.
 | | Step | State |
 |---|---|---|
 | C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
-| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | **run, open** — fourth run: (s)–(v) pass on all five; info 45 distinct directions but one wall six times (the prompt's limit is five, then it moved on), so closing is Chat's call. Error: info 0.103 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074; `docs/c2-active-loop.md` |
-| C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
+| C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **done** — four runs, `docs/c2-active-loop.md`; (s)–(v) pass on all five at 50 fixations; error: info 0.103 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074 |
+| C3 | Closing: the classroom at `small` (four policies) and one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | **written**, not yet run — `docs/c3-closing.md` |
 
 ## State
 
