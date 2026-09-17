@@ -813,3 +813,34 @@ stub. Predicted for the workstation: ~1 s per fixation at small, a minute per ru
 spreading policies within 20% of each other on error and all well ahead of target order at
 50 fixations; whether info beats coverage on the fine band is the open question, and the
 render's textured walls (not the stub's noise texture) decide the coarse-band gross fraction.
+
+## 2026-09-17 — C2 run on the workstation: the loop closes at 0.3-0.5 s per fixation; (t) and (v) fail on the model-driven policies, which lock onto an unmeasurable direction
+
+All measured. Refactor check: calib_room_c2check re-rendered in 11.2 s; check_pairs, stereo_truth,
+stereo_instrument ok, instrument summary = calib_room_sp to 1e-8 (0.0269 deg, 12604 cells).
+Self-tests ok. Five runs x 50 fixations at small: targets 15.2 s, random 15.3, coverage 17.3, info
+23.0, oracle 21.7 (render 0.08-0.11 s per pair, field 0.13-0.23 s, choose 0.09-0.14 s for the
+scored policies). Eval: (s) exact and (u) pass on all five; (t) FAILS info 0.310, oracle 0.298
+(band [0.4, 2.5]); (v) FAILS coverage, info, oracle at fine coverage 0.004 vs random 0.069. Final
+at 8.0e7 rays: rho err median random 0.1641 < oracle 0.1741 < info 0.1894 < coverage 0.2052 <
+targets 0.2101 /m; fine coverage targets 0.179 > random 0.069 > the three at 0.004; coverage any
+0.961 / 0.955 / 0.563 / 0.853 / 0.887 (targets/random/coverage/info/oracle); gross 0.62-0.71;
+coarse-band gross 0.67-0.82 (stub 0.35-0.40). Diagnosis: coverage fixates (-22, +56) deg 49
+times (score bit-identical, 0.18876), info locks on (+58, -16) from k013, oracle on (+60, 0)
+from k020; in the loop's own records no eccentric fixation of the three yields any consistent
+level-0/1 row (only cards do: random p002 130+188, p019 153+200). Cause 1: the carried noise,
+calibrated on fixation 0's seed pair, is 0.177/0.173/0.162/0.143/0.084 relative per level; the
+host-side field on a copy of the info record judges 6545 level-0 cells (gross 4.6% -> 2.0%) at
+--noise-rel 0.07 and 79 (gross 49%) at 0.177 — the walls are matchable finely, the thresholds
+at the calibrated noise reject them. Cause 2: coverage scores best_level (measured) not visited;
+the visit-map zero applies only to visited-and-never-measured cells, so cells a coarse level has
+measured keep a floor-limited variance and info/oracle's gain to re-look never falls. Vergence
+error median info 1.54 m, oracle 2.81 m (the locked fixation's own); --search-deg 8 diagnostic
+(diag_info_s8, diag_oracle_s8): 1.56 / 1.07 m, fine 0.004, (t)(v) fail the same way. Hazard:
+stereo_field.py on a loop run overwrites field/p*.npz (the loop's record); info run re-rendered
+to restore it (final numbers identical to 1e-9), host-side field then run on a symlinked copy.
+Phase B tools on calib_info: check_pairs ok (0 judged card pairs), stereo_truth ok, stereo_field
+--noise-rel 0.07 ok ((p) skipped). info level_sigma_final 0.0199/0.0415/0.2166/0.2096/0.4410.
+No code changed. README C2 row -> run, open. Figures copied to docs/reference. Decisions for
+Chat: the noise carry, the gain model's use of the visit map, and whether the room's walls are
+the scene to rank policies on.

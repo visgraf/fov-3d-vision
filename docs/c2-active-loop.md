@@ -138,7 +138,103 @@ depth to 25%; it says roughly how far, and the fovea has to come.
 
 ## Results
 
-*(filled by Code from the workstation run)*
+Run 2026-09-17 on the workstation (RTX 4090, Blender 5.2.1), calibration room at `small`, 50
+fixations per policy, one Blender session per run. All numbers measured (`loop.json`,
+`compare.json`, the eval's lines) unless marked assumed. Figures:
+`docs/reference/c2_compare_calib_small.png` (the four curves, five runs) and
+`docs/reference/c2_loop_info_calib_small.png` (the info run's four panels).
+
+**Refactor check.** `calib_room_c2check` re-rendered in 11.2 s (0.091 s per pair); `check_pairs`,
+`stereo_truth` and `stereo_instrument` pass, and the instrument's summary is `calib_room_sp`'s to
+the eighth digit (inlier RMS 0.0269°, 37 pairs, 12604 cells, gross 6.2%, bias +0.0107, bound
+0.0085, RMS/bound 2.54, info/ray 0.3466): `PairRenderer` is behaviour-preserving.
+
+**Self-tests** (`belief`, `stereo_field`): ok, 0.2 s each.
+
+**The runs.** Every run completed in 15–24 s, 0.3–0.5 s per fixation — three times faster than
+the ~1 s predicted (the render is 0.08–0.11 s per pair, the field 0.13–0.23 s).
+
+| policy | rays | wall | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) | gated |
+|---|---|---|---|---|---|---|---|---|---|
+| targets | 7.995e7 | 15.2 s | 0.961 / 0.179 | 0.2101 / 0.0118 | 1.665 / 0.047 | 0.666 | 0.52 | 0.01 | 1764 |
+| random | 7.995e7 | 15.3 s | 0.955 / 0.069 | 0.1641 / 0.0167 | 1.228 / 0.067 | 0.616 | 0.42 | 0.69 | 13030 |
+| coverage | 7.995e7 | 17.3 s | 0.563 / 0.004 | 0.2052 / 0.1691 | 1.497 / 1.896 | 0.714 | 0.43 | 0.04 | 5567 |
+| info | 7.995e7 | 23.0 s | 0.853 / 0.004 | 0.1894 / 0.1691 | 1.399 / 1.896 | 0.673 | 0.31 | 1.54 | 3680 |
+| oracle | 7.995e7 | 21.7 s | 0.887 / 0.004 | 0.1741 / 0.1691 | 1.386 / 1.896 | 0.658 | 0.30 | 2.81 | 2310 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): targets 0.000 + 0.113 +
+0.143 + 0.030; random 0.006 + 0.096 + 0.147 + 0.035; coverage 0.088 + 0.094 + 0.134 + 0.022; info
+0.124 + 0.093 + 0.229 + 0.029; oracle 0.141 + 0.077 + 0.178 + 0.030.
+
+Rankings (the eval's, reported not judged): by median ρ error over measured cells, **random
+0.1641 < oracle 0.1741 < info 0.1894 < coverage 0.2052 < targets 0.2101**; by fine coverage,
+**targets 0.179 > random 0.069 > coverage 0.004 = info 0.004 = oracle 0.004**.
+
+**Checks.** (s) replay ok on all five (exact); (u) passes on all five. **(t) fails** on info
+(z RMS 0.310) and oracle (0.298), below 0.4: the belief's σ is conservative by ~3× there
+(random 0.42, coverage 0.43, targets 0.52 pass). **(v) fails** on coverage, info and oracle:
+fine coverage 0.004 against random's 0.069, i.e. no fixation after the first added a fine cell
+in any of the three. Not widened, not changed. The eval exits 1 with 5 failures.
+
+**Diagnosis of (v), measured.** The three policies lock onto one direction at the cap's edge
+and re-fixate it: `coverage` fixates (yaw −22°, pitch +56°) at every fixation from k001 to k049
+(2 distinct directions in 50; its score is bit-identical at every step, 0.18876); `info` visits
+13 distinct directions, then (+58°, −16°) from k013 on; `oracle` 19, then (+60°, 0°) from k020 on.
+Two mechanisms, both in the record:
+
+1. *No fine cells away from the cards.* In the loop's own field records, no eccentric fixation of
+   the three runs produced a single LR-consistent level-0 or level-1 row (oracle p002, p003,
+   p007, p019: 0 and 0; coverage p001: 0 and 0; random's fixations that landed on cards did:
+   p002 130 + 188, p019 153 + 200). The belief's fine cells stay fixation 0's 908 (593 with
+   truth) in all three runs. The cause is the noise the loop carries: fixation 0's seed pair
+   calibrates `noise_rel_per_level` = 0.177 / 0.173 / 0.162 / 0.143 / 0.084 (relative, per
+   level), 2.5× the 0.07 this prompt assumed for the host-side check. Run host-side on a copy of
+   the info run's record, `stereo_field.py --noise-rel 0.07` judges 6545 level-0 cells over 50
+   pairs with gross 4.6% → 2.0% after LR (the walls *are* matchable at the fine scale), while
+   `--noise-rel 0.177` judges 79 with gross 49%: the texture and bound thresholds at the
+   calibrated noise reject the walls' texture, and only the cards pass. Whether 0.177 is the
+   render's noise or an overestimate of the seed pair's σ (measured over the wide map, then
+   made relative) is for Chat; the fix, if one is wanted, belongs in the loop's noise carry
+   (`active_loop.py`, `noise_rel_equiv`), not in the thresholds.
+2. *The gain model does not learn that a surface is unmeasurable.* `coverage` scores
+   `best_level > 1` (not yet *measured* finely), not `visited > 1` (not yet *looked at*), so a
+   fine look that measures nothing leaves its gain unchanged: at the locked direction 2698 of
+   the 2879 belief cells within 6° are visited at level ≤ 1 and 0 are measured at level ≤ 1. The
+   visit-map rule in `_gain_field` (zero gain where visited finely and never measured) is
+   applied after `coverage` has already returned, and for `info`/`oracle` it does not fire on
+   cells a coarse level has measured (P > 0), which is every cell at the cap's edge after a few
+   fixations; their variance then sits at the coarse floor, which does not average down, so the
+   expected gain of re-looking never falls. This is the lock-up bio-3d-vision described; the
+   decision on the gain model is Chat's, per the prompt.
+
+**Vergence.** Median vergence error exceeds 1 m on info (1.54 m) and oracle (2.81 m): both are the
+locked fixation's own error (info: ẑ 2.19 m from the belief over the cap against a wall at
+3.70 m; oracle: ẑ 0.64 m from a wrong fine estimate against 3.45 m). The prescribed diagnostic
+re-run with `--search-deg 8` (`previews/loop/diag_info_s8`, `diag_oracle_s8`) changes nothing
+that matters: vergence medians 1.56 m and 1.07 m, fine coverage 0.004, (t) and (v) fail the same
+way — the search range is not what is missing.
+
+**What the render decided that the stub could not.** Coarse-band gross fractions are 0.67–0.82
+(stub: 0.35–0.40): at 1.6–3.2° cells on the room's walls, the periphery says which side of the
+room, not the depth. `info` does not beat `coverage` on the fine band; neither measured it.
+The four spreading policies are not within 20% of each other on error (random 0.164 to coverage
+0.205), and random is the best of the five: it is the only spreading policy that keeps landing
+on cards. Target order wins fine coverage (0.179) because the cards are the only fine-measurable
+surfaces and it visits all of them.
+
+**Record hazard (found, not fixed).** `stereo_field.py <loop run>` writes `field/p<NNN>.npz`
+into the same directory the loop's own record uses and overwrote the info run's fields (the eval
+had already passed (s) on the originals). The run was re-rendered to restore it (identical to
+1e-9: final ρ error 0.1894, z 0.3097602631 vs 0.3097602658; one per-fixation line differs in
+the fourth decimal) and the host-side field was then run on a symlinked copy. The Phase B tools
+on the info run: `check_pairs` ok (0 judged card pairs, reported), `stereo_truth` ok (visible
+96.7%, (i) 0.014 s₀, (j) 100%), `stereo_field --noise-rel 0.07` ok (levels 0–4 judged
+6545 / 21888 / 34974 / 39827 / 12541 cells; (p) skipped, no stereo.json).
+
+**Per-level σ_ρ at the end of the info run** (`level_sigma_final`, 1/m): 0.0199 / 0.0415 /
+0.2166 / 0.2096 / 0.4410; noise note: "calibrated on fixation 0 (seed pair), then carried".
+
+No code was changed in this step.
 
 ## What C2 leaves open
 

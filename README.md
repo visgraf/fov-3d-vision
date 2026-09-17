@@ -79,7 +79,7 @@ matters more than the objective.
 | | Step | State |
 |---|---|---|
 | C1 | The stereo field: the D15 instrument extended over the whole disc a pair covers, level by level at the scale the samples support, with left–right consistency and an inverse-depth measurement with variance per cell | **done** — `stereo_field.py`; D17; `docs/c1-stereo-field.md`: (p) −7% at small, −24% at full; floor 0.10–0.37 cells |
-| C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **written**, not yet run — `docs/c2-active-loop.md` |
+| C2 | The loop: pair spec (ω, ẑ), a belief on the head sphere fused across pairs, policies (target order, random, coverage-first with inhibition of return, expected information), one Blender session, bioeye's four panels on the sphere, error and coverage against cumulative rays | **run, open** — five policies × 50 fixations at `small`, 15–24 s per run; (s) and (u) pass on all five; **(t) fails** on info and oracle (z RMS 0.31, 0.30) and **(v) fails** on coverage, info and oracle (fine coverage 0.004 vs random's 0.069): the three lock onto one direction at the cap's edge, where the loop's carried noise (0.177 relative) leaves no fine cells and the gain model does not learn it; `docs/c2-active-loop.md` |
 | C3 | Closing: both scenes at `small`, one `full` run, the README as the engine's front page, `docs/phase-c-summary.md` | — |
 
 ## State
@@ -117,6 +117,12 @@ floor of 0.1–0.4 cell and a positive bias at depth edges, not noise (RMS/bound
 variance carries; the maps are smoothed along θ only from level 2, where it de-biases and the
 fovea cannot afford it. κ and floor per level are in each run's `field.json` for C2
 (`docs/c1-stereo-field.md`, Results, Second run).
+
+C2 has run: the loop closes in one Blender session at 0.3–0.5 s per fixation, the record
+replays exactly, and the result is a finding rather than a ranking — on the calibration room the
+cards are the only surfaces the fovea can measure at the noise the loop carries, so the three
+model-driven policies lock onto one unmeasurable direction at the edge of the field of regard
+while random, which keeps landing on cards, has the lowest error (`docs/c2-active-loop.md`).
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.
