@@ -1012,3 +1012,19 @@ policies that do not consult it; the objective bought nothing where the model wa
 (calib room) and costs where it is wrong. Next: random, coverage, oracle at full on the
 classroom beside the info run, evals of the five with the new (u); then the summary and the
 front page.
+
+## 2026-09-17 — C3b: classroom at full, four policies; all thirteen runs pass under the new (u); info third at full, random first at both profiles
+
+All measured, `previews/loop3/`. Random, coverage, oracle at full (kappa 3.8): 68.4 / 74.9 /
+77.5 s (1.4-1.6 s per fixation), distinct 49/50/50; final at 1.287e9 rays: rho err median
+random 0.0385 < coverage 0.0427 < info 0.0435 < oracle 0.0453 /m; fine coverage coverage 0.094
+> random 0.078 > oracle 0.064 > info 0.059; fine-band error oracle 0.0139 < random 0.0155 <
+coverage 0.0177 < info 0.0186; gross 0.31-0.37 (coarse 0.38-0.43); z 0.74-1.02; vergence
+medians 0.33-0.71 m. Evals: (s), (t), (u), (v) pass on all thirteen runs (exit 0). (u)
+fixation-0 cells: classroom full 27427 cells 0.0397 -> 0.0180-0.0195; classroom small 5627
+cells 0.0799 -> 0.0412-0.0535; calib room 10820 cells 0.2160 -> 0.2009-0.2155 (0-7%; the
+central cards' surround is gross at its depth edges and the coarse looks cannot lower it).
+Small rankings unchanged (re-judged, not re-rendered). Reading: at full info recovers from
+last to third, within 2% of coverage, still last on fine coverage; random first on error at
+both profiles (by 10% at full), coverage first on fine coverage at both; spread 18% at full.
+No code changed. README C3 row stays run. Figure c3_compare_classroom_full.png added.

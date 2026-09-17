@@ -145,3 +145,52 @@ cap (0.14 m on the fine band) and gross 0.355.
 
 The Phase B tools on `class_info`: `check_pairs` ok (0 judged card pairs of 50, reported),
 `stereo_truth` ok ((i) 0.015 s₀, (j) 100%, visible 93.4%).
+
+### Full profile (2026-09-17, after `5001865`: (u) on the fixation-0 cells)
+
+Random, coverage and oracle at `full` on the classroom (κ 3.8, 50 fixations, 1.287e9 rays each),
+beside the info run from the first step; then every earlier run re-judged under the new (u)
+without re-rendering. All measured. Figure: `docs/reference/c3_compare_classroom_full.png`.
+
+| policy | profile | rays | wall | distinct dirs | cover any / fine | ρ err median all / fine (1/m) | depth err median all / fine (m) | gross | z RMS | vergence err median (m) | (u) fixation-0 cells, ρ err start → end |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| random | full | 1.287e9 | 68.4 s | 49 | 0.924 / 0.078 | 0.0385 / 0.0155 | 0.325 / 0.104 | 0.314 | 1.02 | 0.33 | 27427: 0.0397 → 0.0190 |
+| coverage | full | 1.287e9 | 74.9 s | 50 | 0.930 / 0.094 | 0.0427 / 0.0177 | 0.351 / 0.134 | 0.344 | 1.01 | 0.38 | 27427: 0.0397 → 0.0180 |
+| info | full | 1.287e9 | 78.6 s | 50 | 0.920 / 0.059 | 0.0435 / 0.0186 | 0.375 / 0.140 | 0.355 | 0.85 | 0.71 | 27427: 0.0397 → 0.0195 |
+| oracle | full | 1.287e9 | 77.5 s | 50 | 0.868 / 0.064 | 0.0453 / 0.0139 | 0.438 / 0.231 | 0.374 | 0.74 | 0.61 | 27427: 0.0397 → 0.0183 |
+
+Per-fixation timings, medians (choose + render + infer + judge, s): random 0.023 + 0.724 + 0.465
++ 0.146; coverage 0.135 + 0.724 + 0.460 + 0.146; info 0.293 + 0.637 + 0.465 + 0.147; oracle 0.291
++ 0.639 + 0.441 + 0.143 — 1.4–1.6 s per fixation, 4400–4600 matchable cells per field (info
+3400), gross by band fine / mid / coarse 0.20–0.28 / 0.21–0.23 / 0.38–0.43.
+
+Rankings at `full` (reported, not judged): by median ρ error, **random 0.0385 < coverage 0.0427
+< info 0.0435 < oracle 0.0453**; by fine coverage, **coverage 0.094 > random 0.078 > oracle 0.064
+> info 0.059**. On the fine band's own error oracle 0.0139 < random 0.0155 < coverage 0.0177 <
+info 0.0186.
+
+**Checks: (s), (t), (u), (v) pass on all thirteen runs** (four `full`, four `small`, five on the
+calib room); every eval exits 0. The new (u) line, the cells measured and judged after
+fixation 0 and the same cells at the end (median ρ error, 1/m):
+
+- classroom `full`: 27427 cells, 0.0397 → 0.0190 (random), 0.0180 (coverage), 0.0195 (info),
+  0.0183 (oracle);
+- classroom `small`: 5627 cells, 0.0799 → 0.0417 (random), 0.0412 (coverage), 0.0535 (info),
+  0.0511 (oracle);
+- calib room `small`: 10820 cells, 0.2160 → 0.2081 (targets), 0.2045 (random), 0.2155
+  (coverage), 0.2118 (info), 0.2009 (oracle).
+
+The fixation-0 cells improve on every run: by half on the classroom (the loop learns), by 0–7%
+on the calib room, where fixation 0's cells are the central cards and their surround, measured
+finely at once and gross at the depth edges thereafter (0.216 /m is a floor the periphery's
+coarse looks cannot lower).
+
+**Does info recover at `full`?** Partly. With the error model closer to the truth (gross 0.36
+against 0.55 at `small`) info moves from last to third on median error, within 2% of coverage
+(0.0435 against 0.0427), and stays last on fine coverage. Random stays first on error at both
+profiles, by 10% at `full`, and coverage first on fine coverage at both. The spread among the
+four is 18% on median error at `full`; the chart's fine-band curves cross each other through
+the run. What the two profiles say together: on a scene textured everywhere the objective does
+not buy error at equal rays; spreading does, and random spreads as well as anything. The
+`small` rankings and (u) lines are unchanged from the first step (the runs were re-judged,
+not re-rendered).
