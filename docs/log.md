@@ -1263,3 +1263,38 @@ distinct of 60, no lock; coarse 0.336 -> 0.156 and outlier 0.173 -> 0.228 from K
 1.02 -> 1.60; second_look on 60 fixations: P(second bad | first bad) 53.5% vs 8.5%, bad-bad pairs
 agree 67%, fine gross mean 26.1% / median 23.7% / consensus 17.9% with 4.3% undecided; (z1) 0
 cells differ of 31176.
+
+## 2026-09-18 — D4: the run to saturation scheduled (overnight class)
+
+`class_coverage_full_500` (coverage-first, `full`, 500 fixations, κ 3.8, ~13 G rays, predicted
+13–15 min) runs now because it is the one record every remaining Phase D step reads
+(`second_look.py`, the checkpoint curve, a consensus fusion re-fused from it without rendering),
+and it is backed up outside the checkout as a pinned asset.
+
+## 2026-09-18 — D4 run: 500 fixations at full in 12 min; bad looks repeat, consensus beats the mean; (z1) fails on the gate
+
+Measured. The render: 717.7 s wall (choose 88.7 / render 311.1 / infer 239.1 / judge 78.8 s;
+medians per fixation 0.191 / 0.623 / 0.463 / 0.159 s), 1.287e10 rays, exit 0, no lock (469
+distinct directions of 500, longest repeat 1), least-looked from k = 146; 14 GB, backed up to
+/home/lvelho/data/loop4/class_coverage_full_500. Eval (2 min, ok): checkpoints K = 10 / 25 /
+50 / 100 / 200 / 300 / 500 — fine coverage 0.021 / 0.048 / 0.094 / 0.171 / 0.230 / 0.266 /
+0.295; rho err median 0.0515 / 0.0415 / 0.0423 / 0.0404 / 0.0391 / 0.0386 / 0.0387 (fine 0.0187
+at 500); gross 0.384 / 0.332 / 0.345 / 0.344 / 0.337 / 0.336 / 0.336 = coarse 0.296 -> 0.200 +
+outlier 0.088 -> 0.136; z RMS 0.77 -> 1.66 (inside (t)'s band); (u) 0.0397 -> 0.0160. (z0): the
+50 directions identical to loop3's, the numbers differ in the third-fourth digit (rho err
+0.0423 vs 0.0427, gross 0.345 vs 0.344): fixation 0's fix.exr and samples.npz differ in
+checksum at the same seed and its field by <= 1e-5 deg in 4 cells — OptiX is not
+bit-deterministic; the loop is. second_look (8.6 s, 0.7 GB): P(second bad | first bad) 61.8%
+vs P(second bad | first good) 11.3% (at 100: 64.0 / 7.3; at 200: 63.8 / 9.2); agreement
+good-good 98.3%, one bad 13.8%, bad-bad 64.4%; fine gross over all fine cells: first look
+25.2%, mean 27.9%, median 23.2%, consensus 18.3% with 9.3% undecided (2+ looks: 26.9 -> 14.6%
+with 11.5% undecided). (z1) FAIL: 1422 cells (0.4%) hold a fine look that belief.npz has at
+best_level 2-3 — all one way, across the cap, cells fused ~200 times from coarse levels whose
+single fine look the gate treats as the coarser measurement and drops when it disagrees;
+best_level is set only for what passes the gate. Left as it is; the side to change is Chat's.
+Views (3.7 min): median |rho err| 0.0919 /m on 3.35 M shared cells, solid on 4.3% of the
+sphere, half-confident 9.4% (50 fixations: 1.1 / 5.5%); docs/reference/views_classroom_full_500.png.
+Predictions: 1 held (k = 146, 469 distinct), 2 held (0.204 at the switch, 0.295 at 500), 3
+failed on the number (0.0387, not 0.025-0.032; saturates above the fine band as said), 4
+outlier held (0.136) coarse failed (0.200, not 0.10-0.15), 5 held (62 vs 11%), 6 held on all
+looks (34% below the mean, 9.3% undecided). No code change.
