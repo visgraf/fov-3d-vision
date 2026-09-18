@@ -1246,3 +1246,20 @@ the 45-65%), 2 failed on the amount (0.4% isolated vs 10-35%), 3 held at levels 
 at levels 0-1 and 54% of the search cells). No nanmedian warning; the known
 stereo_instrument.py warnings on the loop run. No code change. D2 closes as the note's rule
 says; what remains is D4.
+
+## 2026-09-18 — D22: D2 closes; D4 written (the long run, a second look as the test)
+
+After D2b's report (bc7c71d): the neighbour test missed its offline rule (cuts 32.4 / 32.4 /
+23.2% at levels 0-2, rule a third; 98% of the right kept), the loop was not run; outside the
+model 10.5 -> 9.2% of the judged area, occluded + window 8.2 of it. D22 closes D2; `--nb-tol`
+stays, off. D4: `belief.looks` and coverage-first's second phase (least-looked: sum of area /
+(1 + fine looks) once the best disc holds under 5% unvisited area) because the long run would
+otherwise return candidate 0 for ever after K ~ 130 (self-test with its negative: six distinct
+directions, one with the phase disabled); `rho_err_p90` in the metrics; the step records the
+phase; `active_eval.py` prints checkpoints for runs over 60 fixations; `tools/second_look.py`
+(fine looks per cell, repeatability, agreement, four fusions; (z1), (z2)). Stub only
+(measured, sandbox, small, a 20-degree cap so it saturates): least-looked from k = 21, 52
+distinct of 60, no lock; coarse 0.336 -> 0.156 and outlier 0.173 -> 0.228 from K = 10 to 70, z RMS
+1.02 -> 1.60; second_look on 60 fixations: P(second bad | first bad) 53.5% vs 8.5%, bad-bad pairs
+agree 67%, fine gross mean 26.1% / median 23.7% / consensus 17.9% with 4.3% undecided; (z1) 0
+cells differ of 31176.

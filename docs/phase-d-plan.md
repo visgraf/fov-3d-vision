@@ -33,6 +33,12 @@ from any edge (18-21% of the cells there), which neither a pyramid nor a smaller
   no feature is a test (best 44.5% at 90% kept), AUCs at most 0.71, the 3 x 3 window loses
   everywhere. D2b tries the one thing a marginal cell's wrong peak cannot fake, agreement with
   its neighbours: a sixth feature, a what-if, and — if the offline rule is met — one loop run.
+- **D2 closed (D22).** The neighbour test cuts wrong peaks by a third at the fine levels for 2%
+  of the right ones and missed its rule by a point; outside-the-model area 10.5 -> 9.2%, of
+  which edges and occlusions are 8.2. `--nb-tol` stays, off by default.
+- **D4 moved up** (`docs/d4-long-run.md`): one run to saturation, and on its record the
+  question D2 left — is a second look a test? Coverage-first gets a second phase (least-looked)
+  because its gain is zero everywhere once the cap is covered.
 - **D3 — coverage-first against expected information at `full`**, once the model contains or
   rejects its outliers (the first plan's closing comparison; either outcome counts).
 - **D4 — the run to saturation**, unchanged.

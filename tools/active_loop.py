@@ -166,7 +166,7 @@ def main():
         m = B.metrics(cap)
         t4 = time.perf_counter()
         step = {"k": k, "name": pair["name"], "dir_head": pair["policy"]["dir_head"], "z_hat_m": z_hat, "z_source": z_src,
-                "score": info.get("score"), "vergence_deg": pair["vergence_deg"],
+                "score": info.get("score"), "phase": info.get("phase"), "vergence_deg": pair["vergence_deg"],
                 "centre_depth_m": pair["eyes"][0]["measured_in_session"]["centre_depth_m"],
                 "vergence_err_m": abs(pair["eyes"][0]["measured_in_session"]["centre_depth_m"] - z_hat) if pair["eyes"][0]["measured_in_session"]["centre_hit"] else None,
                 "rays_cum": (k + 1) * rays_per_pair, "field_cells": int(len(f["rho"])), "field_consistent": int(f["consistent"].sum()),

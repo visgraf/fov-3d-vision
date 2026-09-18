@@ -268,3 +268,29 @@ decision rule on that number rewards nothing a matcher can do.
 Overturned if: the re-judged runs put the outlier fraction near the gross fraction (the
 belief's sigma then does not cover its coarse cells and (t) has been passing on inliers only).
 
+## D22 — D2 closes: at one look the field's outliers are the scene's; the neighbour test stays an option (2026-09-18)
+
+D2a and D2b (`docs/d2-wrong-or-right.md`, `docs/d2b-neighbour-test.md`; measured, offline, on
+`class_coverage_full` and `calib_room_full_sp`). Tried against the wrong peaks, in order: the
+parent as a prior (the oracle: 16% cured, net harmful on the calib room), a 3 x 3 window
+(loses at every level on both scenes), five truth-free features (best 44.5% rejected at 90% of
+the right kept; the NCC peak below a coin), agreement with the neighbours (the best feature at
+every level on the classroom, 44-50% at levels 0-2; as a one-cell test it cuts wrong peaks by
+32 / 32 / 23% for 2% of the right ones), a cross-validated logistic score of all six (AUC
+0.72-0.79). The neighbour test's offline rule — a third at each of levels 0-2 — was missed by
+one point at two levels and ten at the third, so by the rule written before the run the loop
+was not run with it. It would not have changed the account: outside-the-model area goes from
+10.5% to 9.2% of the judged area, and of that 9.2%, occluded and window are 8.2. The test
+removes half of the search kind and a sixth of the window kind; what is left is depth edges
+and half-occlusions, which agree with their neighbours along the edge and with their parents
+across scales.
+Decision: `--nb-tol` stays in the field and the loop, off by default; no default changes
+without a loop result. D2 closes. The remaining remedy inside Phase D's scope is not in the
+matcher: a loop can look again. D4 runs to saturation and its record says whether a second
+look is a test (`tools/second_look.py`).
+Why: four remedies and six features, each judged offline in under a minute against a rule
+written first, all say the same thing about the same 8% of the area.
+Overturned if: the long run shows the bad looks are not repeatable across fixations
+(P(second bad | first bad) near the base rate) — then the outliers were the matcher's after
+all, and a consensus fusion removes them.
+

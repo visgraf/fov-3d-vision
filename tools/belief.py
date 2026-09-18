@@ -68,6 +68,7 @@ class SphereBelief:
         self.n = np.zeros(shape, np.int32)
         self.best_level = np.full(shape, UNVISITED, np.int8)      # finest level that MEASURED the cell
         self.visited = np.full(shape, UNVISITED, np.int8)         # finest level that OWNED the cell
+        self.looks = np.zeros(shape, np.int16)                    # how many fixations owned the cell at levels 0-1 (D4: the policy after the cap is covered)
         self.tW = np.zeros(shape); self.tS = np.zeros(shape); self.tn = np.zeros(shape, np.int32)
         self.sigma_prior = float(sigma_prior)
         self.gated = 0
@@ -107,11 +108,18 @@ class SphereBelief:
 
     # ---------------------------------------------------------------- updates
     def visit(self, visits: dict):
+        """One fixation's owned cells, matchable or not: the finest level that looked at each
+        belief cell, and (D4) one more fine look for those it owned at levels 0-1 — once per
+        fixation however many of its cells overlap there."""
+        seen = np.zeros(self.visited.shape, bool)
         for l in np.unique(visits["level"]):
             m = visits["level"] == l
             def fn(i, j, sel, l=int(l)):
                 self.visited[i, j] = np.minimum(self.visited[i, j], l)
+                if l <= 1:
+                    seen[i, j] = True
             self._splat(visits["theta_L"][m], visits["phi"][m], visits["cell_deg"][m], fn)
+        self.looks += seen
 
     def fuse(self, f: dict, consistent_only: bool = True, gate_sigmas: float = 3.0) -> dict:
         """Fuse a field (field_of_pair's rows). Returns counts."""
@@ -213,7 +221,7 @@ class SphereBelief:
                     out[f"{band}_cells"] = int(sel.sum()); out[f"{band}_rho_err_median"] = float(np.median(np.abs(err[sel])))
                     out[f"{band}_depth_err_median_m"] = float(np.median(dep[sel])); out[f"{band}_gross_frac"] = float(1.0 - inl[sel].mean())
                     out[f"{band}_outlier_frac"] = float(outl[sel].mean())
-            out.update({"judged_cells": int(j.sum()), "rho_err_median": float(np.median(np.abs(err))),
+            out.update({"judged_cells": int(j.sum()), "rho_err_median": float(np.median(np.abs(err))), "rho_err_p90": float(np.quantile(np.abs(err), 0.9)),
                         "rho_inlier_rms": float(np.sqrt(np.mean(err[inl] ** 2))) if inl.any() else None,
                         "gross_frac": float(1.0 - inl.mean()),
                         "outlier_frac": float(outl.mean()), "coarse_frac": float((~inl & ~outl).mean()),
@@ -226,7 +234,7 @@ class SphereBelief:
 
     def snapshot(self) -> dict:
         return {"cell_deg": self.cell, "mean": self.mean().astype(np.float32), "sigma": self.sigma().astype(np.float32),
-                "n": self.n.astype(np.int16), "best_level": self.best_level, "visited": self.visited,
+                "n": self.n.astype(np.int16), "best_level": self.best_level, "visited": self.visited, "looks": self.looks,
                 "truth": self.truth().astype(np.float32), "truth_n": self.tn.astype(np.int16)}
 
 
@@ -276,6 +284,7 @@ class Policy:
         self.edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
         self.R = float(min(self.edges[min(policy_levels, len(self.edges)) - 1], e_max))
         self.R_fine = float(self.edges[min(1, len(self.edges) - 1)])          # levels 0-1: 6 deg at the standard warp
+        self.fine_disc_sr = 2.0 * math.pi * (1.0 - math.cos(math.radians(self.R_fine))); self.cover_done = 0.05
         self.regard = regard_deg
         self.cand = candidates(regard_deg, cand_deg)
         self.rng = np.random.default_rng(seed)
@@ -394,10 +403,19 @@ class Policy:
             H = np.stack(self.history)
             near = (self.cand @ H.T) >= math.cos(math.radians(self.ior_deg))
             scores = np.where(near.any(1), -np.inf, scores)
+        phase = self.name
+        if self.name == "coverage" and float(np.max(scores)) < self.cover_done * self.fine_disc_sr:
+            # D4: the cap has been looked at finely everywhere (the best disc holds under 5% of
+            # unvisited area), so every score is ~0 and argmax would return candidate 0 for ever.
+            # Coverage of the NEXT look: the disc whose cells have had the fewest fine looks,
+            # sum of area / (1 + looks). Parameter-free, and coverage-first again at every pass.
+            lm = self._reduce(1.0 / (1.0 + self.b.looks.astype(np.float64))) * self.cap_c
+            scores = np.array([self._score(lm, vis, meas, d) for d in self.cand])
+            phase = "least-looked"
         k = int(np.argmax(scores))
         d = self.cand[k]
         self.history.append(d)
-        return d, {"score": float(scores[k]), "score_median": float(np.median(scores[np.isfinite(scores)]))}
+        return d, {"score": float(scores[k]), "score_median": float(np.median(scores[np.isfinite(scores)])), "phase": phase}
 
 
 # ----------------------------------------------------------------------------------------
@@ -502,6 +520,17 @@ def self_test() -> list[str]:
     vmc = polc._reduce(polc._gain_field())
     if not polc._score(vmc, vis, meas, FORWARD.copy()) < polc._score(vmc, vis, meas, d_else):
         fails.append("coverage still wants a direction already looked at finely")
+    # D4: a cap already looked at finely everywhere — coverage must not return the same candidate for ever
+    b9 = SphereBelief(1.0)
+    b9.visited[:] = 0; b9.looks[:] = 1
+    pol9 = Policy("coverage", b9, 2.0, 2.0, 45.0, regard_deg=30.0, cand_deg=5.0, level_sigma=ls)
+    seen9 = []
+    for _ in range(6):
+        d9, i9 = pol9.choose()
+        b9.visit({"theta_L": np.array([epipolar(d9)[0]]), "phi": np.array([epipolar(d9)[1]]), "cell_deg": np.array([12.0]), "level": np.array([0], np.int8)})
+        seen9.append(tuple(np.round(d9, 6)))
+    if len(set(seen9)) < 6 or i9.get("phase") != "least-looked":
+        fails.append(f"coverage after the cap is covered: {len(set(seen9))} distinct of 6, phase {i9.get('phase')}")
     # candidates lie within the cap
     c = candidates(30.0, 5.0)
     if (c @ FORWARD).min() < math.cos(math.radians(30.0)) - 1e-9 or len(c) < 50:
