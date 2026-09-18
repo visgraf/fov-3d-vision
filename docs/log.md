@@ -1113,3 +1113,14 @@ docstring edits were `str.replace` calls whose old text no longer matched, so th
 nothing while the code moved. The policies paragraph now states what runs: coverage on the
 visit map; info on the two-part variance, fine-level measurability, the cap mask; oracle's
 inhibition of return. No code change; self-test ok.
+
+## 2026-09-18 — Phase D plan revised after a third-party review; the review filed
+
+`docs/reviews/2026-09-18-phase-d-suggestions.md` with the reading. Changes to the plan: the
+diagnosis of the gross errors comes first (distance to a depth edge, occlusion from the truth
+sidecar, per level; prediction: the window's at levels 0-1, the search's at 3-4);
+coarse-to-fine gets a safety valve (parent as proposal; full search on a boundary hit, weak
+peak or LR failure) and P(child gross | parent gross); D2 is the window (3x3 at the fine
+levels, photometrically weighted 5x5), D3 the inlier probability in the fusion (conditional,
+then coverage vs information only), D4 the long run read at checkpoints. D20 stands as
+written. Phase D starts in a new conversation.
