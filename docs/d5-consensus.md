@@ -92,7 +92,116 @@ Check (r), which can fail: re-fused fixation 0 covers the cap exactly as the rec
 
 ## Results
 
-_To be filled by Code: second_look's (z1) line; both checkpoint tables and the "re-fused vs
-recorded" line verbatim, for the 500 and the 50 record; the rule's verdict with its four
-numbers; if the live run was made: both [eval] lines, the 5% comparison, the default changed or
-not (commit); the five predictions held / failed with the number._
+Run 2026-09-18 on the workstation, host side; **no render: the rule landed in between**, so the
+live run was not made and `--fusion` keeps its default (`mean`). No code changed. No FAIL line.
+
+**Self-tests** `belief`, `second_look`: ok. **`second_look.py`** on the 500-fixation record
+(8.5 s, 0.70 GB): exit 0, every other line as in D4, and (z1) as corrected:
+
+```
+[look2] (z1) fine cells here 355601, in belief.npz 354179: missing here 0; fine looks the belief's gate dropped 1422 (reported)
+```
+
+**The re-fusion** (`active_eval.py --refuse consensus` on `class_coverage_full_500`: 5 min 09 s,
+1.73 GB resident; exit 0, 0 failures; (s), (t), (u) ok; `belief.npz` and `loop.json` untouched
+by mtime and size; `belief_consensus.npz`, `refuse_consensus.json`, `loop_fig_consensus.png`
+written). The recorded checkpoints reproduce D4's to the digit; (r) reads 2.8e-16, a rounding
+of the cap's area, not a displaced look.
+
+```
+[eval] class_coverage_full_500 coverage k 500 rays 1.287e+10 | cover any 0.993 fine 0.295 | rho err med 0.0387 (fine 0.0187) /m | depth med 0.331 (fine 0.188) m | gross 0.336 = coarse 0.200 + outlier 0.136 (outlier fine/mid/coarse 0.206/0.154/0.086; gross 0.216/0.239/0.451) | z 1.66 | verg err med 0.35 m | (s) replay ok; (u) fixation-0 cells 27427: rho err median 0.0397 -> 0.0160 -> loop_fig.png
+[eval] class_coverage_full_500 checkpoints (recorded):   K |      rays | cover any / fine | rho err med / p90 / fine (1/m) | gross = coarse + outlier | outlier fine / mid / coarse | z RMS | undecided of cap | policy phase
+[eval] class_coverage_full_500 checkpoint    10 | 2.574e+08 | 0.813 / 0.021 | 0.0515 / 0.3574 / 0.0132 | 0.384 = 0.296 + 0.088 | 0.208 / 0.168 / 0.059 | 0.77 | - | coverage
+[eval] class_coverage_full_500 checkpoint    25 | 6.434e+08 | 0.876 / 0.048 | 0.0415 / 0.2903 / 0.0163 | 0.332 = 0.237 + 0.095 | 0.193 / 0.157 / 0.057 | 0.85 | - | coverage
+[eval] class_coverage_full_500 checkpoint    50 | 1.287e+09 | 0.930 / 0.094 | 0.0423 / 0.2992 / 0.0177 | 0.345 = 0.241 + 0.104 | 0.218 / 0.154 / 0.058 | 1.01 | - | coverage
+[eval] class_coverage_full_500 checkpoint   100 | 2.574e+09 | 0.960 / 0.171 | 0.0404 / 0.3193 / 0.0177 | 0.344 = 0.228 + 0.116 | 0.205 / 0.156 / 0.067 | 1.17 | - | coverage
+[eval] class_coverage_full_500 checkpoint   200 | 5.148e+09 | 0.980 / 0.230 | 0.0391 / 0.3148 / 0.0186 | 0.337 = 0.211 + 0.126 | 0.213 / 0.149 / 0.075 | 1.38 | - | least-looked
+[eval] class_coverage_full_500 checkpoint   300 | 7.721e+09 | 0.989 / 0.266 | 0.0386 / 0.3092 / 0.0185 | 0.336 = 0.202 + 0.135 | 0.209 / 0.157 / 0.085 | 1.48 | - | least-looked
+[eval] class_coverage_full_500 checkpoint   500 | 1.287e+10 | 0.993 / 0.295 | 0.0387 / 0.3035 / 0.0187 | 0.336 = 0.200 + 0.136 | 0.206 / 0.154 / 0.086 | 1.66 | - | least-looked
+[eval] class_coverage_full_500 distinct directions 469 of 500; least-looked from k = 146
+[eval] class_coverage_full_500 checkpoints (re-fused consensus):   K |      rays | cover any / fine | rho err med / p90 / fine (1/m) | gross = coarse + outlier | outlier fine / mid / coarse | z RMS | undecided of cap | policy phase
+[eval] class_coverage_full_500 checkpoint    10 | 2.574e+08 | 0.813 / 0.021 | 0.0517 / 0.3574 / 0.0135 | 0.384 = 0.296 + 0.088 | 0.212 / 0.169 / 0.059 | 0.77 | 0.0000 | coverage
+[eval] class_coverage_full_500 checkpoint    25 | 6.434e+08 | 0.876 / 0.048 | 0.0416 / 0.2912 / 0.0162 | 0.332 = 0.237 + 0.095 | 0.196 / 0.157 / 0.057 | 0.84 | 0.0000 | coverage
+[eval] class_coverage_full_500 checkpoint    50 | 1.287e+09 | 0.930 / 0.094 | 0.0420 / 0.3007 / 0.0167 | 0.345 = 0.242 + 0.103 | 0.210 / 0.155 / 0.058 | 0.97 | 0.0001 | coverage
+[eval] class_coverage_full_500 checkpoint   100 | 2.574e+09 | 0.960 / 0.167 | 0.0398 / 0.3237 / 0.0165 | 0.343 = 0.228 + 0.115 | 0.200 / 0.157 / 0.067 | 1.06 | 0.0036 | coverage
+[eval] class_coverage_full_500 checkpoint   200 | 5.148e+09 | 0.980 / 0.209 | 0.0379 / 0.3195 / 0.0159 | 0.333 = 0.213 + 0.120 | 0.190 / 0.152 / 0.075 | 1.14 | 0.0207 | least-looked
+[eval] class_coverage_full_500 checkpoint   300 | 7.721e+09 | 0.989 / 0.239 | 0.0370 / 0.3119 / 0.0154 | 0.330 = 0.204 + 0.127 | 0.180 / 0.158 / 0.085 | 1.19 | 0.0274 | least-looked
+[eval] class_coverage_full_500 checkpoint   500 | 1.287e+10 | 0.993 / 0.263 | 0.0365 / 0.3025 / 0.0151 | 0.328 = 0.203 + 0.126 | 0.171 / 0.156 / 0.086 | 1.27 | 0.0322 | least-looked
+[eval] class_coverage_full_500 re-fused consensus vs recorded at K = 500: outlier 0.136 -> 0.126, fine outlier 0.206 -> 0.171, fine coverage 0.295 -> 0.263, rho err 0.0387 -> 0.0365 (fine 0.0187 -> 0.0151), z RMS 1.66 -> 1.27; (u) fixation-0 cells 0.0397 -> 0.0154; (r) fixation 0 coverage differs by 2.8e-16
+[eval] ok (0 failures)
+```
+
+**The 50-fixation record** (`loop3/class_coverage_full --refuse consensus`, 29 s, exit 0; its
+`belief.npz` and `loop.json` untouched). Its recorded steps predate the judge split, so the
+"recorded" outlier reads nan on the comparison line; the recorded values are the [eval] line's
+0.104 / 0.219. No recorded checkpoint table: the run has 50 steps (the table needs more than
+60).
+
+```
+[eval] class_coverage_full    coverage k  50 rays 1.287e+09 | cover any 0.930 fine 0.094 | rho err med 0.0427 (fine 0.0177) /m | depth med 0.351 (fine 0.134) m | gross 0.344 = coarse 0.240 + outlier 0.104 (outlier fine/mid/coarse 0.219/0.154/0.058; gross 0.227/0.225/0.425) | z 1.01 | verg err med 0.38 m | (s) replay ok; (u) fixation-0 cells 27427: rho err median 0.0397 -> 0.0180 -> loop_fig.png
+[eval] class_coverage_full checkpoints (re-fused consensus):   K |      rays | cover any / fine | rho err med / p90 / fine (1/m) | gross = coarse + outlier | outlier fine / mid / coarse | z RMS | undecided of cap | policy phase
+[eval] class_coverage_full checkpoint    50 | 1.287e+09 | 0.930 / 0.094 | 0.0424 / 0.3049 / 0.0165 | 0.344 = 0.240 + 0.103 | 0.214 / 0.155 / 0.058 | 0.97 | 0.0001 | -
+[eval] class_coverage_full re-fused consensus vs recorded at K = 50: outlier nan -> 0.103, fine outlier nan -> 0.214, fine coverage 0.094 -> 0.094, rho err 0.0427 -> 0.0424 (fine 0.0177 -> 0.0165), z RMS 1.01 -> 0.97; (u) fixation-0 cells 0.0397 -> 0.0179; (r) fixation 0 coverage differs by 2.8e-16
+[eval] ok (0 failures)
+```
+
+### The rule at K = 500 — in between
+
+Re-fused against recorded, the exact values from `refuse_consensus.json`:
+
+| clause | recorded | re-fused | needed to win | |
+|---|---|---|---|---|
+| fine outlier | 0.206 | **0.1715** | ≤ 0.175 | met |
+| outlier | 0.136 | **0.1257** | ≤ 0.125 | missed by 0.0007 |
+| fine coverage | 0.295 | **0.2625** | ≥ 0.265 | missed by 0.0025 |
+| ρ error median | 0.0387 | 0.0365 | not above +2% | met (−5.6%) |
+| fine ρ error | 0.0187 | 0.0151 | not above +2% | met (−19%) |
+
+Neither outlier rises and fine coverage stays above 0.250, so it does not lose; two clauses
+miss by the last printed digit, so it does not win. **In between**: the flag stays an option,
+no live run, no default change. Phase D closes with it.
+
+**The picture** (3 min 44 s; `docs/reference/views_classroom_full_500_consensus.png`, from
+`belief_consensus.npz`; the mean's sheet is `views_classroom_full_500.png`):
+
+```
+[views] engine vs truth on 3346001 shared cells: median |rho err| 0.0898 /m, median |depth err| 0.397 m
+[views] engine depth drawn solid on 3.6% of the sphere, at half confidence or better on 9.2% (solid at sigma <= 0.021, grey at >= 0.091 /m)
+[views] sphere at 0.0998261 deg: 66.4% of it seen by the L eye, 53.1% with a depth from the belief; white 1.922, depth scale 0.54-4.98 m
+[views] -> /home/lvelho/rd/fov-3d-vision/previews/loop4/class_coverage_full_500/views_belief_consensus/sheet.png (+ 8 panels, 4 depth .npy, the scanpath)
+```
+
+Against the mean's sheet: median |ρ err| 0.0919 → 0.0898 /m, depth solid on 4.3 → 3.6% of the
+sphere (the undecided cells fall back to the coarse stream and lose their fine σ), half
+confidence 9.4 → 9.2%.
+
+### The five predictions against the run
+
+1. **Fine outlier 0.155–0.175, outlier 0.110–0.125 — fine held, outlier failed by 0.0007.**
+   0.206 → 0.1715; 0.136 → 0.1257. By band at 500 the outlier is 0.171 / 0.156 / 0.086 (fine /
+   mid / coarse) against 0.206 / 0.154 / 0.086 recorded: the consensus moves the fine band only,
+   as the design says; the mid and coarse bands, where the wrong peaks of levels 2–4 live, are
+   unchanged, and they are two thirds of the outlier area.
+2. **Fine coverage 0.265–0.285, undecided 2–4% of the cap and 8–12% of the finely looked-at
+   cells — coverage failed by 0.0025, undecided held.** 0.295 → 0.2625; undecided 0.0322 of the
+   cap, which is exactly the fine coverage lost (0.2625 + 0.0322 = 0.2947) and 10.9% of the
+   finely looked-at cells. Undecided grows with the looks: 0.0001 at 50, 0.0036 at 100, 0.0207
+   at 200, 0.0322 at 500.
+3. **ρ error median unchanged within 2%, the fine band's better by up to 5%, the 90th
+   percentile falling more than the median — failed on all three, two of them in the good
+   direction.** Median 0.0387 → 0.0365 (−5.6%), fine 0.0187 → 0.0151 (−19%), p90 0.3035 →
+   0.3025 (−0.3%): the tail is the coarse cells' and the consensus does not reach it.
+4. **z RMS stays at 1.55–1.66 — failed, downward.** 1.66 → 1.27 (0.97 at 50, 1.06 at 100, 1.14
+   at 200). D23 said the climb was not the outliers' doing; a third of it goes with them all
+   the same — the fine verdict replaces a mean whose noise variance had averaged down over
+   correlated looks with a fusion of the agreeing members only, so the fine cells' σ is
+   honest again where the looks disagreed. The rest of the climb (0.77 → 1.27) stays open.
+5. **The rule is met — failed.** In between, by 0.0007 of outlier and 0.0025 of fine coverage.
+
+Not decided here. What the numbers say for the record: on this scene the consensus removes a
+sixth of the fine band's outliers (0.206 → 0.171) at the price of a ninth of its coverage
+(0.295 → 0.263), moves the whole-cap outlier by a tenth (0.136 → 0.126) because the mid and
+coarse bands carry two thirds of it and are untouched, and lowers the median error by 6% and
+the fine band's by 19%. D23's "overturned if" (undecided cells that do not resolve on a
+third look) is not tested by a re-fusion; it would need a loop that looks where its looks
+disagree.

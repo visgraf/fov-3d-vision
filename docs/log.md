@@ -1311,3 +1311,26 @@ coverage 0.993 -> 0.946 (undecided 4.7% of the cap), rho error 0.0416 -> 0.0414 
 live `--fusion consensus` on the same stub: outlier 0.172, fine coverage 0.946, (s) replay ok;
 the default path's 15-fixation stub run reproduces to the digit (0.154 / 0.0478 / 0.359).
 Self-tests ok, each new one with a known answer.
+
+## 2026-09-18 — D5 run: the consensus belief re-fused on D4's record; the rule lands in between; Phase D closes
+
+Measured, host side, no render. Self-tests ok. second_look on class_coverage_full_500 exits 0
+with the corrected (z1): fine cells here 355601, in belief.npz 354179, missing here 0, gate
+dropped 1422 (reported); every other line as in D4. active_eval --refuse consensus on the
+500-record (5 min 09 s, 1.73 GB; belief.npz and loop.json untouched; belief_consensus.npz,
+refuse_consensus.json, loop_fig_consensus.png written; (r) 2.8e-16; (s)-(u) ok): recorded
+checkpoints reproduce D4's; re-fused at K = 10 / 25 / 50 / 100 / 200 / 300 / 500 — fine
+coverage 0.021 / 0.048 / 0.094 / 0.167 / 0.209 / 0.239 / 0.263, rho err 0.0517 / 0.0416 /
+0.0420 / 0.0398 / 0.0379 / 0.0370 / 0.0365 (fine 0.0151 at 500), outlier 0.088 / 0.095 / 0.103
+/ 0.115 / 0.120 / 0.127 / 0.126 (fine 0.212 -> 0.171; mid and coarse unchanged), z RMS 0.77 ->
+1.27, undecided of cap 0 -> 0.0322. The 50-record re-fused (29 s): fine outlier 0.214, outlier
+0.103, fine coverage 0.094, rho err 0.0424 (fine 0.0165), z 0.97. THE RULE at K = 500, exact:
+fine outlier 0.1715 (<= 0.175 met), outlier 0.1257 (<= 0.125 missed by 0.0007), fine coverage
+0.2625 (>= 0.265 missed by 0.0025), rho err -5.6% and fine -19% (met); nothing rises, coverage
+above 0.250: IN BETWEEN. No live run; --fusion stays mean by default. Views from the
+consensus belief (3.7 min): median |rho err| 0.0898 /m (mean's 0.0919), solid 3.6% / half
+9.2% of the sphere (4.3 / 9.4); docs/reference/views_classroom_full_500_consensus.png.
+Predictions: 1 fine outlier held (0.171), outlier failed by 0.0007; 2 fine coverage failed by
+0.0025, undecided held (3.2% of cap, 10.9% of the fine cells); 3 failed on all three (median
+-5.6%, fine -19%, p90 -0.3%); 4 failed downward (z RMS 1.66 -> 1.27); 5 failed (in between).
+No code change. Phase D closes.
