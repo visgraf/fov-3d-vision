@@ -1178,3 +1178,28 @@ five-feature separation at 90% of the right peaks kept, `--tag` for what-ifs. St
 74-78% of wrong peaks at levels 0-1 (90% of search), peak and margin 40-50%, bound 4-6%; the
 oracle's uncured are 54-65% "inside the interval" at levels 1-3; `--window 1` raises wrong
 peaks at level 0 from 7% to 30% on the stub's noise texture.
+
+## 2026-09-18 — D2a run: the split judge on the thirteen runs, the five features, the 3x3 what-if; all checks pass
+
+All measured, host side, nothing rendered, no loop re-run. Four self-tests ok. The three
+active_eval calls (47.1 / 16.8 / 23.3 s) exit 0, (s) replay ok on all thirteen runs, no other
+FAIL; compare.json's scalars unchanged from C3b's files, four keys added; gross - coarse -
+outlier <= 8e-17 everywhere. Outlier fraction: classroom full 0.098-0.104 of gross
+0.314-0.374; by band fine 0.194-0.268 of 0.199-0.284 (the fine band's gross is its outlier
+fraction), mid 0.14-0.15 of 0.21-0.23, coarse 0.06 of 0.38-0.43; classroom small 0.08-0.09 of
+0.49-0.55; calib room 0.12-0.19 of 0.54-0.63. D21's "overturned if" does not fire. The four
+standard diagnoses (4.8 / 15.7 / 6.1 / 20.9 s): (y1), (y2) ok, the level lines equal D1a's
+exactly (string diff). Telling wrong from right at 90% of the right kept, class_coverage_full
+levels 0-2: parent 33.9 / 44.5 / 39.7% (the best), margin 31.5 / 34.4 / 28.4%, bound 18.0 /
+21.5 / 21.3%, peak 11.4 / 14.4 / 15.8% (AUC 0.45-0.51, a coin); no AUC above 0.71 there. On the
+calib room the bound is the best at level 0 (68.4% sp, 52.6% full) and the LR residual at
+level 2. The uncured wrong peaks are mostly "parent wrong too" or "no parent" at levels 0-2
+on the classroom (inside the interval 14.6 / 20.6 / 33.0%), inside only at level 3 (60.8%).
+The 3x3 what-ifs (10.3 / 15.5 s, exit 0, (y1) not judged, standard files untouched): on
+class_coverage_full judged cells 4736 -> 1557 at level 0, wrong peaks 26.1 -> 45.7%, far rate
+21.5 -> 45.2%, worse at every level; on calib_room_full_sp worse at every level too (level 0
+wrong peaks 8.5 -> 9.2%, far 1.7 -> 5.0%, a quarter fewer cells). Predictions: 1 held, 2 held
+(peak's 30-50% failed low at 11-14%), 3 held on the classroom and failed on the calib room at
+levels 0 and 2 and in its "inside the interval" reason, 4 held and the window loses on the
+calib room too. RuntimeWarnings from stereo_instrument.py on the loop runs as in D1a. No code
+change. D2b not decided here.
