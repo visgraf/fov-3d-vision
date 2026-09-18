@@ -1140,3 +1140,26 @@ search's") is revised to "the resolution's" in the note, before the run. Stub on
 once the samples are placed by the record's float32 directions as the loop placed them (by the
 sidecar's analytic theta 0.26% of rows move: a cell border for a few samples); negatives
 --search-deg and --edge-jump 10 exit 1; by area 90% of the stub's bad cells are resolution.
+
+## 2026-09-18 — D1a run: the gross-error diagnosis on the four records; all checks pass
+
+All measured, host side, nothing rendered. Self-test ok. field.json refreshed on both pairs
+runs with the standard flags (C2's second-run numbers back: (p) -3% at sp, -24% at full).
+stereo_truth on the loop runs ok (class_coverage 0.7 s, class_coverage_full 2.1 s; (h) reads
+None on a loop run). Diagnoses: calib_room_sp 4.8 s, calib_room_full_sp 15.1 s,
+class_coverage 6.0 s, class_coverage_full 20.4 s; (y1) 0.0000 / 0.0000 / 100.000% of 46692
+rows / 99.999% of 213541 rows; (y2) passes on all four; negatives --search-deg 4 (worst
+difference 0.0083) and --edge-jump 10 (no edge cells) exit 1. By area, resolution is
+89.1 / 76.9 / 83.7 / 74.6% of the bad cells (bad area 67.3 / 48.6 / 64.9 / 41.5%): prediction 3
+holds. Prediction 1 (levels 0-1 the window's) holds on the calib room (excess share 75-95%)
+and fails on the classroom (46-54% at full; search 15.3 / 13.1% exceeds window 9.2 / 8.5% at
+levels 0-1; far-from-edge wrong peaks at 18-22%). Prediction 2 holds in direction, fails the
+50% clause (class_coverage_full level 4: resolution 37.2% of judged cells, 80% of the bad
+ones; search 1.7%). Prediction 4: the oracle cures 6-25% of the wrong peaks at levels 0-2 on
+the renders (33% at level 3 of calib_room_full_sp), the minority it predicted; at risk under
+5% except calib_room_full_sp levels 1-2 (5.0%, 9.0%). Prediction 5 holds: removing the bias
+moves P(beyond 25%) by at most -4.6% relative and raises it on 5 of 8 rows at levels 3-4.
+The loop-run diagnoses print numpy RuntimeWarnings from stereo_instrument.py:244-262 (per-cell
+noise zero on some cells); the rebuilt rows equal the record, nothing changed. No code
+change. Figures in docs/reference (d1_diagnosis_classroom_full.png,
+d1_diagnosis_calib_room_full.png). D20's rule and the order D1b/D2 not decided here.

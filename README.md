@@ -133,7 +133,7 @@ remove the removable ones, represent the rest (D20, `docs/phase-d-plan.md`).
 
 | | Step | State |
 |---|---|---|
-| D1a | The diagnosis on the saved records: occluded / window / search / resolution per level, P(gross) against the distance to a depth edge, the parent oracle (what coarse-to-fine could cure) | **written** 2026-09-18 — `gross_diagnosis.py`, `docs/d1-gross-diagnosis.md`; not run on the renders yet |
+| D1a | The diagnosis on the saved records: occluded / window / search / resolution per level, P(gross) against the distance to a depth edge, the parent oracle (what coarse-to-fine could cure) | **run** 2026-09-18 — `gross_diagnosis.py`, `docs/d1-gross-diagnosis.md`; all checks pass on the four records; by area resolution is 75–89% of the bad cells, the oracle cures 3–25% of the wrong peaks at levels 0–2; D20's rule and the order D1b/D2 to be decided |
 | D1b | Coarse-to-fine with a safety valve in `stereo_field.py` | planned; its decision rule is read against D1a first |
 
 ## State
