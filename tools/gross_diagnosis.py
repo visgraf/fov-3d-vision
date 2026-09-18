@@ -60,6 +60,13 @@ read WITHOUT the truth. Per level and feature: the threshold that keeps --keep (
 right peaks, the share of the wrong peaks it rejects (all / window / search), and the AUC. A
 feature that rejects 10% at 90% kept is a coin; one that rejects 70% is a test.
 
+D2b adds a sixth feature, `neighbours` (|parallax - median of the LR-consistent neighbours'| in
+cells, radius window + 1, at least three; fewer: 'isolated', counted apart), and `combined`, a
+logistic score of all six fitted on the even pairs and judged on the odd ones. --nb-tol T
+[--nb-drop-isolated] rebuilds the fields with the neighbour test on (a what-if: needs --tag);
+a loop run made with it carries it in loop.json and is rebuilt with it, so (y1) still judges.
+The area line ends with what is outside the variance model: occluded + window + search.
+
 --tag NAME marks a what-if (e.g. --window 1 --tag w1): output goes to gross_diagnosis_NAME.*,
 the standard files stay, and (y1) is reported, not judged (the field is not the one on record).
 
@@ -90,10 +97,12 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rig import epipolar, to_eye_frame  # noqa: E402
-from stereo_field import field_of_pair, inverse_depth, load, synthetic_pair  # noqa: E402
+from stereo_field import field_of_pair, inverse_depth, load, neighbour_median, synthetic_pair  # noqa: E402
 
 KINDS = ("occluded", "window", "search", "resolution", "good")
-FEATURES = ("peak", "margin", "lr_resid", "bound", "parent")     # -ncc peak, -(peak - rival), LR residual (cells), bound (cells), |parallax - parent's| (cells)
+FEATURES = ("peak", "margin", "lr_resid", "bound", "parent", "neighbours")   # -ncc peak, -(peak - rival), LR residual, bound, |parallax - parent's|,
+NF = len(FEATURES)                                                          # |parallax - median of the consistent neighbours'| (all in cells but the first two)
+
 
 
 # ----------------------------------------------------------------------------------------
@@ -146,6 +155,7 @@ def diagnose_pair(f: dict, window: int, dmax: int, rel: float, c2f_cells: float)
     lev = f["level"].astype(int); cell = f["cell_deg"]
     dist = np.full(M, dmax + 1, np.int32)
     par_parent = np.full(M, np.nan)
+    nb_dev = np.full(M, np.nan); nb_n = np.zeros(M, np.int32)
     edge_cells = []
     for lv in f["levels"]:
         l = lv["level"]
@@ -157,6 +167,9 @@ def diagnose_pair(f: dict, window: int, dmax: int, rel: float, c2f_cells: float)
         m = lev == l
         dist[m] = Dm[f["row"][m], f["col"][m]]
         edge_cells.append(int((Ecell[:, c0:c0 + J] & own).sum()))
+        if m.any():
+            med, cnt = neighbour_median(par, matchable & consistent, window + 1)
+            nb_dev[m] = np.abs(par - med)[f["row"][m], f["col"][m]] / lv["cell_deg"]; nb_n[m] = cnt[f["row"][m], f["col"][m]]
         # the parent: level l + 1's consistent parallax at this cell's direction
         up = next((x for x in f["levels"] if x["level"] == l + 1), None)
         if up is not None and m.any():
@@ -197,9 +210,10 @@ def diagnose_pair(f: dict, window: int, dmax: int, rel: float, c2f_cells: float)
         with np.errstate(invalid="ignore"):
             margin = f["ncc_peak"] - np.where(np.isfinite(f["ncc_rival"]), f["ncc_rival"], -1.0)
             feats = np.stack([-f["ncc_peak"], -margin, np.nan_to_num(f["lr_resid_cells"], nan=9.0), f["bound_deg"] / cell,
-                              np.where(has_parent, np.abs(f["parallax_deg"] - par_parent) / cell, 0.0)])
+                              np.where(has_parent, np.abs(f["parallax_deg"] - par_parent) / cell, 0.0),
+                              np.where(nb_n >= 3, nb_dev, np.nan)])        # NaN: fewer than three consistent neighbours — 'isolated', counted apart
     return {"judged": judged, "err_cells": err_cells, "wrong": wrong, "beyond": beyond, "dist": dist, "near": near,
-            "kind": kind, "occluded": occluded, "why": why, "feats": feats, "has_parent": has_parent, "cured": cured, "at_risk": at_risk, "edge_cells": edge_cells}
+            "kind": kind, "occluded": occluded, "why": why, "feats": feats, "pair_parity": None, "has_parent": has_parent, "cured": cured, "at_risk": at_risk, "edge_cells": edge_cells}
 
 
 def extras_of(L: dict, raster_index: np.ndarray, distance: np.ndarray, n: int, jump: float) -> dict:
@@ -216,7 +230,7 @@ def extras_of(L: dict, raster_index: np.ndarray, distance: np.ndarray, n: int, j
 class Pool:
     def __init__(self, nlev: int, dmax: int, ipd_m: float = 0.063, rel: float = 0.25):
         self.nlev, self.dmax, self.ipd, self.rel = nlev, dmax, ipd_m, rel
-        self.keep = 0.9
+        self.keep = 0.9; self.n_pairs = 0
         self.why = np.zeros((nlev, 4), np.int64); self.feat_rows = [[] for _ in range(nlev)]   # (5 features, wrong, near) per cell with a correspondence
         self.right_rows = [[] for _ in range(nlev)]               # right peaks with a correspondence: (err_cells, theta_L, parallax, truth rho, cell)
         z = lambda *s: np.zeros(s, np.int64)
@@ -229,6 +243,7 @@ class Pool:
 
     def add(self, f: dict, d: dict, keep: np.ndarray):
         lev = f["level"].astype(int)
+        self.n_pairs += 1
         for l in range(self.nlev):
             m = (lev == l) & keep
             self.unhit[l] += int((m & ~d["judged"]).sum())
@@ -248,7 +263,8 @@ class Pool:
             self.wrong[l] += int((v & d["wrong"]).sum()); self.right[l] += int((v & ~d["wrong"]).sum())
             self.why[l] += np.bincount(d["why"][v & d["wrong"]], minlength=4)[:4]
             if d["feats"] is not None:
-                self.feat_rows[l].append(np.vstack([d["feats"][:, v], d["wrong"][v][None].astype(float), d["near"][v][None].astype(float)]))
+                self.feat_rows[l].append(np.vstack([d["feats"][:, v], d["wrong"][v][None].astype(float), d["near"][v][None].astype(float),
+                                                    np.full((1, int(v.sum())), float(self.n_pairs % 2))]))
             r = v & ~d["wrong"]
             self.right_rows[l].append(np.stack([d["err_cells"][r], f["theta_L"][r], f["parallax_deg"][r], f["x_rho"][r], f["cell_deg"][r]]))
         # as stereo_field judges: visible >= 0.5, finite truth, consistent; gross = wrong peak
@@ -261,17 +277,41 @@ class Pool:
         if not self.feat_rows[l]:
             return None
         X = np.concatenate(self.feat_rows[l], axis=1)
-        wrong, near = X[5] > 0.5, X[6] > 0.5
+        wrong, near, odd = X[NF] > 0.5, X[NF + 1] > 0.5, X[NF + 2] > 0.5
         if wrong.sum() < 50 or (~wrong).sum() < 50:
             return None
         out = {"keep": self.keep, "wrong": int(wrong.sum()), "right": int((~wrong).sum())}
-        for i, name in enumerate(FEATURES):
-            b = X[i]; br = np.sort(b[~wrong]); bw = b[wrong]
+
+        def judge(b, sel):
+            """Threshold keeping `keep` of the right peaks among sel; what it rejects of the wrong ones; AUC."""
+            br = np.sort(b[sel & ~wrong]); bw = b[sel & wrong]
             t = float(np.quantile(br, self.keep))
             lo, hi = np.searchsorted(br, bw, "left"), np.searchsorted(br, bw, "right")
-            rj = lambda m: float((b[m] > t).mean()) if m.any() else None
-            out[name] = {"threshold": t, "kept_right": float((br <= t).mean()), "rejects_wrong": rj(wrong), "rejects_window": rj(wrong & near),
-                         "rejects_search": rj(wrong & ~near), "auc": float(((lo + hi) / 2.0).mean() / len(br))}
+            rj = lambda m: float((b[sel & m] > t).mean()) if (sel & m).any() else None
+            return {"threshold": t, "kept_right": float((br <= t).mean()), "rejects_wrong": rj(wrong), "rejects_window": rj(wrong & near),
+                    "rejects_search": rj(wrong & ~near), "auc": float(((lo + hi) / 2.0).mean() / len(br))}
+        iso = ~np.isfinite(X[NF - 1])
+        out["isolated"] = {"of_right": float(iso[~wrong].mean()), "of_wrong": float(iso[wrong].mean())}
+        for i, name in enumerate(FEATURES):
+            sel = np.isfinite(X[i])
+            if (sel & wrong).sum() >= 50 and (sel & ~wrong).sum() >= 50:
+                out[name] = judge(X[i], sel)
+        # all six together: a logistic score fitted on the even pairs, judged on the odd ones (the ceiling of a pi
+        # built from these; a fit judged on its own data would flatter it)
+        F = X[:NF].T.copy()
+        F[:, NF - 1] = np.where(iso, 0.0, F[:, NF - 1]); F = np.column_stack([F, iso.astype(float)])
+        tr, te = ~odd, odd
+        if min((tr & wrong).sum(), (tr & ~wrong).sum(), (te & wrong).sum(), (te & ~wrong).sum()) >= 50:
+            lo_, hi_ = np.quantile(F[tr], 0.01, axis=0), np.quantile(F[tr], 0.99, axis=0)
+            Z = np.clip(F, lo_, hi_); mu, sd = Z[tr].mean(0), Z[tr].std(0) + 1e-9
+            Z = np.column_stack([(Z - mu) / sd, np.ones(len(Z))])
+            w = np.zeros(Z.shape[1]); y = wrong.astype(float)
+            for _ in range(25):                                     # Newton steps, ridge 1e-3
+                p_ = 1.0 / (1.0 + np.exp(-np.clip(Z[tr] @ w, -30, 30)))
+                H = (Z[tr] * (p_ * (1 - p_))[:, None]).T @ Z[tr] + 1e-3 * np.eye(len(w))
+                w = w + np.linalg.solve(H, Z[tr].T @ (y[tr] - p_) - 1e-3 * w)
+            out["combined"] = dict(judge(Z @ w, te), trained_on=int(tr.sum()), judged_on=int(te.sum()),
+                                   weights={k_: float(x) for k_, x in zip(FEATURES + ("isolated", "const"), w)})
         return out
 
     def report(self, window: int, cell0: float) -> dict:
@@ -318,7 +358,8 @@ class Pool:
                 "separation": self.separation(l),
                 "sf_gross_frac_consistent": float(self.sf_gross[l] / self.sf_n[l]) if self.sf_n[l] else None})
         A = self.area.sum(0); bad = A[:4].sum()
-        out["area_weighted"] = {"beyond_or_wrong_frac": float(bad / max(A.sum(), 1e-12)),
+        out["area_weighted"] = {"beyond_or_wrong_frac": float(bad / max(A.sum(), 1e-12)), "outside_model_frac": float(A[:3].sum() / max(A.sum(), 1e-12)),
+                                "judged_area_deg2": float(A.sum()),
                                 "share_of_bad": {KINDS[i]: float(A[i] / bad) if bad > 0 else None for i in range(4)},
                                 "note": "cells weighted by cell_deg^2, as the belief's cell count weights them"}
         return out
@@ -347,10 +388,11 @@ def print_report(rep: dict, tag: str = "[diag]"):
         S_ = L.get("separation")
         if S_:
             print(f"{tag} level {L['level']} telling wrong from right at {100 * S_['keep']:.0f}% of the right kept ({S_['wrong']} wrong, {S_['right']} right) — rejects all / window / search, AUC: "
-                  + "; ".join(f"{k_} {pc(S_[k_]['rejects_wrong'])}/{pc(S_[k_]['rejects_window'])}/{pc(S_[k_]['rejects_search'])}% {S_[k_]['auc']:.2f}" for k_ in FEATURES))
+                  + "; ".join(f"{k_} {pc(S_[k_]['rejects_wrong'])}/{pc(S_[k_]['rejects_window'])}/{pc(S_[k_]['rejects_search'])}% {S_[k_]['auc']:.2f}" for k_ in FEATURES + ("combined",) if k_ in S_)
+                  + f"; isolated (< 3 consistent neighbours): {pc(S_['isolated']['of_right'])}% of the right, {pc(S_['isolated']['of_wrong'])}% of the wrong")
     a = rep["area_weighted"]; s = a["share_of_bad"]
     print(f"{tag} by area (the loop's count): {pc(a['beyond_or_wrong_frac'])}% of the judged area is wrong or beyond 25%; of that, occluded {pc(s['occluded'])}%  window {pc(s['window'])}%  "
-          f"search {pc(s['search'])}%  resolution {pc(s['resolution'])}%")
+          f"search {pc(s['search'])}%  resolution {pc(s['resolution'])}%  | outside the model (occluded + window + search) {pc(a['outside_model_frac'])}% of {a['judged_area_deg2']:.0f} deg2 judged")
 
 
 def figure(rep: dict, path: str, window: int, title: str, size: int = 300):
@@ -481,6 +523,8 @@ def main():
     ap.add_argument("--search-deg", type=float, default=None); ap.add_argument("--kappa", type=float, default=None)
     ap.add_argument("--floor-cells", type=float, default=None); ap.add_argument("--window", type=int, default=None)
     ap.add_argument("--noise-rel", type=float, default=None)
+    ap.add_argument("--nb-tol", type=float, default=None, help="what-if (D2b): drop consistent cells more than this many cells from the median of their consistent neighbours")
+    ap.add_argument("--nb-drop-isolated", action="store_true", help="with --nb-tol: also drop cells with fewer than three consistent neighbours")
     ap.add_argument("--keep", type=float, default=0.9, help="separation: the share of right peaks a threshold must keep")
     ap.add_argument("--tag", default=None, help="a what-if run: outputs suffixed _TAG, (y1) reported but not judged")
     args = ap.parse_args()
@@ -494,11 +538,12 @@ def main():
     # the settings the run's field was built with
     is_loop = os.path.exists(os.path.join(run, "loop.json"))
     kw = {"eval_factor": 2.0, "search_deg": 3.0, "window": 2, "kappa": 2.5, "floor_cells": 0.3, "lr_tol_cells": 1.0}
-    noise_list, ref = None, None
+    noise_list, ref, rec_nb = None, None, (None, False)
     if is_loop:
         lj = json.load(open(os.path.join(run, "loop.json"))); st = lj["settings"]
         kw.update(eval_factor=st["eval_factor"], search_deg=st["search_deg"], kappa=st["kappa"], floor_cells=st["floor_cells"])
         noise_list = lj["noise_rel_per_level"]
+        rec_nb = (st.get("nb_tol"), bool(st.get("nb_drop_isolated", False)))    # a loop run with the neighbour test on: part of its record
         src = "loop.json"
     elif os.path.exists(os.path.join(run, "field.json")):
         ref = json.load(open(os.path.join(run, "field.json")))["summary"]
@@ -510,6 +555,9 @@ def main():
     for k_, v in (("search_deg", args.search_deg), ("kappa", args.kappa), ("floor_cells", args.floor_cells), ("window", args.window)):
         if v is not None:
             kw[k_] = v; src += f", --{k_.replace('_', '-')} overridden"
+    nb_tol, nb_iso = (args.nb_tol, args.nb_drop_isolated) if args.nb_tol is not None else rec_nb
+    if nb_tol is not None:
+        src += f"; neighbour test {nb_tol} cells{', isolated dropped' if nb_iso else ''} ({'--nb-tol' if args.nb_tol is not None else 'the record'})"
     seed_pair = bool(pj.get("seed_pair", False))
     print(f"[diag] {run}: {len(pj['pairs'])} pairs, s0 {s0:.4f} deg, settings from {src}: {kw}")
 
@@ -529,7 +577,7 @@ def main():
         if not measured and nr is None:
             raise SystemExit("[diag] no seed pair and no recorded noise: pass --noise-rel")
         f = field_of_pair(L, R, gaze[0], gaze[1], s0, E2, emax, ipd, noise_rel=nr,
-                          extras=extras_of(L, s["raster_index"], s["distance"], n, args.edge_jump), features=True, **kw)
+                          extras=extras_of(L, s["raster_index"], s["distance"], n, args.edge_jump), features=True, nb_tol_cells=nb_tol, nb_drop_isolated=nb_iso, **kw)
         if pool is None:
             nlev = len(f["levels"]); pool = Pool(nlev, args.dmax, ipd, args.rel); pool.keep = args.keep
         d = diagnose_pair(f, kw["window"], args.dmax, args.rel, args.c2f_cells)
@@ -566,6 +614,8 @@ def main():
         y1_note = f"(y1) per-level gross after LR vs field.json: worst difference {worst:.4f}"
     else:
         y1_note = "(y1) not judged: no record of this run's field"
+    if args.nb_tol is not None and not args.tag:
+        raise SystemExit("[diag] --nb-tol is a what-if: give it a --tag")
     if args.tag:
         y1_note += " — a what-if (--tag): not judged"; fails = []
     fails += check_y2(rep, kw["window"])

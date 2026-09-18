@@ -65,6 +65,7 @@ import json
 import math
 import os
 import sys
+import warnings
 
 import numpy as np
 
@@ -132,6 +133,22 @@ def smooth_theta(X: np.ndarray) -> np.ndarray:
     return np.where(v, S, np.nan)
 
 
+def neighbour_median(par: np.ndarray, valid: np.ndarray, r: int) -> tuple[np.ndarray, np.ndarray]:
+    """Median of `par` over the valid cells of each cell's (2r+1)^2 neighbourhood, the cell
+    itself excluded, and how many there were. A wrong peak on marginal texture lands anywhere in
+    the search range; its neighbours on the same surface do not land there with it."""
+    J, W = par.shape
+    P = np.pad(np.where(valid, par, np.nan), r, constant_values=np.nan)
+    stack = [P[dr:dr + J, dc:dc + W] for dr in range(2 * r + 1) for dc in range(2 * r + 1) if not (dr == r and dc == r)]
+    S = np.stack(stack)
+    n = np.isfinite(S).sum(0)
+    with np.errstate(all="ignore"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            med = np.nanmedian(S, axis=0)
+    return med, n
+
+
 # ----------------------------------------------------------------------------------------
 # the field of one pair
 # ----------------------------------------------------------------------------------------
@@ -142,14 +159,17 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
                   lr_tol_cells: float = 1.0, finest_factor: float = 1.5, noise_rel: float | None = None,
                   margin_deg: float = 2.0, axis_deg: float = 5.0, min_valid: float = 0.6,
                   smooth_from_level: int = 2, floor_cells: float = 0.3, lr: bool = True, extras: dict | None = None,
-                  features: bool = False) -> dict:
+                  features: bool = False, nb_tol_cells: float | None = None, nb_drop_isolated: bool = False) -> dict:
     """L, R: dicts with 'theta', 'phi' (epipolar, deg), 'val' (N,), 'fp' (N,) sr, optional
     'val_b' (seed pair). gazeL/R: head-frame unit gaze directions. Returns the measurement rows
     (see module docstring) plus per-level diagnostics under 'levels' and, if extras is given
     ({'name': per-sample array of L}), their finest-owns cell means as 'x_<name>'. features=True
     adds what a confidence test could read, per row, without changing anything else (D2; off in
     the loop): ncc_peak, ncc_rival (the best score more than a cell from the peak), lr_resid_cells
-    (|shift_LR + shift_RL| at the matched R cell; NaN when R has no match there)."""
+    (|shift_LR + shift_RL| at the matched R cell; NaN when R has no match there). nb_tol_cells
+    (D2b, off by default): an LR-consistent cell whose parallax is more than that many cells
+    from the median of its consistent neighbours (radius window + 1, at least three of them) is
+    no longer consistent; nb_drop_isolated drops those with fewer than three as well."""
     (thL, phL), (thR, phR) = epipolar(gazeL), epipolar(gazeR)
     phi_c, theta_mid = 0.5 * (phL + phR), 0.5 * (thL + thR)
     edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
@@ -218,6 +238,13 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         jr = np.clip(np.rint(np.nan_to_num(sh_lr)).astype(int) + cc, 0, J - 1)
         back = sh_rl[rr, jr]
         consistent = matchable & np.isfinite(back) & (np.abs(sh_lr + back) <= lr_tol_cells) if lr else matchable.copy()
+        if nb_tol_cells is not None:
+            med, cnt = neighbour_median(sh_lr, consistent, h + 1)
+            with np.errstate(invalid="ignore"):
+                off = (cnt >= 3) & (np.abs(sh_lr - med) > nb_tol_cells)
+            consistent &= ~off
+            if nb_drop_isolated:
+                consistent &= cnt >= 3
         # ownership by eccentricity from the L gaze, per cell centre
         th_cells = gL.theta_of_col(np.arange(c0, c0 + J))[None, :] + np.zeros((J, 1))
         ph_cells = phi_c + (np.arange(J) - gL.h)[:, None] * gL.dphi + np.zeros((1, J))
@@ -349,6 +376,23 @@ def self_test() -> list[str]:
     rej_rest = float((~f["consistent"])[~near_edge].mean()) if (~near_edge).any() else 0.0
     if not rej_edge > rej_rest:
         fails.append(f"synthetic pair: LR consistency rejects {100 * rej_edge:.0f}% at the card edge vs {100 * rej_rest:.0f}% elsewhere")
+    # the neighbour test (D2b): the median against brute force; and on this pair it must drop wrong peaks (more than a
+    # cell off) at several times the rate it drops right ones, and no more than 5% of the right ones. Rows are the
+    # same set with and without it (only `consistent` changes).
+    Mx = rng.normal(size=(9, 11)); Vx = rng.random((9, 11)) < 0.6
+    med, cnt = neighbour_median(Mx, Vx, 2)
+    for (r_, c_) in ((0, 0), (4, 5), (8, 10)):
+        nb = [Mx[i, j] for i in range(max(r_ - 2, 0), min(r_ + 3, 9)) for j in range(max(c_ - 2, 0), min(c_ + 3, 11)) if Vx[i, j] and (i, j) != (r_, c_)]
+        if cnt[r_, c_] != len(nb) or (nb and abs(med[r_, c_] - float(np.median(nb))) > 1e-12):
+            fails.append(f"neighbour_median at {(r_, c_)}: {med[r_, c_]} of {cnt[r_, c_]} vs brute {np.median(nb) if nb else None} of {len(nb)}")
+    f2 = field_of_pair(eyes[0], eyes[1], eyes[0]["gaze"], eyes[1]["gaze"], s0, E2, emax, ipd, floor_cells=0.1, nb_tol_cells=1.0)
+    if len(f2["rho"]) != len(f["rho"]):
+        fails.append("neighbour test changed the rows, not only `consistent`")
+    else:
+        was = f["consistent"]; dropped = was & ~f2["consistent"]; wr = np.abs(e_cells) > 1.0
+        p_w = dropped[was & wr].mean() if (was & wr).any() else 0.0; p_r = dropped[was & ~wr].mean()
+        if not (p_w > 3.0 * p_r and p_r < 0.05) or (f2["consistent"] & ~was).any():
+            fails.append(f"neighbour test drops {100 * p_w:.1f}% of the wrong peaks and {100 * p_r:.1f}% of the right ones")
     for lv in range(int(f["level"].max()) + 1):
         m = (f["level"] == lv) & f["consistent"]
         if m.sum() < 50:

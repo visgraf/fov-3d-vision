@@ -29,6 +29,10 @@ from any edge (18-21% of the cells there), which neither a pyramid nor a smaller
   on the wrong-peak fraction per level and the cells kept, then once in the loop on the
   outlier fraction, the fine band's error and coverage. The rule is written in D2b's note
   before it runs, from D2a's numbers.
+- **D2b as it turned out** (`docs/d2b-neighbour-test.md`): D2a supported none of the three —
+  no feature is a test (best 44.5% at 90% kept), AUCs at most 0.71, the 3 x 3 window loses
+  everywhere. D2b tries the one thing a marginal cell's wrong peak cannot fake, agreement with
+  its neighbours: a sixth feature, a what-if, and — if the offline rule is met — one loop run.
 - **D3 — coverage-first against expected information at `full`**, once the model contains or
   rejects its outliers (the first plan's closing comparison; either outcome counts).
 - **D4 — the run to saturation**, unchanged.

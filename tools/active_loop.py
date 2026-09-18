@@ -67,6 +67,8 @@ def main():
     ap.add_argument("--kappa", type=float, default=2.5)
     ap.add_argument("--floor-cells", type=float, default=0.3)
     ap.add_argument("--noise-rel", type=float, default=None, help="assumed per-pixel relative RMS; default: calibrated on fixation 0's seed pair")
+    ap.add_argument("--nb-tol", type=float, default=None, help="D2b: drop LR-consistent cells more than this many cells from the median of their consistent neighbours (off by default)")
+    ap.add_argument("--nb-drop-isolated", action="store_true", help="with --nb-tol: also drop cells with fewer than three consistent neighbours")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--ior-deg", type=float, default=None, help="explicit inhibition of return; default 0 for the policies, 3 for the oracle")
     add_profile(ap, script_args(), s0="s0", spp="fix_spp")
@@ -150,7 +152,8 @@ def main():
         # ---- infer
         gaze = [to_eye_frame(np.array([[0.0, 0.0, 1.0]]), g["yaw"], g["pitch"])[0] for g in pair["eyes"]]
         f = field_of_pair(L, Rr, gaze[0], gaze[1], s0, E2, emax, args.ipd, eval_factor=args.eval_factor, search_deg=args.search_deg,
-                          kappa=args.kappa, floor_cells=args.floor_cells, noise_rel=noise_rel)
+                          kappa=args.kappa, floor_cells=args.floor_cells, noise_rel=noise_rel,
+                          nb_tol_cells=args.nb_tol, nb_drop_isolated=args.nb_drop_isolated)
         if k == 0 and noise_rel is None:
             noise_rel = [lv["noise_rel_equiv"] for lv in f["levels"]]
             L.pop("val_b", None); Rr.pop("val_b", None)

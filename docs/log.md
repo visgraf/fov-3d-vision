@@ -1203,3 +1203,24 @@ wrong peaks 8.5 -> 9.2%, far 1.7 -> 5.0%, a quarter fewer cells). Predictions: 1
 levels 0 and 2 and in its "inside the interval" reason, 4 held and the window loses on the
 calib room too. RuntimeWarnings from stereo_instrument.py on the loop runs as in D1a. No code
 change. D2b not decided here.
+
+## 2026-09-18 — D2b written: the neighbour test (after D2a's report, 374e211)
+
+D2a supported none of its three options (no feature a test: best 44.5% at 90% kept, AUC <=
+0.71; NCC peak below a coin at the fine levels; 3 x 3 loses everywhere); the judge split held
+(outlier 0.098-0.104 of gross 0.31-0.37 at full; fine outlier ~ fine gross). My reason for the
+parent's value was wrong (the uncured are "parent wrong too" and "no parent", not "inside the
+interval"). Reading: the classroom's fine levels are the texture gate's margin. Sandbox,
+measured: a wall of smooth shading plus noise — below the margin the gates reject every cell,
+above it nothing is wrong, at it (0.1-1 c/m, noise 0.03, level 2) 59% of 78 matchable cells are
+wrong and LR keeps 22 with 51% wrong. D2b: `neighbour_median` and
+`field_of_pair(nb_tol_cells, nb_drop_isolated)` (off by default; record rebuilds exactly),
+`active_loop.py --nb-tol`, the diagnostic's sixth feature `neighbours`, `combined` (logistic,
+even pairs -> odd pairs), `--nb-tol` what-ifs, "outside the model" on the area line, loop.json's
+nb settings read back. Stub only (measured): neighbours rejects 75-86% at levels 0-2 (AUC
+0.88-0.92), combined 77-89%; what-if nb1 on the stub loop run: wrong peaks 7.2/4.9/2.6 ->
+2.0/2.3/1.3% for 2-6% of the cells, outside-the-model area 6.2 -> 4.2%; stub loop with
+--nb-tol 1 (15 fixations): outlier 0.061 -> 0.038, fine 0.087 -> 0.048, fine coverage 0.154 ->
+0.150, (y1) 100.000% of 44445 rows; synthetic wall and card: drops 22.8% of 92 wrong (the
+card's edge: coherent) and 0.3% of the right. Both rules (offline -> loop; loop win/lose) are
+in the note before the run.
