@@ -25,18 +25,23 @@ belief's estimate along that direction (or the target's, for the target-order ba
   targets    the target list in order (Phase B's runs; the baseline)
   random     uniform over the field of regard (a cap of --regard-deg about the primary gaze)
   coverage   the candidate whose foveal disc (levels 0-1, 6 deg) holds the most cells not yet
-             looked at finely (the visit map, measurable or not); bio-3d-vision's "not looking
+             LOOKED AT finely — the visit map, measurable or not; bio-3d-vision's "not looking
              twice" and nothing else
   info       expected information: sum over the cells a pair would measure, out to
-             --policy-levels, of 1/2 log(1 + sigma_c^2 I(e)), with I(e) the precision the
-             field delivers at eccentricity e (the running median sigma_rho per level of this
-             run's own fields) and sigma_c the belief's; unseen cells at the prior, cells
-             looked at finely and found unmeasurable at zero (the reviewer's policy, with the
-             visit map)
-  oracle     the same sum with the belief's actual squared error where truth exists ("look
-             where you are most wrong"), with an explicit inhibition of return (3 deg) because a
-             depth edge the fovea cannot resolve is "wrong" forever; the upper bracket, not a
-             policy
+             --policy-levels, of 1/2 log(var_before / var_after) under the belief's own
+             two-part variance model (sigma^2 = 1/P_noise + floor^2): the noise part averaged
+             down by the level's noise precision, the floor replaced by the smaller of the two
+             floors — both per level from the running medians of this run's own fields
+             (LevelSigma). Unseen cells at the prior. A cell counts only where the fine levels
+             have measured it, or where the look would be two levels finer than the finest
+             look that found nothing; cells outside the field of regard count for nothing. A
+             floor-limited cell therefore yields nothing and retires itself. (The reviewer's
+             policy, with the visit map and the two variances; the C2 note records the three
+             earlier forms and the lock each one produced.)
+  oracle     the same sum with 1/2 log(1 + err^2 I(e)), the belief's actual squared error
+             where truth exists in place of its variance ("look where you are most wrong"),
+             with an explicit inhibition of return (3 deg), because a depth edge the fovea
+             cannot resolve is "wrong" forever; the upper bracket, not a policy
 """
 from __future__ import annotations
 

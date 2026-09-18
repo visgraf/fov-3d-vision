@@ -1104,3 +1104,12 @@ reference_small_L/classroom pano 17bdfa4a8dab7260fd95926b9a61aa9e, backface
 06038dd4afbc5a0c7be885e1d1e05fa7; reference_full_L/classroom backface
 ac86e5f65f40d69d9b3658821ad79de8 — in the manifest. Figures replaced/added in docs/reference.
 No code changed.
+
+## 2026-09-18 — belief.py: the module docstring caught up with the code (a review observation)
+
+The third-party reviewer noticed the docstring still gave info's gain as 1/2 log(1 + sigma^2 I)
+while `_score` computes 1/2 log(var_before / var_after). Cause: the C2 third- and fourth-round
+docstring edits were `str.replace` calls whose old text no longer matched, so they did
+nothing while the code moved. The policies paragraph now states what runs: coverage on the
+visit map; info on the two-part variance, fine-level measurability, the cap mask; oracle's
+inhibition of return. No code change; self-test ok.
