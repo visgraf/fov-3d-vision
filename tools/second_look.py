@@ -31,9 +31,11 @@ Reported, over the cells with truth:
                  The last line is the fine band as a whole: what a robust fusion would buy.
 
 Checks, each of which can fail (exit 1):
-  (z1) the fine looks collected here are the belief's: the cells with at least one are exactly
-       the cells belief.npz has at best_level <= --max-level inside the cap (full run only;
-       skipped with --upto).
+  (z1) every cell belief.npz has at best_level <= --max-level inside the cap has a fine look
+       here (full run only; skipped with --upto). The other direction is REPORTED: cells with a
+       fine look here that the belief holds at a coarser level are fine looks its gate dropped
+       (after some two hundred coarse fusions the belief can be surer than one noisy fine look;
+       D4 found 1422 such cells of 355601 — the first (z1) asked for equality and was wrong to).
   (z2) the four rules coincide on one-look cells (they must: there is nothing to fuse).
 --self-test: three looks with one confident wrong peak — median and consensus recover the cell,
 the mean does not; two looks that disagree are undecided; two that agree fuse.
@@ -48,7 +50,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from belief import SphereBelief  # noqa: E402
+from belief import SphereBelief, consensus_of  # noqa: E402
 
 
 class Looks:
@@ -92,21 +94,10 @@ def fuse_rules(rho: np.ndarray, sig: np.ndarray) -> dict:
     with np.errstate(invalid="ignore", divide="ignore"):
         mean = np.where(v, rho, 0.0).__mul__(w).sum(0) / w.sum(0)
         med = np.nanmedian(np.where(v, rho, np.nan), axis=0)
-    M = rho.shape[0]
-    votes = np.zeros(rho.shape, np.int32)
-    for a in range(M):
-        for b in range(M):
-            with np.errstate(invalid="ignore"):
-                votes[a] += (v[a] & v[b] & agree(rho[a], sig[a], rho[b], sig[b])).astype(np.int32)
-    score = np.where(v, votes - 1e-3 * np.nan_to_num(sig / np.nanmax(sig)), -1.0)      # ties: the surer look
-    lead = np.argmax(score, axis=0); cols = np.arange(rho.shape[1])
-    top = votes[lead, cols]
-    with np.errstate(invalid="ignore"):
-        member = v & agree(rho, sig, rho[lead, cols][None], sig[lead, cols][None])
+    member, decided, _ = consensus_of(rho, sig)                      # belief.py's rule: the one the consensus belief uses
     wc = np.where(member, w, 0.0)
     with np.errstate(invalid="ignore", divide="ignore"):
         cons = (np.where(member, rho, 0.0) * wc).sum(0) / wc.sum(0)
-    decided = (n == 1) | (top * 2 > n)                                                  # a strict majority agrees with the leader
     return {"first": rho[0], "mean": mean, "median": med, "consensus": np.where(decided, cons, np.nan), "n": n}
 
 
@@ -223,11 +214,11 @@ def main():
     if args.upto is None or K == len(lj["steps"]):
         bz = np.load(os.path.join(run, "belief.npz"))
         mine = (L.n > 0) & capb; theirs = (bz["best_level"][i0:i1, j0:j1] <= args.max_level) & capb
-        diff = int((mine ^ theirs).sum())
-        a["z1_cells_differ"] = diff
-        if diff:
-            fails.append(f"(z1) {diff} cells differ between the fine looks collected here ({int(mine.sum())}) and belief.npz's best_level <= {args.max_level} ({int(theirs.sum())})")
-        print(f"[look2] (z1) fine cells here {int(mine.sum())}, in belief.npz {int(theirs.sum())}, differ {diff}")
+        missing, gated = int((theirs & ~mine).sum()), int((mine & ~theirs).sum())
+        a["z1_missing_here"] = missing; a["fine_looks_the_belief_gated"] = gated
+        if missing:
+            fails.append(f"(z1) {missing} cells of belief.npz's best_level <= {args.max_level} ({int(theirs.sum())}) have no fine look here ({int(mine.sum())})")
+        print(f"[look2] (z1) fine cells here {int(mine.sum())}, in belief.npz {int(theirs.sum())}: missing here {missing}; fine looks the belief's gate dropped {gated} (reported)")
     else:
         print("[look2] (z1) skipped (--upto)")
     if a["z2_max_diff_one_look"] > 1e-6:

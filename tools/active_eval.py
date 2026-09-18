@@ -37,19 +37,22 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from belief import FORWARD, SphereBelief  # noqa: E402
+from belief import FORWARD, ConsensusBelief, SphereBelief  # noqa: E402
 from rig import epipolar  # noqa: E402
 
 
-def replay(run: str, lj: dict) -> tuple[SphereBelief, list[dict], dict]:
+def replay(run: str, lj: dict, fusion: str | None = None) -> tuple[SphereBelief, list[dict], dict]:
     """Rebuild the belief from the record. Also returns the fixed-set learning numbers for (u):
     the median |rho error| on the cells measured AND judged after fixation 0, at that moment
     and at the end — the same cells both times. (The first (u) compared the median over all
     measured cells at the end with the median after fixation 0: two medians over different
     sets, and on the classroom fifty fixations of coarse periphery raised the second without
     any measured cell getting worse.)"""
-    B = SphereBelief(lj["belief_cell_deg"], sigma_prior=lj["settings"]["sigma_prior"])
+    fusion = fusion or lj["settings"].get("fusion", "mean")
+    B = (ConsensusBelief if fusion == "consensus" else SphereBelief)(lj["belief_cell_deg"], sigma_prior=lj["settings"]["sigma_prior"])
     cap = B.cap_mask(lj["settings"]["regard_deg"])
+    if fusion == "consensus":
+        B.enable_looks(cap)
     steps = []; fixed = {}
     for k in range(len(lj["steps"])):
         f = dict(np.load(os.path.join(run, "field", f"p{k:03d}.npz")))
@@ -57,6 +60,10 @@ def replay(run: str, lj: dict) -> tuple[SphereBelief, list[dict], dict]:
         s = np.load(os.path.join(run, "L", f"f{k:03d}", "samples.npz"))
         B.add_truth(s["direction"], s["distance"], s["footprint"])
         steps.append(B.metrics(cap))
+        if fusion == "consensus":
+            A_ = B.area; fine_seen = np.zeros(B.P.shape, bool); i0_, i1_, j0_, j1_ = B.box; fine_seen[i0_:i1_, j0_:j1_] = B.l_seen > 0
+            steps[-1]["undecided_of_cap"] = float(A_[cap & B.undecided].sum() / A_[cap].sum())
+            steps[-1]["undecided_of_fine_looked"] = float(A_[cap & B.undecided].sum() / max(A_[cap & fine_seen].sum(), 1e-12))
         if k == 0:
             m0 = cap & (B.P > 0) & (B.tW > 0)
             e0 = np.abs(B.mean()[m0] - B.truth()[m0])
@@ -165,6 +172,18 @@ def figure(run: str, lj: dict, B: SphereBelief, out_path: str, size: int = 480):
     im.save(out_path)
 
 
+def print_checkpoints(tag: str, metrics: list[dict], rec_steps: list[dict], checkpoints: str, label: str):
+    """The metrics at the checkpoint fixations; rays and the policy phase come from the record."""
+    g = lambda st, key, fmt: "-" if st.get(key) is None else format(st[key], fmt)
+    print(f"[eval] {tag} checkpoints ({label}):   K |      rays | cover any / fine | rho err med / p90 / fine (1/m) | gross = coarse + outlier | outlier fine / mid / coarse | z RMS | undecided of cap | policy phase")
+    for K in [int(x) for x in checkpoints.split(",") if x.strip()]:
+        if K <= len(metrics):
+            st, rs = metrics[K - 1], rec_steps[K - 1]
+            print(f"[eval] {tag} checkpoint  {K:4d} | {rs['rays_cum']:.3e} | {st['coverage_any']:.3f} / {st['coverage_fine']:.3f} | {g(st, 'rho_err_median', '.4f')} / {g(st, 'rho_err_p90', '.4f')} / {g(st, 'fine_rho_err_median', '.4f')} | "
+                  f"{g(st, 'gross_frac', '.3f')} = {g(st, 'coarse_frac', '.3f')} + {g(st, 'outlier_frac', '.3f')} | {g(st, 'fine_outlier_frac', '.3f')} / {g(st, 'mid_outlier_frac', '.3f')} / {g(st, 'coarse_outlier_frac', '.3f')} | "
+                  f"{g(st, 'z_rms_inliers', '.2f')} | {g(st, 'undecided_of_cap', '.4f')} | {rs.get('phase') or '-'}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+")
@@ -173,6 +192,9 @@ def main():
     ap.add_argument("--z-hi", type=float, default=2.5)
     ap.add_argument("--twice", type=float, default=0.5)
     ap.add_argument("--no-replay", action="store_true", help="skip (s) and (u) (they re-fuse every field; seconds per run)")
+    ap.add_argument("--refuse", choices=("consensus", "mean"), default=None,
+                    help="D5: re-fuse the run's record with this fusion instead of the one it was made with, print the re-fused checkpoints beside the "
+                         "recorded ones and write belief_<fusion>.npz; (s) is then not judged (the record's metrics are the other fusion's), nothing is overwritten")
     ap.add_argument("--checkpoints", default="10,25,50,100,200,300,500", help="D4: print the recorded metrics at these fixation counts (runs longer than 60 fixations)")
     ap.add_argument("--u-tol", type=float, default=0.05, help="(u): the fixation-0 cells may not get worse by more than this fraction")
     args = ap.parse_args()
@@ -228,16 +250,24 @@ def main():
               f"rho err med {f(row['rho_err_median'])} (fine {f(row['fine_rho_err_median'])}) /m | depth med {f(row['depth_err_median_m'], '.3f')} (fine {f(row['fine_depth_err_median_m'], '.3f')}) m | "
               f"gross {f(row['gross_frac'], '.3f')} = coarse {f(row['coarse_frac'], '.3f')} + outlier {f(row['outlier_frac'], '.3f')} (outlier fine/mid/coarse {'/'.join(f(x, '.3f') for x in row['outlier_by_band'])}; gross {'/'.join(f(x, '.3f') for x in row['gross_by_band'])}) | z {f(z, '.2f')} | verg err med {f(row['vergence_err_median_m'], '.2f')} m | {rep_note}; {u_note} -> loop_fig.png")
         if len(lj["steps"]) > 60:                                   # D4: the run read at checkpoints, from the metrics the loop recorded
-            g = lambda st, key, fmt: "-" if st.get(key) is None else format(st[key], fmt)
-            print(f"[eval] {tag} checkpoints:   K |      rays | cover any / fine | rho err med / p90 / fine (1/m) | gross = coarse + outlier | outlier fine / mid / coarse | z RMS | policy phase")
-            for K in [int(x) for x in args.checkpoints.split(",") if x.strip()]:
-                if K <= len(lj["steps"]):
-                    st = lj["steps"][K - 1]
-                    print(f"[eval] {tag} checkpoint  {K:4d} | {st['rays_cum']:.3e} | {st['coverage_any']:.3f} / {st['coverage_fine']:.3f} | {g(st, 'rho_err_median', '.4f')} / {g(st, 'rho_err_p90', '.4f')} / {g(st, 'fine_rho_err_median', '.4f')} | "
-                          f"{g(st, 'gross_frac', '.3f')} = {g(st, 'coarse_frac', '.3f')} + {g(st, 'outlier_frac', '.3f')} | {g(st, 'fine_outlier_frac', '.3f')} / {g(st, 'mid_outlier_frac', '.3f')} / {g(st, 'coarse_outlier_frac', '.3f')} | "
-                          f"{g(st, 'z_rms_inliers', '.2f')} | {st.get('phase') or '-'}")
+            print_checkpoints(tag, lj["steps"], lj["steps"], args.checkpoints, "recorded")
             dirs = np.round(np.array([st["dir_head"] for st in lj["steps"]]), 5)
             print(f"[eval] {tag} distinct directions {len({tuple(x) for x in dirs})} of {len(dirs)}; least-looked from k = {next((st['k'] for st in lj['steps'] if st.get('phase') == 'least-looked'), None)}")
+        if args.refuse and args.refuse != lj["settings"].get("fusion", "mean"):
+            # D5: the same record, another fusion. Nothing is rendered and nothing the run wrote is touched.
+            B2, steps2, fixed2 = replay(run, lj, fusion=args.refuse)
+            d0 = abs(steps2[0]["coverage_any"] - lj["steps"][0]["coverage_any"])
+            if d0 > 1e-9:
+                fails.append(f"(r) {tag}: re-fused with {args.refuse}, fixation 0 covers {steps2[0]['coverage_any']:.6f} of the cap against the record's {lj['steps'][0]['coverage_any']:.6f}: the looks are not the record's")
+            print_checkpoints(tag, steps2, lj["steps"], args.checkpoints if len(steps2) > 60 else str(len(steps2)), f"re-fused {args.refuse}")
+            e2, e1 = steps2[-1], lj["steps"][-1]
+            print(f"[eval] {tag} re-fused {args.refuse} vs recorded at K = {len(steps2)}: outlier {e1.get('outlier_frac', float('nan')):.3f} -> {e2['outlier_frac']:.3f}, fine outlier {e1.get('fine_outlier_frac', float('nan')):.3f} -> {e2['fine_outlier_frac']:.3f}, "
+                  f"fine coverage {e1['coverage_fine']:.3f} -> {e2['coverage_fine']:.3f}, rho err {e1['rho_err_median']:.4f} -> {e2['rho_err_median']:.4f} (fine {e1['fine_rho_err_median']:.4f} -> {e2['fine_rho_err_median']:.4f}), "
+                  f"z RMS {e1['z_rms_inliers']:.2f} -> {e2['z_rms_inliers']:.2f}; (u) fixation-0 cells {fixed2.get('start', float('nan')):.4f} -> {fixed2.get('end', float('nan')):.4f}; (r) fixation 0 coverage differs by {d0:.1e}")
+            np.savez_compressed(os.path.join(run, f"belief_{args.refuse}.npz"), **B2.snapshot(), cap=B2.cap_mask(lj["settings"]["regard_deg"]), regard_deg=lj["settings"]["regard_deg"])
+            with open(os.path.join(run, f"refuse_{args.refuse}.json"), "w") as fh:
+                json.dump({"fusion": args.refuse, "steps": steps2, "u_fixed": fixed2}, fh, indent=1)
+            figure(run, lj, B2, os.path.join(run, f"loop_fig_{args.refuse}.png"))
     rnd = [r for r in rows if r["policy"] == "random"]
     if rnd:
         ref = rnd[0]["coverage_fine"]

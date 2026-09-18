@@ -39,7 +39,7 @@ import traceback
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from belief import FORWARD, LevelSigma, Policy, SphereBelief  # noqa: E402
+from belief import FORWARD, ConsensusBelief, LevelSigma, Policy, SphereBelief  # noqa: E402
 from fixation_pairs import PairRenderer, add_render_args, load_points  # noqa: E402
 from rig import epipolar, gaze_of_world_direction, to_eye_frame  # noqa: E402
 from stereo_field import field_of_pair, n_levels_for  # noqa: E402
@@ -69,6 +69,7 @@ def main():
     ap.add_argument("--noise-rel", type=float, default=None, help="assumed per-pixel relative RMS; default: calibrated on fixation 0's seed pair")
     ap.add_argument("--nb-tol", type=float, default=None, help="D2b: drop LR-consistent cells more than this many cells from the median of their consistent neighbours (off by default)")
     ap.add_argument("--nb-drop-isolated", action="store_true", help="with --nb-tol: also drop cells with fewer than three consistent neighbours")
+    ap.add_argument("--fusion", choices=("mean", "consensus"), default="mean", help="D5: consensus among the fine looks of a cell (belief.ConsensusBelief); mean is Phase C's belief")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--ior-deg", type=float, default=None, help="explicit inhibition of return; default 0 for the policies, 3 for the oracle")
     add_profile(ap, script_args(), s0="s0", spp="fix_spp")
@@ -84,11 +85,13 @@ def main():
     E2, emax, s0 = args.e2, args.emax, R.s0
     cell_b = args.belief_deg or args.eval_factor * s0
     nlev = n_levels_for(E2, args.eval_factor, emax)
-    B = SphereBelief(cell_b, sigma_prior=args.sigma_prior)
+    B = (ConsensusBelief if args.fusion == "consensus" else SphereBelief)(cell_b, sigma_prior=args.sigma_prior)
     ls = LevelSigma(nlev)
     pol = Policy(args.policy, B, E2, args.eval_factor, emax, regard_deg=args.regard_deg, cand_deg=args.cand_deg,
                  policy_levels=args.policy_levels, seed=args.seed, level_sigma=ls, ior_deg=args.ior_deg)
     cap = pol.cap
+    if args.fusion == "consensus":
+        B.enable_looks(cap)
     rays_per_pair = 2 * R.n_inside * args.spp
     targets = load_points(args.targets, None, R.head_origin) if args.policy == "targets" else None
     n_fix = min(args.fixations, len(targets)) if targets else args.fixations

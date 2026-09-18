@@ -266,6 +266,166 @@ class LevelSigma:
                     self.s_floor[l].append(float(np.median(f["sigma_rho_floor"][m]))); self.floor[l] = float(np.median(self.s_floor[l]))
 
 
+def consensus_of(rho: np.ndarray, sig: np.ndarray, k: float = 3.0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """rho, sig: (M, N), NaN in empty slots. Two looks AGREE when they differ by less than
+    k sqrt(s1^2 + s2^2). The leader is the look most others agree with (ties: the surer); its
+    MEMBERS are the looks that agree with it; the cell is DECIDED when it has one look, or a
+    strict majority of its looks are members. Returns (members (M, N), decided (N,), n (N,)).
+    D4 measured what this is worth: two looks that disagree hold a bad one 94% of the time, two
+    that agree 14%; an inverse-variance mean is worse than the first look at every multiplicity."""
+    v = np.isfinite(rho) & np.isfinite(sig); n = v.sum(0)
+    M = rho.shape[0]
+    votes = np.zeros(rho.shape, np.int32)
+    with np.errstate(invalid="ignore"):
+        for a in range(M):
+            for b in range(M):
+                votes[a] += (v[a] & v[b] & (np.abs(rho[a] - rho[b]) <= k * np.sqrt(sig[a] ** 2 + sig[b] ** 2))).astype(np.int32)
+        smax = np.nanmax(np.where(v, sig, np.nan)) if v.any() else 1.0
+        score = np.where(v, votes - 1e-3 * np.nan_to_num(sig / smax), -1.0)
+        lead = np.argmax(score, axis=0); cols = np.arange(rho.shape[1])
+        members = v & (np.abs(rho - rho[lead, cols][None]) <= k * np.sqrt(sig ** 2 + sig[lead, cols][None] ** 2))
+    decided = (n == 1) | (votes[lead, cols] * 2 > n)
+    return members, decided & (n > 0), n
+
+
+class ConsensusBelief(SphereBelief):
+    """The belief with a consensus among its fine looks (D5, D23). Everything that reads a
+    SphereBelief reads this one the same way — P, S, Pn, F, n, best_level are the FINAL arrays —
+    but they are derived, per cell, from two things kept apart:
+      the coarse stream   levels above `fine_level`, fused exactly as SphereBelief fuses them
+                          (inverse variance, two-part variance, the 3-sigma gate);
+      the fine looks      levels <= fine_level, one per fixation per cell (a fixation's
+                          overlapping rows are merged as the mean would merge them), up to
+                          `max_looks`, inside the box enable_looks() was given.
+    The fine VERDICT of a cell is consensus_of its looks, fused over the members; a cell whose
+    looks have no majority is UNDECIDED and falls back to its coarse stream (and is exported:
+    that map is where a loop should look again). Verdict and coarse stream are summed when they
+    agree within the gate and the surer one stands when they do not — the parent's gate, made
+    symmetric (the parent averages a disagreeing fine look into a coarse belief if it arrives
+    second and drops the coarse one if it arrives first; here the order does not matter). With
+    one fine look per cell, agreeing with its coarse stream, this is SphereBelief to the last
+    digit (self-test)."""
+
+    def __init__(self, cell_deg: float, sigma_prior: float = 1.0, max_looks: int = 6, fine_level: int = 1, gate_sigmas: float = 3.0):
+        super().__init__(cell_deg, sigma_prior)
+        self.M, self.fine_level, self.k = int(max_looks), int(fine_level), float(gate_sigmas)
+        shape = self.P.shape
+        self.Pc = np.zeros(shape); self.Sc = np.zeros(shape); self.Pnc = np.zeros(shape); self.Fc = np.full(shape, np.inf)
+        self.nc = np.zeros(shape, np.int32); self.best_c = np.full(shape, UNVISITED, np.int8)
+        self.undecided = np.zeros(shape, bool)
+        self.box = None
+
+    def enable_looks(self, cap: np.ndarray):
+        ii, jj = np.nonzero(cap)
+        self.box = (int(ii.min()), int(ii.max()) + 1, int(jj.min()), int(jj.max()) + 1)
+        h, w = self.box[1] - self.box[0], self.box[3] - self.box[2]
+        z = lambda: np.full((self.M, h, w), np.nan, np.float32)
+        self.l_rho, self.l_P, self.l_Pn, self.l_F = z(), z(), z(), z()
+        self.l_n = np.zeros((h, w), np.int16); self.l_seen = np.zeros((h, w), np.int16); self.l_lv = np.full((h, w), UNVISITED, np.int8)
+
+    def fuse(self, f: dict, consistent_only: bool = True, gate_sigmas: float | None = None) -> dict:
+        if self.box is None:
+            raise RuntimeError("ConsensusBelief.enable_looks(cap) first")
+        g = self.k if gate_sigmas is None else gate_sigmas
+        keep = f["consistent"] if consistent_only else np.ones(len(f["rho"]), bool)
+        keep = keep & np.isfinite(f["rho"]) & np.isfinite(f["sigma_rho"]) & (f["sigma_rho"] > 0)
+        n_in, n_gated = 0, 0
+        has_parts = "sigma_rho_noise" in f
+        i0, i1, j0, j1 = self.box
+        dirty = np.zeros(self.P.shape, bool)
+        tP = np.zeros(self.l_n.shape); tS = np.zeros(self.l_n.shape); tPn = np.zeros(self.l_n.shape)
+        tF = np.full(self.l_n.shape, np.inf); tL = np.full(self.l_n.shape, UNVISITED, np.int8)
+        for l in np.unique(f["level"][keep]):
+            m = keep & (f["level"] == l)
+            rho, var = f["rho"][m], f["sigma_rho"][m] ** 2
+            vn = f["sigma_rho_noise"][m] ** 2 if has_parts else var
+            fl = f["sigma_rho_floor"][m] if has_parts else np.zeros(int(m.sum()))
+            def fn(i, j, sel, l=int(l), rho=rho, var=var, vn=vn, fl=fl):
+                nonlocal n_in, n_gated
+                r, v, vnn, fll = rho[sel], var[sel], vn[sel], fl[sel]
+                fine = (l <= self.fine_level) & (i >= i0) & (i < i1) & (j >= j0) & (j < j1)
+                if fine.any():                                    # a fine look: merged per fixation, judged with its fellows later
+                    a, b = i[fine] - i0, j[fine] - j0
+                    np.add.at(tP, (a, b), 1.0 / v[fine]); np.add.at(tS, (a, b), r[fine] / v[fine])
+                    np.add.at(tPn, (a, b), 1.0 / np.maximum(vnn[fine], 1e-12))
+                    np.minimum.at(tF, (a, b), fll[fine]); np.minimum.at(tL, (a, b), np.int8(l))
+                    n_in += int(fine.sum())
+                c = ~fine
+                if c.any():                                       # the coarse stream: SphereBelief's fusion, gated against the final belief
+                    ic, jc, r, v = i[c], j[c], r[c], v[c]
+                    P, S, Pn, F = self.P[ic, jc], self.S[ic, jc], self.Pn[ic, jc], self.F[ic, jc]
+                    with np.errstate(divide="ignore", invalid="ignore"):
+                        mean = np.where(P > 0, S / P, 0.0)
+                        bvar = np.where(P > 0, 1.0 / Pn + np.where(np.isfinite(F), F, 0.0) ** 2, np.inf)
+                    gate = (P > 0) & (v > bvar) & ((r - mean) ** 2 > g ** 2 * (v + bvar))
+                    ok = ~gate
+                    np.add.at(self.Pc, (ic[ok], jc[ok]), 1.0 / v[ok]); np.add.at(self.Sc, (ic[ok], jc[ok]), r[ok] / v[ok])
+                    np.add.at(self.Pnc, (ic[ok], jc[ok]), 1.0 / np.maximum(vnn[c][ok], 1e-12))
+                    np.minimum.at(self.Fc, (ic[ok], jc[ok]), fll[c][ok])
+                    np.add.at(self.nc, (ic[ok], jc[ok]), 1)
+                    np.minimum.at(self.best_c, (ic[ok], jc[ok]), np.int8(l))
+                    dirty[ic[ok], jc[ok]] = True
+                    n_in += int(ok.sum()); n_gated += int(gate.sum())
+            self._splat(f["theta_L"][m], f["phi"][m], f["cell_deg"][m], fn)
+        new = tP > 0
+        if new.any():
+            a, b = np.nonzero(new & (self.l_n < self.M))
+            sl = self.l_n[a, b]
+            self.l_rho[sl, a, b] = (tS[a, b] / tP[a, b]); self.l_P[sl, a, b] = tP[a, b]; self.l_Pn[sl, a, b] = tPn[a, b]; self.l_F[sl, a, b] = tF[a, b]
+            self.l_n[a, b] += 1; self.l_seen += new
+            self.l_lv = np.minimum(self.l_lv, tL)
+            dirty[i0:i1, j0:j1] |= new
+        self._refresh(dirty)
+        self.gated += n_gated
+        if "visits" in f:
+            self.visit(f["visits"])
+        return {"cells_in": n_in, "gated": n_gated}
+
+    def _refresh(self, dirty: np.ndarray):
+        """Recompute the final arrays on the dirty cells from the coarse stream and the fine verdict."""
+        ii, jj = np.nonzero(dirty)
+        if len(ii) == 0:
+            return
+        i0, i1, j0, j1 = self.box
+        Pc, Sc, Pnc, Fc = self.Pc[ii, jj], self.Sc[ii, jj], self.Pnc[ii, jj], self.Fc[ii, jj]
+        Pf = np.zeros(len(ii)); Sf = np.zeros(len(ii)); Pnf = np.zeros(len(ii)); Ff = np.full(len(ii), np.inf); nf = np.zeros(len(ii), np.int32)
+        und = np.zeros(len(ii), bool)
+        inb = (ii >= i0) & (ii < i1) & (jj >= j0) & (jj < j1)
+        a, b = ii[inb] - i0, jj[inb] - j0
+        has = np.zeros(len(ii), bool); has[inb] = self.l_n[a, b] > 0
+        if has.any():
+            a, b = ii[has] - i0, jj[has] - j0
+            rho, P, Pn, F = (X[:, a, b].astype(np.float64) for X in (self.l_rho, self.l_P, self.l_Pn, self.l_F))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                sig = np.sqrt(1.0 / Pn + np.where(np.isfinite(F), F, 0.0) ** 2)
+            mem, dec, _ = consensus_of(rho, sig, self.k)
+            mem &= dec[None]
+            Pf[has] = np.where(mem, P, 0.0).sum(0); Sf[has] = np.where(mem, P * rho, 0.0).sum(0); Pnf[has] = np.where(mem, Pn, 0.0).sum(0)
+            Ff[has] = np.where(mem, F, np.inf).min(0); nf[has] = mem.sum(0); und[has] = ~dec
+        fv, cv = Pf > 0, Pc > 0
+        with np.errstate(divide="ignore", invalid="ignore"):
+            vf = 1.0 / Pnf + np.where(np.isfinite(Ff), Ff, 0.0) ** 2; vc = 1.0 / Pnc + np.where(np.isfinite(Fc), Fc, 0.0) ** 2
+            both = fv & cv
+            agree = both & ((Sf / Pf - Sc / Pc) ** 2 <= self.k ** 2 * (vf + vc))
+        use_f = fv & (~cv | agree | (both & ~agree & (vf <= vc)))
+        use_c = cv & (~fv | agree | (both & ~agree & (vc < vf)))
+        self.P[ii, jj] = np.where(use_f, Pf, 0.0) + np.where(use_c, Pc, 0.0)
+        self.S[ii, jj] = np.where(use_f, Sf, 0.0) + np.where(use_c, Sc, 0.0)
+        self.Pn[ii, jj] = np.where(use_f, Pnf, 0.0) + np.where(use_c, Pnc, 0.0)
+        self.F[ii, jj] = np.minimum(np.where(use_f, Ff, np.inf), np.where(use_c, Fc, np.inf))
+        self.n[ii, jj] = np.where(use_f, nf, 0) + np.where(use_c, self.nc[ii, jj], 0)
+        lv = np.full(len(ii), UNVISITED, np.int8); lv[has] = self.l_lv[ii[has] - i0, jj[has] - j0]
+        self.best_level[ii, jj] = np.minimum(np.where(use_f, lv, UNVISITED), np.where(use_c, self.best_c[ii, jj], UNVISITED)).astype(np.int8)
+        self.undecided[ii, jj] = und
+
+    def snapshot(self) -> dict:
+        out = super().snapshot()
+        i0, i1, j0, j1 = self.box
+        fl = np.zeros(self.P.shape, np.int16); fl[i0:i1, j0:j1] = self.l_seen
+        out.update({"undecided": self.undecided, "fine_looks": fl, "fusion": "consensus"})
+        return out
+
+
 def candidates(regard_deg: float, step_deg: float) -> np.ndarray:
     """Directions (head frame) on a yaw/pitch grid within the cap about the primary gaze."""
     a = np.arange(-regard_deg, regard_deg + 1e-9, step_deg)
@@ -457,8 +617,9 @@ def self_test() -> list[str]:
     tt, pp = np.meshgrid(np.arange(80.5, 100.5, 1.0), np.arange(-19.5, 20.5, 1.0)); tt, pp = tt.ravel(), pp.ravel()   # one belief cell each (cell 0.98 below)
     n8 = len(tt); bad = np.arange(n8) % 10 == 0
     rho8 = np.where(bad, 1.2, 0.4 + rng.normal(0, 0.2, n8)); sg8 = np.where(bad, 0.02, 0.2)
-    b8.fuse({"theta_L": tt, "phi": pp, "cell_deg": np.full(n8, 0.98), "level": np.full(n8, 3, np.int8), "rho": rho8, "sigma_rho": sg8,
-             "consistent": np.ones(n8, bool)})
+    f8 = {"theta_L": tt, "phi": pp, "cell_deg": np.full(n8, 0.98), "level": np.full(n8, 3, np.int8), "rho": rho8, "sigma_rho": sg8,
+          "consistent": np.ones(n8, bool)}
+    b8.fuse(f8)
     b8.add_truth(direction_of(tt, pp), np.full(n8, 2.5), np.full(n8, 1e-5))
     m8 = b8.metrics(b8.cap_mask(60.0))
     if abs(m8["outlier_frac"] + m8["coarse_frac"] - m8["gross_frac"]) > 1e-12:
@@ -531,6 +692,34 @@ def self_test() -> list[str]:
         seen9.append(tuple(np.round(d9, 6)))
     if len(set(seen9)) < 6 or i9.get("phase") != "least-looked":
         fails.append(f"coverage after the cap is covered: {len(set(seen9))} distinct of 6, phase {i9.get('phase')}")
+    # D5: the consensus belief. (1) with one fine look per cell it IS the mean belief; (2) three fine looks, one a
+    # confident wrong peak: the consensus holds the cell, the mean does not; (3) two fine looks that disagree: undecided,
+    # the cell falls back to its coarse stream; (4) the final arrays stay consistent (mean = S / P where measured).
+    capx = SphereBelief(1.0).cap_mask(60.0)
+    def look(rho, sg, lv=1, cell=0.98, th=90.5, ph=0.5):
+        return {"theta_L": np.array([th]), "phi": np.array([ph]), "cell_deg": np.array([cell]), "level": np.array([lv], np.int8),
+                "rho": np.array([rho]), "sigma_rho": np.array([sg]), "consistent": np.array([True])}
+    bm, bc = SphereBelief(1.0), ConsensusBelief(1.0); bc.enable_looks(capx)
+    fa_ = dict(f8)                                                   # the gross-split field: one look per cell, level 3 ...
+    fb_ = dict(f8, level=np.full(n8, 1, np.int8))                    # ... and the same cells as fine looks
+    for fx in (fa_, fb_):
+        bm.fuse(fx); bc.fuse(fx)
+    if not (np.allclose(bm.P, bc.P) and np.allclose(bm.S, bc.S) and np.allclose(bm.Pn, bc.Pn) and np.array_equal(bm.best_level, bc.best_level)):
+        fails.append("consensus belief differs from the mean belief with one fine look per cell")
+    bm, bc = SphereBelief(1.0), ConsensusBelief(1.0); bc.enable_looks(capx)
+    for fx in (look(0.40, 0.02), look(0.90, 0.01), look(0.41, 0.02)):
+        bm.fuse(fx); bc.fuse(fx)
+    i9, j9 = bc.index(90.5, 0.5)
+    if not (abs(bc.mean()[i9, j9] - 0.405) < 1e-6 and bm.mean()[i9, j9] > 0.6 and not bc.undecided[i9, j9]):
+        fails.append(f"consensus of three looks: {bc.mean()[i9, j9]:.4f} (mean belief {bm.mean()[i9, j9]:.4f})")
+    bc = ConsensusBelief(1.0); bc.enable_looks(capx)
+    for fx in (look(0.45, 0.2, lv=3, cell=4.0), look(0.40, 0.02), look(0.90, 0.01)):
+        bc.fuse(fx)
+    if not (bc.undecided[i9, j9] and abs(bc.mean()[i9, j9] - 0.45) < 1e-9 and bc.best_level[i9, j9] == 3):
+        fails.append(f"two fine looks that disagree: undecided {bc.undecided[i9, j9]}, mean {bc.mean()[i9, j9]}, level {bc.best_level[i9, j9]}")
+    bc.fuse(look(0.405, 0.02))                                       # a third look settles it
+    if bc.undecided[i9, j9] or abs(bc.mean()[i9, j9] - 0.4025) > 5e-3 or bc.best_level[i9, j9] != 1:
+        fails.append(f"a third look should settle the cell: undecided {bc.undecided[i9, j9]}, mean {bc.mean()[i9, j9]:.4f}")
     # candidates lie within the cap
     c = candidates(30.0, 5.0)
     if (c @ FORWARD).min() < math.cos(math.radians(30.0)) - 1e-9 or len(c) < 50:

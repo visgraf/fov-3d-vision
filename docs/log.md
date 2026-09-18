@@ -1298,3 +1298,16 @@ Predictions: 1 held (k = 146, 469 distinct), 2 held (0.204 at the switch, 0.295 
 failed on the number (0.0387, not 0.025-0.032; saturates above the fine band as said), 4
 outlier held (0.136) coarse failed (0.200, not 0.10-0.15), 5 held (62 vs 11%), 6 held on all
 looks (34% below the mean, 9.3% undecided). No code change.
+
+## 2026-09-18 — D23, D5 written: the consensus belief (after D4's report, 3c65e49)
+
+`belief.ConsensusBelief` (a subclass; SphereBelief untouched), `consensus_of` shared with
+`second_look.py`, `active_loop.py --fusion`, `active_eval.py --refuse` with check (r),
+`second_look.py`'s (z1) made one-directional (the gate's drops reported; the first definition
+was wrong, as (p) and (u) were before it). Stub only (measured, sandbox, small, 20-degree cap,
+70 fixations): re-fused consensus against recorded mean — outlier 0.228 -> 0.175, fine
+coverage 0.993 -> 0.946 (undecided 4.7% of the cap), rho error 0.0416 -> 0.0414 (fine 0.0414 ->
+0.0397), p90 0.172 -> 0.150, z RMS 1.60 -> 1.54 (not repaired: z is on inliers); (r) exact;
+live `--fusion consensus` on the same stub: outlier 0.172, fine coverage 0.946, (s) replay ok;
+the default path's 15-fixation stub run reproduces to the digit (0.154 / 0.0478 / 0.359).
+Self-tests ok, each new one with a known answer.

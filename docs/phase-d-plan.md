@@ -39,6 +39,13 @@ from any edge (18-21% of the cells there), which neither a pyramid nor a smaller
 - **D4 moved up** (`docs/d4-long-run.md`): one run to saturation, and on its record the
   question D2 left — is a second look a test? Coverage-first gets a second phase (least-looked)
   because its gain is zero everywhere once the cap is covered.
+- **D4 ran** (`docs/d4-long-run.md`): flat after coverage (0.0423 at 50, 0.0387 at 500); bad
+  looks repeat (62% against 11%); the mean is worse than the first look; two looks that
+  disagree hold a bad one 94% of the time.
+- **D5 — the consensus belief, the last step** (D23, `docs/d5-consensus.md`): judged by
+  re-fusing D4's record. Then `docs/phase-d-summary.md`. The first plan's D3 (coverage against
+  information) is not run in Phase D: its premise — a variance model missing a third of the
+  cells — was D21's first casualty.
 - **D3 — coverage-first against expected information at `full`**, once the model contains or
   rejects its outliers (the first plan's closing comparison; either outcome counts).
 - **D4 — the run to saturation**, unchanged.

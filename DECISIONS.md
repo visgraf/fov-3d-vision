@@ -294,3 +294,27 @@ Overturned if: the long run shows the bad looks are not repeatable across fixati
 (P(second bad | first bad) near the base rate) — then the outliers were the matcher's after
 all, and a consensus fusion removes them.
 
+## D23 — A consensus among the fine looks, judged by re-fusing D4's record; the default follows the rule (2026-09-18)
+
+D4 (`docs/d4-long-run.md`, measured): the budget curve is flat after the cap is covered
+(median rho error 0.0423 at 50 fixations, 0.0387 at 500); bad looks repeat (61.8% against
+11.3%), so D22 stands; and the belief's inverse-variance mean is worse than a cell's first look
+at every multiplicity (27.9% against 25.2% of the fine cells beyond 25%), because a confident
+wrong peak, once averaged in, never leaves. Two looks are a test where one is not: a pair that
+disagrees holds a bad look 94% of the time, a pair that agrees 14%.
+Decision: `belief.ConsensusBelief` — the fine looks of a cell (levels 0-1, one per fixation,
+up to six) are kept, the cell's fine verdict is the fusion of the largest set of mutually
+agreeing looks when that set is a strict majority, a cell without a majority is *undecided*
+and falls back to its coarse stream; verdict and coarse stream are summed when they agree and
+the surer stands when they do not. `--fusion consensus` in the loop; `active_eval.py --refuse
+consensus` re-fuses a recorded run without rendering. It becomes the loop's default only if
+the rule in `docs/d5-consensus.md`, written before the run, is met on D4's record, and one
+live 50-fixation run confirms the Blender-side path. Phase D closes after it either way.
+Not claimed: that it repairs the belief's overconfidence. z RMS is computed on inliers, so its
+climb (0.77 to 1.66 over 500 fixations) is not the wrong peaks'; it is the noise part of the
+variance averaging down over looks whose errors are correlated. That is left open, by name.
+Why: the one remedy for outliers that this sensor has and a matcher does not is another look,
+and the record to judge it on already exists.
+Overturned if: the undecided cells, given a third look, do not resolve (a loop that looks
+where its looks disagree and stays undecided has found the scene's 8%, not a test).
+

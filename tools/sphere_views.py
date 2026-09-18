@@ -126,7 +126,7 @@ def finest_owns(theta, phi, val, fp, dist, cell: float, factor: float = 1.5):
     return rgb.reshape(nth, nph, 3), dep.reshape(nth, nph), finest.reshape(nth, nph)
 
 
-def load_engine(run: str, cell: float):
+def load_engine(run: str, cell: float, belief_file: str = "belief.npz"):
     """The loop's L records integrated on the sphere, and the belief's depth."""
     lj = json.load(open(os.path.join(run, "loop.json")))
     T, P, V, F, D = [], [], [], [], []
@@ -136,7 +136,7 @@ def load_engine(run: str, cell: float):
         T.append(th); P.append(ph); V.append(s["value"].astype(np.float64)); F.append(s["footprint"].astype(np.float64)); D.append(s["distance"].astype(np.float64))
     th, ph, val, fp, dist = (np.concatenate(x) for x in (T, P, V, F, D))
     rgb, dep_rays, finest = finest_owns(th, ph, val, fp, dist, cell)
-    bz = np.load(os.path.join(run, "belief.npz"))
+    bz = np.load(os.path.join(run, belief_file))
     bcell = float(bz["cell_deg"])
     mean = bz["mean"].astype(np.float64)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -256,6 +256,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run", help="a loop run (loop.json, belief.npz, L/)")
     ap.add_argument("--truth", help="a preview360 output directory (pano.exr) rendered at the L eye")
+    ap.add_argument("--belief", default="belief.npz", help="which belief file of the run to draw (D5: belief_consensus.npz from active_eval.py --refuse); outputs go to views_<stem>/")
     ap.add_argument("--cell", type=float, default=None, help="sphere-map cell, deg; default the belief's")
     ap.add_argument("--width", type=int, default=1800, help="equirect width (height is half)")
     ap.add_argument("--white", type=float, default=None, help="radiance mapped to white; default the 99th percentile of the truth (or the engine)")
@@ -268,10 +269,10 @@ def main():
     from PIL import Image, ImageDraw
 
     run = os.path.abspath(args.run)
-    bz = np.load(os.path.join(run, "belief.npz"))
+    bz = np.load(os.path.join(run, args.belief))
     cell = args.cell or float(bz["cell_deg"])
-    out = os.path.join(run, "views"); os.makedirs(out, exist_ok=True)
-    E = load_engine(run, cell)
+    out = os.path.join(run, "views" if args.belief == "belief.npz" else "views_" + os.path.splitext(args.belief)[0]); os.makedirs(out, exist_ok=True)
+    E = load_engine(run, cell, args.belief)
     truth_src = None
     if args.truth:
         Tr = load_truth(args.truth)
