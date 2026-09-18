@@ -112,9 +112,133 @@ almost the same directions and differ by the vergence the belief supplies.
 
 ## Results
 
-_To be filled by Code: for the two standard diagnoses the "telling wrong from right" lines
-verbatim (now with neighbours, combined, isolated); for the four what-ifs, per level: judged
-cells, wrong peaks %, right peaks kept %, and the area line verbatim, beside the standard ones;
-the offline rule's verdict with its numbers; if the loop ran: both [eval] lines verbatim, the
-loop rule's verdict, infer seconds per fixation (median) against C3b's 0.46, the nb run's
-diagnosis area line and (y1); the five predictions held / failed with the number._
+Run 2026-09-18 on the workstation, host side (`.venv`), nothing rendered. **The loop did not run:
+the offline rule is met by neither what-if** (the arithmetic below). No code changed. The four
+self-tests ok. No FAIL line on any of the six diagnoses.
+
+**The standard diagnoses** (`calib_room_full_sp` 18.2 s, `class_coverage_full` 22.7 s): exit 0,
+(y1) 0.0000 and 99.999% of 213541 rows, (y2) ok. The level, right-peaks, parent-oracle and
+uncured lines are D2a's, string-equal on both runs (20 lines each); the area line's first part
+is D1a's, with the new tail — `calib_room_full_sp`: *outside the model (occluded + window +
+search) 11.2% of 261183 deg2 judged*; `class_coverage_full`: *10.5% of 162647 deg2 judged*.
+`combined` is present at every level (no level under 50 wrong or right peaks on either parity).
+The loop run prints the `stereo_instrument.py` RuntimeWarnings known from D1a (now at lines
+250–268); no nanmedian warning printed on any run. The "telling" lines:
+
+`calib_room_full_sp`:
+
+```
+[diag] level 0 telling wrong from right at 90% of the right kept (3894 wrong, 41883 right) — rejects all / window / search, AUC: peak  14.8/ 16.6/  5.1% 0.43; margin  44.6/ 35.6/ 92.8% 0.72; lr_resid  35.9/ 29.8/ 69.0% 0.69; bound  52.6/ 48.0/ 77.7% 0.85; parent  30.1/ 20.4/ 82.0% 0.58; neighbours  35.8/ 26.6/ 86.3% 0.63; combined  52.7/ 44.0/ 98.8% 0.85; isolated (< 3 consistent neighbours):   0.0% of the right,   0.3% of the wrong
+[diag] level 1 telling wrong from right at 90% of the right kept (16184 wrong, 53947 right) — rejects all / window / search, AUC: peak  14.8/ 18.1/  6.0% 0.51; margin  33.7/ 19.5/ 72.7% 0.68; lr_resid  22.6/ 16.7/ 38.9% 0.67; bound  25.3/ 13.1/ 58.7% 0.70; parent  43.2/ 34.2/ 67.9% 0.70; neighbours  34.0/ 23.1/ 63.8% 0.68; combined  34.1/ 20.2/ 79.4% 0.71; isolated (< 3 consistent neighbours):   0.0% of the right,   0.0% of the wrong
+[diag] level 2 telling wrong from right at 90% of the right kept (19738 wrong, 92118 right) — rejects all / window / search, AUC: peak  23.7/ 28.6/  7.7% 0.65; margin  19.7/  9.0/ 54.8% 0.67; lr_resid  28.7/ 33.7/ 12.5% 0.70; bound   6.1/  4.6/ 10.7% 0.42; parent  17.3/  6.7/ 51.8% 0.61; neighbours  43.8/ 38.9/ 59.8% 0.74; combined  43.2/ 36.9/ 69.0% 0.79; isolated (< 3 consistent neighbours):   0.0% of the right,   0.0% of the wrong
+[diag] level 3 telling wrong from right at 90% of the right kept (23103 wrong, 109458 right) — rejects all / window / search, AUC: peak   9.5/  8.5/ 11.8% 0.58; margin  23.4/ 15.3/ 41.3% 0.72; lr_resid  18.9/ 20.7/ 14.9% 0.66; bound   5.5/  4.5/  7.6% 0.40; parent  36.9/ 10.6/ 94.9% 0.62; neighbours  23.7/ 17.4/ 37.4% 0.64; combined  47.5/ 26.8/ 92.5% 0.83; isolated (< 3 consistent neighbours):   0.0% of the right,   0.0% of the wrong
+[diag] level 4 telling wrong from right at 90% of the right kept (957 wrong, 56250 right) — rejects all / window / search, AUC: peak  23.6/ 31.9/ 20.5% 0.72; margin  33.8/ 30.0/ 35.2% 0.69; lr_resid  49.9/ 55.1/ 48.0% 0.79; bound  72.5/ 45.6/ 82.7% 0.91; parent   0.0/  0.0/  0.0% 0.50; neighbours  75.8/ 82.5/ 73.2% 0.87; combined  88.3/ 82.5/ 90.6% 0.96; isolated (< 3 consistent neighbours):   0.0% of the right,   0.0% of the wrong
+```
+
+`class_coverage_full`:
+
+```
+[diag] level 0 telling wrong from right at 90% of the right kept (1160 wrong, 3289 right) — rejects all / window / search, AUC: peak  11.4/  7.1/ 13.9% 0.45; margin  31.5/ 18.6/ 39.2% 0.71; lr_resid  13.1/ 15.6/ 11.6% 0.57; bound  18.0/ 11.3/ 22.1% 0.54; parent  33.9/ 24.4/ 39.6% 0.56; neighbours  49.0/ 28.2/ 62.1% 0.72; combined  39.9/ 21.1/ 59.3% 0.72; isolated (< 3 consistent neighbours):   0.4% of the right,   3.3% of the wrong
+[diag] level 1 telling wrong from right at 90% of the right kept (3950 wrong, 13418 right) — rejects all / window / search, AUC: peak  14.4/ 10.3/ 17.0% 0.46; margin  34.4/ 15.0/ 47.0% 0.70; lr_resid  20.1/ 19.8/ 20.3% 0.63; bound  21.5/  8.6/ 29.9% 0.55; parent  44.5/ 27.7/ 55.3% 0.64; neighbours  50.4/ 30.3/ 63.7% 0.75; combined  56.0/ 23.2/ 76.3% 0.76; isolated (< 3 consistent neighbours):   0.2% of the right,   0.9% of the wrong
+[diag] level 2 telling wrong from right at 90% of the right kept (6648 wrong, 34059 right) — rejects all / window / search, AUC: peak  15.8/ 14.8/ 17.5% 0.51; margin  28.4/ 12.9/ 54.7% 0.64; lr_resid  26.7/ 16.1/ 44.7% 0.64; bound  21.3/  7.7/ 44.5% 0.51; parent  39.7/ 25.6/ 63.6% 0.67; neighbours  43.6/ 21.6/ 81.4% 0.71; combined  52.0/ 31.1/ 83.0% 0.79; isolated (< 3 consistent neighbours):   0.1% of the right,   0.4% of the wrong
+[diag] level 3 telling wrong from right at 90% of the right kept (6769 wrong, 56177 right) — rejects all / window / search, AUC: peak  17.3/ 18.0/ 14.5% 0.55; margin  24.8/ 13.4/ 70.8% 0.59; lr_resid  25.7/ 18.0/ 56.6% 0.64; bound  17.2/  5.7/ 63.1% 0.44; parent  37.3/ 26.2/ 81.9% 0.70; neighbours  40.0/ 28.2/ 87.5% 0.70; combined  41.4/ 32.6/ 82.6% 0.77; isolated (< 3 consistent neighbours):   0.0% of the right,   0.0% of the wrong
+[diag] level 4 telling wrong from right at 90% of the right kept (2106 wrong, 39613 right) — rejects all / window / search, AUC: peak  19.4/ 18.4/ 21.2% 0.62; margin  23.7/ 11.2/ 46.1% 0.63; lr_resid  32.2/ 22.9/ 48.9% 0.69; bound  27.9/  3.5/ 71.5% 0.53; parent   0.0/  0.0/  0.0% 0.50; neighbours  52.7/ 39.2/ 77.2% 0.78; combined  52.6/ 34.6/ 86.3% 0.78; isolated (< 3 consistent neighbours):   0.1% of the right,   0.5% of the wrong
+```
+
+**The what-ifs** (exit 0 each; wall 20.0 / 20.0 s on the calib room, 24.3 / 24.3 s on the
+classroom; (y1) "not judged"; the standard `gross_diagnosis.json` files kept their mtime;
+`gross_diagnosis_nb1.*` and `_nb1i.*` written beside them). The first line of each names the
+test: *neighbour test 1.0 cells (--nb-tol)*, *neighbour test 1.0 cells, isolated dropped
+(--nb-tol)*. Per level, with a correspondence = the by_distance n summed (equal to the json's
+`with_correspondence`); right peaks = that × (1 − wrong fraction); kept = what-if over standard:
+
+`class_coverage_full`:
+
+| what-if | level | judged cells std → w | with a correspondence std → w | wrong peaks % std → w | cut | right peaks w / std | kept |
+|---|---|---|---|---|---|---|---|
+| `nb1` | 0 | 4736 → 4166 | 4449 → 3928 | 26.07 → 17.62 | 32.4% ✗ | 3236 / 3289 | 98.4% ✓ ✗ |
+| `nb1` | 1 | 18340 → 16482 | 17368 → 15596 | 22.74 → 15.38 | 32.4% ✗ | 13197 / 13418 | 98.4% ✓ ✗ |
+| `nb1` | 2 | 42525 → 40198 | 40707 → 38448 | 16.33 → 12.55 | 23.2% ✗ | 33624 / 34059 | 98.7% ✓ ✗ |
+| `nb1` | 3 | 65854 → 64248 | 62946 → 61383 | 10.75 → 9.03 | 16.1% ✗ | 55843 / 56177 | 99.4% ✓ |
+| `nb1` | 4 | 44329 → 43743 | 41719 → 41194 | 5.05 → 4.08 | 19.3% ✗ | 39515 / 39613 | 99.8% ✓ |
+| `nb1i` | 0 | 4736 → 4115 | 4449 → 3877 | 26.07 → 16.87 | 35.3% ✓ | 3223 / 3289 | 98.0% ✓ ✓ |
+| `nb1i` | 1 | 18340 → 16422 | 17368 → 15537 | 22.74 → 15.22 | 33.1% ✗ | 13173 / 13418 | 98.2% ✓ ✗ |
+| `nb1i` | 2 | 42525 → 40143 | 40707 → 38393 | 16.33 → 12.50 | 23.4% ✗ | 33593 / 34059 | 98.6% ✓ ✗ |
+| `nb1i` | 3 | 65854 → 64220 | 62946 → 61355 | 10.75 → 9.03 | 16.1% ✗ | 55817 / 56177 | 99.4% ✓ |
+| `nb1i` | 4 | 44329 → 43711 | 41719 → 41163 | 5.05 → 4.05 | 19.7% ✗ | 39494 / 39613 | 99.7% ✓ |
+
+```
+std : [diag] by area (the loop's count):  41.5% of the judged area is wrong or beyond 25%; of that, occluded   9.2%  window  11.3%  search   4.9%  resolution  74.6%  | outside the model (occluded + window + search)  10.5% of 162647 deg2 judged
+nb1 : [diag] by area (the loop's count):  40.6% of the judged area is wrong or beyond 25%; of that, occluded   9.3%  window  10.8%  search   2.6%  resolution  77.3%  | outside the model (occluded + window + search)   9.2% of 159677 deg2 judged
+nb1i: [diag] by area (the loop's count):  40.6% of the judged area is wrong or beyond 25%; of that, occluded   9.3%  window  10.8%  search   2.6%  resolution  77.3%  | outside the model (occluded + window + search)   9.2% of 159565 deg2 judged
+      [diag] (y1) rebuilt field = the record on 96.740% of 213541 rows — a what-if (--tag): not judged
+      [diag] (y1) rebuilt field = the record on 96.634% of 213541 rows — a what-if (--tag): not judged
+```
+
+`calib_room_full_sp`:
+
+| what-if | level | judged cells std → w | with a correspondence std → w | wrong peaks % std → w | cut | right peaks w / std | kept |
+|---|---|---|---|---|---|---|---|
+| `nb1` | 0 | 46919 → 45898 | 45777 → 44819 | 8.51 → 7.16 | 15.9% ✗ | 41612 / 41883 | 99.4% ✓ ✗ |
+| `nb1` | 1 | 74500 → 68523 | 70131 → 64481 | 23.08 → 19.28 | 16.5% ✗ | 52049 / 53947 | 96.5% ✓ ✗ |
+| `nb1` | 2 | 117678 → 110454 | 111856 → 104774 | 17.65 → 14.64 | 17.1% ✗ | 89440 / 92118 | 97.1% ✓ ✗ |
+| `nb1` | 3 | 137424 → 130998 | 132561 → 126155 | 17.43 → 15.32 | 12.1% ✗ | 106832 / 109458 | 97.6% ✓ |
+| `nb1` | 4 | 59322 → 59028 | 57207 → 56942 | 1.67 → 1.30 | 22.5% ✗ | 56204 / 56250 | 99.9% ✓ |
+| `nb1i` | 0 | 46919 → 45883 | 45777 → 44804 | 8.51 → 7.13 | 16.2% ✗ | 41609 / 41883 | 99.3% ✓ ✗ |
+| `nb1i` | 1 | 74500 → 68516 | 70131 → 64474 | 23.08 → 19.28 | 16.5% ✗ | 52044 / 53947 | 96.5% ✓ ✗ |
+| `nb1i` | 2 | 117678 → 110445 | 111856 → 104765 | 17.65 → 14.63 | 17.1% ✗ | 89433 / 92118 | 97.1% ✓ ✗ |
+| `nb1i` | 3 | 137424 → 130994 | 132561 → 126151 | 17.43 → 15.32 | 12.1% ✗ | 106828 / 109458 | 97.6% ✓ |
+| `nb1i` | 4 | 59322 → 59028 | 57207 → 56942 | 1.67 → 1.30 | 22.5% ✗ | 56204 / 56250 | 99.9% ✓ |
+
+```
+std : [diag] by area (the loop's count):  48.6% of the judged area is wrong or beyond 25%; of that, occluded   6.5%  window  10.8%  search   5.7%  resolution  76.9%  | outside the model (occluded + window + search)  11.2% of 261183 deg2 judged
+nb1 : [diag] by area (the loop's count):  48.0% of the judged area is wrong or beyond 25%; of that, occluded   6.7%  window  10.1%  search   4.0%  resolution  79.3%  | outside the model (occluded + window + search)   9.9% of 254934 deg2 judged
+nb1i: [diag] by area (the loop's count):  48.0% of the judged area is wrong or beyond 25%; of that, occluded   6.7%  window  10.1%  search   4.0%  resolution  79.3%  | outside the model (occluded + window + search)   9.9% of 254930 deg2 judged
+      [diag] (y1) per-level gross after LR vs field.json: worst difference 0.0380 — a what-if (--tag): not judged
+      [diag] (y1) per-level gross after LR vs field.json: worst difference 0.0380 — a what-if (--tag): not judged
+```
+
+**The offline rule on `class_coverage_full`: not met by `nb1`, not met by `nb1i`.** The keep
+clause holds everywhere (98.0–98.7% of the right peaks at levels 0–2: the test is nearly free
+in right peaks). The cut clause fails: `nb1` cuts the wrong-peak fraction by 32.4 / 32.4 /
+23.2% at levels 0 / 1 / 2, each under a third; `nb1i` by 35.3 / 33.1 / 23.4% — level 0 passes,
+level 1 misses by 0.2 points (15.22 against 22.74%, ratio 0.669), level 2 by 10. Dropping the
+isolated changes almost nothing because there are almost none (below). At one cell of
+tolerance the test removes a quarter to a third of the wrong peaks and one in fifty right
+ones; the loop is not run, and D2 closes as the rule said it would: at one look, the field's
+outliers cannot be told from the matcher's own evidence. What remains is D4.
+
+### The five predictions against the runs
+
+1. **`neighbours` the best single feature on `class_coverage_full` at every level, 45–65% at
+   levels 0–2, search above window — held, with level 2 under the range.** At 90% kept it
+   rejects 49.0 / 50.4 / 43.6 / 40.0 / 52.7% at levels 0–4, above the runner-up at every
+   level (parent 33.9 / 44.5 / 39.7 / 37.3%, LR residual 32.2% at level 4); level 2's 43.6% is
+   1.4 points under the predicted range. Search 62.1 / 63.7 / 81.4% against window 28.2 /
+   30.3 / 21.6% at levels 0–2. AUC 0.72 / 0.75 / 0.71 / 0.70 / 0.78. On the calib room it is
+   the best only at levels 2 and 4 (43.8%, 75.8%); the bound leads at level 0 (52.6%), the
+   parent at 1 and 3.
+2. **Isolated 10–35% of the right peaks at level 0, and wronger — failed on the amount, held
+   on the direction.** Isolated cells are 0.4% of the right and 3.3% of the wrong at level 0
+   on the classroom (0.2 / 0.9% at level 1, 0.1 / 0.4% at level 2); 0.0% on the calib room.
+   Eight times wronger, but a hundredth of the predicted share — which is why `nb1i` is `nb1`
+   to within 0.7 points.
+3. **`combined` adds 5–15 points over the best single feature, AUC 0.75–0.85 on the odd
+   pairs — held at levels 1–2, failed at 0, 3, 4.** Classroom: +5.6 (56.0 against 50.4, AUC
+   0.76) at level 1 and +8.4 (52.0 against 43.6, AUC 0.79) at level 2; −9.1 at level 0 (39.9
+   against 49.0, AUC 0.72; 1160 wrong peaks split by parity), +1.4 at level 3 (AUC 0.77), −0.1
+   at level 4 (AUC 0.78). Calib room: +0.1 / −9.1 / −0.6 / +10.6 / +12.5, AUC 0.85 / 0.71 /
+   0.79 / 0.83 / 0.96. The single features are judged on all pairs and `combined` on the odd
+   ones only, so the differences carry that split's noise.
+4. **`nb1` halves the wrong peaks at levels 0–2 for under 15% of the cells, outside-the-model
+   area 10.5 → 6–8%, the offline rule met — failed.** Wrong peaks 26.1 → 17.6, 22.7 → 15.4,
+   16.3 → 12.5% (cuts of 32 / 32 / 23%, not half); judged cells lost 12.0 / 10.1 / 5.5% (that
+   clause held); outside the model 10.5 → 9.2% of the judged area (the bad area 41.5 → 40.6%,
+   search's share of it 4.9 → 2.6%); the rule not met.
+5. **The window kind survives (under 35% of its wrong peaks rejected at levels 0–1) — held.**
+   By the what-if's kind counts on the classroom, `nb1` removes 18% of the window cells at
+   level 0 (435 → 358) and 17% at level 1 (1556 → 1287), against 54% and 54% of the
+   search cells (725 → 334, 2394 → 1112); at 90% kept the feature's window column reads 28.2 /
+   30.3%. After the test, occluded + window are 8.2% of the judged area out of the 9.2% outside
+   the model (standard: 8.5 of 10.5%) — not half of today's outside-the-model area but nine
+   tenths of what is left, since the test takes mostly the search kind.

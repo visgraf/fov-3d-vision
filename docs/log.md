@@ -1224,3 +1224,25 @@ nb settings read back. Stub only (measured): neighbours rejects 75-86% at levels
 0.150, (y1) 100.000% of 44445 rows; synthetic wall and card: drops 22.8% of 92 wrong (the
 card's edge: coherent) and 0.3% of the right. Both rules (offline -> loop; loop win/lose) are
 in the note before the run.
+
+## 2026-09-18 — D2b run: the neighbour test; the offline rule not met by either what-if, the loop not run
+
+All measured, host side, nothing rendered. Four self-tests ok. Standard diagnoses
+(calib_room_full_sp 18.2 s, class_coverage_full 22.7 s): (y1) 0.0000 / 99.999%, (y2) ok; level,
+right-peaks, oracle and uncured lines string-equal to D2a's; area line = D1a's + "outside the
+model" 11.2% of 261183 deg2 / 10.5% of 162647 deg2. Telling wrong from right at 90% kept on
+class_coverage_full: neighbours 49.0 / 50.4 / 43.6 / 40.0 / 52.7% at levels 0-4, the best
+single feature at every level (AUC 0.72 / 0.75 / 0.71 / 0.70 / 0.78), search 62-81% vs window
+22-30%; combined 39.9 / 56.0 / 52.0 / 41.4 / 52.6% (AUC 0.72-0.79); isolated 0.4% of the right,
+3.3% of the wrong at level 0. What-ifs (20-24 s each, exit 0, (y1) not judged, standard files
+untouched): nb1 on class_coverage_full wrong peaks 26.07 -> 17.62, 22.74 -> 15.38, 16.33 ->
+12.55% (cuts 32.4 / 32.4 / 23.2%), right peaks kept 98.4 / 98.4 / 98.7%; nb1i 16.87 / 15.22 /
+12.50% (cuts 35.3 / 33.1 / 23.4%), kept 98.0 / 98.2 / 98.6%; outside the model 10.5 -> 9.2% of
+the judged area, both. Calib room: cuts 16-17% at levels 0-2, kept 96.5-99.4%. Offline rule
+(a third at each of levels 0-2, 85% kept): not met by nb1, not met by nb1i (level 1 misses by
+0.2 points, level 2 by 10). The loop was not run. Predictions: 1 held (level 2 at 43.6%, under
+the 45-65%), 2 failed on the amount (0.4% isolated vs 10-35%), 3 held at levels 1-2 (+5.6,
++8.4 points) and failed at 0, 3, 4, 4 failed, 5 held (the test removes 18% of the window cells
+at levels 0-1 and 54% of the search cells). No nanmedian warning; the known
+stereo_instrument.py warnings on the loop run. No code change. D2 closes as the note's rule
+says; what remains is D4.
