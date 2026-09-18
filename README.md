@@ -126,6 +126,16 @@ matters more than the objective.
 | C2 | The loop: `PairRenderer`, a belief on the head sphere (`belief.py`: two variances, gating, the visit map), five policies (targets, random, coverage, info, oracle), one Blender session (`active_loop.py`), bioeye's four panels and the comparison (`active_eval.py`); D18 the evaluation contract | **done** — four runs, `docs/c2-active-loop.md`; (s)–(v) pass on all five at 50 fixations; error: info 0.103 < coverage 0.105 < random 0.111 < targets 0.140 < oracle 0.146 /m; fine coverage: targets 0.201 > coverage 0.138 > random 0.116 > info 0.080 > oracle 0.074 |
 | C3 | Closing: the classroom at both profiles, `docs/phase-c-summary.md`, this front page; D19 | **done** — thirteen runs pass every check; on the classroom at `full` random 0.0385 < coverage 0.0427 < info 0.0435 < oracle 0.0453 /m, coverage-first first on fine coverage everywhere but the calib room; `docs/c3-closing.md` |
 
+### Phase D — a reliable multiscale depth from the field
+
+Whether the existing field can be made reliable: find where the gross errors come from,
+remove the removable ones, represent the rest (D20, `docs/phase-d-plan.md`).
+
+| | Step | State |
+|---|---|---|
+| D1a | The diagnosis on the saved records: occluded / window / search / resolution per level, P(gross) against the distance to a depth edge, the parent oracle (what coarse-to-fine could cure) | **written** 2026-09-18 — `gross_diagnosis.py`, `docs/d1-gross-diagnosis.md`; not run on the renders yet |
+| D1b | Coarse-to-fine with a safety valve in `stereo_field.py` | planned; its decision rule is read against D1a first |
+
 ## State
 
 Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the engine

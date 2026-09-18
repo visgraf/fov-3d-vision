@@ -1124,3 +1124,19 @@ peak or LR failure) and P(child gross | parent gross); D2 is the window (3x3 at 
 levels, photometrically weighted 5x5), D3 the inlier probability in the fusion (conditional,
 then coverage vs information only), D4 the long run read at checkpoints. D20 stands as
 written. Phase D starts in a new conversation.
+
+## 2026-09-18 — D1a written: the gross-error diagnosis (no rendering, no matcher change)
+
+`tools/gross_diagnosis.py` and `docs/d1-gross-diagnosis.md`. Rebuilds each saved pair's field
+with the run's own settings and the truth carried through the accumulation; kinds per
+LR-consistent cell: occluded / window / search / resolution / good; depth edges judged per
+sample in the L raster; the parent oracle (what a +-2-cell search about the parent would cure
+or put at risk). Found while writing it: the repository's two "gross" differ — a wrong peak
+(> 1 cell, the field's) and rho beyond 25% (the belief's, the one in D20's rule) — and C1's
+table already shows level 4 at 1.3% wrong peaks with an inlier RMS of 0.54 deg, so most of the
+coarse band's 0.38-0.43 cannot be wrong peaks. The plan's prediction for levels 3-4 ("the
+search's") is revised to "the resolution's" in the note, before the run. Stub only so far
+(measured, sandbox): pairs run (y1) exact, loop run rebuilt = record on 100.000% of 44459 rows
+once the samples are placed by the record's float32 directions as the loop placed them (by the
+sidecar's analytic theta 0.26% of rows move: a cell border for a few samples); negatives
+--search-deg and --edge-jump 10 exit 1; by area 90% of the stub's bad cells are resolution.
