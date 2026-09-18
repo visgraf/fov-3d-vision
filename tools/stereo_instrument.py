@@ -111,13 +111,15 @@ def accumulate(grid: FoveaGrid, theta, phi, val, fp, finest_factor: float, extra
 # the instrument
 # ----------------------------------------------------------------------------------------
 
-def ncc_match(A: np.ndarray, B: np.ndarray, h: int, S: int, texture_min: float, min_valid: float = 0.6, texture_abs: float = 0.0):
+def ncc_match(A: np.ndarray, B: np.ndarray, h: int, S: int, texture_min: float, min_valid: float = 0.6, texture_abs: float = 0.0,
+              second: bool = False):
     """Per cell of A (J x J): best shift d in [-S, S] so that A[r, j] ~ B[r, pad + j + d], by NCC
     over a (2h+1)^2 window, with parabolic refinement. B is J x (J + 2 pad) with pad >= S so a
     correspondence within the search range always lies inside B. A window is scored only where
     at least min_valid of ITS OWN valid cells (not of the full window) have a valid partner, so
     edge rows are scored on what they have rather than dropped. Returns (shift, ncc_peak,
-    matchable)."""
+    matchable); with second=True also the best NCC score at a shift more than one cell from the
+    peak (NaN if none): the rival a confidence test compares the peak with (D2)."""
     J = A.shape[0]
     pad = (B.shape[1] - J) // 2
     if pad < S:
@@ -164,6 +166,10 @@ def ncc_match(A: np.ndarray, B: np.ndarray, h: int, S: int, texture_min: float, 
     frac = lk_refine(Az, va, Bz, vb, pad + d0, h)
     shift = np.where(matchable, d0 + np.clip(frac, -1.0, 1.0), np.nan)
     peak = np.where(matchable, pk, np.nan)
+    if second:
+        kk = np.arange(2 * S + 1)[:, None, None]
+        rival = np.where(np.isfinite(scores) & (np.abs(kk - best[None]) > 1), scores, -np.inf).max(0)
+        return shift, peak, matchable, np.where(matchable & np.isfinite(rival), rival, np.nan)
     return shift, peak, matchable
 
 

@@ -188,7 +188,7 @@ def main():
             B.S = np.nan_to_num(bz["mean"].astype(np.float64)) * B.P; B.n = bz["n"].astype(np.int32)
             B.best_level = bz["best_level"]; B.visited = bz["visited"]
             B.tW = (bz["truth_n"] > 0).astype(float); B.tS = np.nan_to_num(bz["truth"].astype(np.float64)) * B.tW
-            rep_note = "(s) skipped"; fixed = {}
+            rep_note = "(s) skipped"; fixed = {}; r = {}
         else:
             B, steps, fixed = replay(run, lj)
             r = steps[-1]
@@ -213,7 +213,11 @@ def main():
                "coverage_any": last["coverage_any"], "coverage_fine": last["coverage_fine"], "visited_fine_unmeasured": last["visited_fine_unmeasured"],
                "rho_err_median": last.get("rho_err_median"), "fine_rho_err_median": last.get("fine_rho_err_median"),
                "depth_err_median_m": last.get("depth_err_median_m"), "fine_depth_err_median_m": last.get("fine_depth_err_median_m"),
-               "gross_frac": last.get("gross_frac"), "fine_gross_frac": last.get("fine_gross_frac"), "z_rms": z, "gated": last["gated_total"],
+               "gross_frac": last.get("gross_frac"), "fine_gross_frac": last.get("fine_gross_frac"), "z_rms": z,
+               # D21: the split of gross, from the replayed belief (runs recorded before it have no such key in loop.json)
+               "outlier_frac": r.get("outlier_frac", last.get("outlier_frac")), "coarse_frac": r.get("coarse_frac", last.get("coarse_frac")),
+               "outlier_by_band": [r.get(f"{b_}_outlier_frac", last.get(f"{b_}_outlier_frac")) for b_ in ("fine", "mid", "coarse")],
+               "gross_by_band": [r.get(f"{b_}_gross_frac", last.get(f"{b_}_gross_frac")) for b_ in ("fine", "mid", "coarse")], "gated": last["gated_total"],
                "level_sigma": lj["level_sigma_final"], "replay": rep_note, "learning": u_note,
                "u_fixed_cells": fixed.get("cells"), "u_start": fixed.get("start"), "u_end": fixed.get("end"), "steps": lj["steps"]}
         rows.append(row)
@@ -221,7 +225,7 @@ def main():
             return "-" if v is None else format(v, fmt)
         print(f"[eval] {tag:<22} {name:<8} k {row['fixations']:3d} rays {row['rays']:.3e} | cover any {row['coverage_any']:.3f} fine {row['coverage_fine']:.3f} | "
               f"rho err med {f(row['rho_err_median'])} (fine {f(row['fine_rho_err_median'])}) /m | depth med {f(row['depth_err_median_m'], '.3f')} (fine {f(row['fine_depth_err_median_m'], '.3f')}) m | "
-              f"gross {f(row['gross_frac'], '.3f')} | z {f(z, '.2f')} | verg err med {f(row['vergence_err_median_m'], '.2f')} m | {rep_note}; {u_note} -> loop_fig.png")
+              f"gross {f(row['gross_frac'], '.3f')} = coarse {f(row['coarse_frac'], '.3f')} + outlier {f(row['outlier_frac'], '.3f')} (outlier fine/mid/coarse {'/'.join(f(x, '.3f') for x in row['outlier_by_band'])}; gross {'/'.join(f(x, '.3f') for x in row['gross_by_band'])}) | z {f(z, '.2f')} | verg err med {f(row['vergence_err_median_m'], '.2f')} m | {rep_note}; {u_note} -> loop_fig.png")
     rnd = [r for r in rows if r["policy"] == "random"]
     if rnd:
         ref = rnd[0]["coverage_fine"]

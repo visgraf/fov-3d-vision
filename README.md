@@ -134,16 +134,17 @@ remove the removable ones, represent the rest (D20, `docs/phase-d-plan.md`).
 | | Step | State |
 |---|---|---|
 | D1a | The diagnosis on the saved records: occluded / window / search / resolution per level, P(gross) against the distance to a depth edge, the parent oracle (what coarse-to-fine could cure) | **run** 2026-09-18 — `gross_diagnosis.py`, `docs/d1-gross-diagnosis.md`; all checks pass on the four records; by area resolution is 75–89% of the bad cells, the oracle cures 3–25% of the wrong peaks at levels 0–2; D20's rule and the order D1b/D2 to be decided |
-| D1b | Coarse-to-fine with a safety valve in `stereo_field.py` | planned; its decision rule is read against D1a first |
+| D1b | Coarse-to-fine | **not written** (D21): the parent oracle is its ceiling, 16% of the wrong peaks on the classroom at `full`, net harmful at levels 1–2 on the calib room |
+| D2a | The judge split (gross = coarse + outlier) re-judged on the saved runs; what tells a wrong peak from a right one (five features, per level); the 3 × 3 window as a what-if | **written** 2026-09-18 — `belief.py`, `active_eval.py`, `gross_diagnosis.py`, `docs/d2-wrong-or-right.md`; not run on the renders yet |
 
 ## State
 
 Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the engine
 above and the finding that, at equal rays, the policy that does not look twice is as good as
-the principled one (D19). Phase D is planned (D20, `docs/phase-d-plan.md`): coarse-to-fine
-matching in the field, against the gross errors at depth edges that the picture
-(`docs/reference/views_classroom_full.png`) shows and the summary lists first among what is
-open. Still open beyond it: the warp as an action, the fixed head, truth beyond what the eyes
+the principled one (D19). Phase D is under way (D20, D21; `docs/phase-d-plan.md`): its diagnosis
+(`docs/d1-gross-diagnosis.md`) found that three quarters of what the loop called gross is coarse
+right peaks inside the variance model and about a tenth of the judged area is outside it, so
+coarse-to-fine was not written and the next step is telling wrong peaks from right ones. Still open beyond it: the warp as an action, the fixed head, truth beyond what the eyes
 sampled.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been

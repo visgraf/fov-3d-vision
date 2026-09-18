@@ -240,3 +240,31 @@ that contains what it is wrong about.
 Overturned if: D1 does not move the gross fraction at `full` by a third or the error by the
 run-to-run spread — then the edges are the window's, not the search's, and the next step is a
 smaller window or an edge-aware one, not a deeper pyramid.
+
+## D21 — D1 closes as a diagnosis; coarse-to-fine is not written; D20's rule withdrawn (2026-09-18)
+
+D1a (`docs/d1-gross-diagnosis.md`, measured, four records) found that the repository's two
+"gross" are different things and that D20's number is mostly the wrong one. On
+`class_coverage_full`, by area, 41.5% of the fused cells are wrong or beyond 25% in rho, and
+74.6% of that is *resolution*: right peaks at levels 3-4 whose honest 0.3-cell error exceeds a
+quarter of the parallax. Those cells are inside the variance model. What is outside it —
+window 11.3%, occluded 9.2%, search 4.9% of the bad area — is about a tenth of the judged
+area, not a third. Curing every wrong peak would move the 25% number by a sixth; D20 asked for
+a third of it from a matcher. The rule is withdrawn as unreachable by construction, not failed.
+
+Coarse-to-fine is not written. The parent oracle is its ceiling with a perfect safety valve:
+16% of the wrong peaks at levels 0-3 cured on the classroom at `full`, 1504 right peaks put at
+risk for 3044 cured; net harmful at levels 1-2 on `calib_room_full_sp` (2780 cured, 8327 at
+risk at level 2). D20's "overturned if" fires on the oracle, without the run.
+
+Phase D's numbers from here: in the loop, the **outlier fraction** — beyond 25% *and* beyond
+3 sigma of the belief's own sigma (`belief.metrics`: gross = coarse + outlier, exactly); in the
+field, the **wrong-peak fraction per level** on the saved pairs, by kind. The 25% gross stays
+reported, by band. D19's mechanism is restated: the variance model misses about a tenth of
+the cells, not a third; that expected information trails coverage-first all the same is left
+standing, and is now a smaller claim.
+Why: a threshold relative to rho calls a coarse measurement gross for being coarse; a
+decision rule on that number rewards nothing a matcher can do.
+Overturned if: the re-judged runs put the outlier fraction near the gross fraction (the
+belief's sigma then does not cover its coarse cells and (t) has been passing on inliers only).
+

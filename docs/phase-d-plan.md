@@ -1,7 +1,44 @@
 # Phase D — plan: a reliable multiscale depth from the field
 
 Written 2026-09-17; revised 2026-09-18 after a third-party review
-(`docs/reviews/2026-09-18-phase-d-suggestions.md`). Nothing here has run.
+(`docs/reviews/2026-09-18-phase-d-suggestions.md`); **revised again 2026-09-18 after D1a ran
+(D21)**: the section "Phase D after the diagnosis" below is the plan; D1's coarse-to-fine, D2
+and D3 as first written are kept under it as the record of what was intended.
+
+## Phase D after the diagnosis (D21)
+
+D1a measured where the gross errors come from (`docs/d1-gross-diagnosis.md`). Three quarters
+of the loop's gross, by area, is coarse right peaks — inside the variance model; about a tenth
+of the judged area is outside it (window, occluded, search). Coarse-to-fine's ceiling is 16% of
+the wrong peaks. On the classroom's fine levels the largest removable kind is wrong peaks *far*
+from any edge (18-21% of the cells there), which neither a pyramid nor a smaller window touches.
+
+- **D1 — closed as a diagnosis.** Coarse-to-fine is not written.
+- **The judge (with D2a).** `belief.metrics` splits gross into coarse (within 3 sigma) and
+  outlier (beyond); the thirteen saved runs are re-judged, no rendering. The outlier fraction
+  is the loop's number from here. Predicted 0.08-0.15 on the classroom at `full`.
+- **D2a — what tells a wrong peak from a right one** (`docs/d2-wrong-or-right.md`). Offline, on
+  the saved pairs: NCC peak, peak minus rival, LR residual, bound in cells, disagreement with
+  the parent; per level the share of wrong peaks each rejects while keeping 90% of the right
+  ones, split window / search. Beside it, the 3 x 3 window as a what-if (`--window 1`). No
+  matcher change.
+- **D2b — the remedy the numbers pick**, one of: a rejection test in the field (a threshold
+  on the best feature; a rejected cell is not measured), the inlier probability pi in the
+  fusion (the first plan's D3, if no single feature is a test but several are), or the
+  photometrically weighted window (if the window's share survives rejection). Judged offline
+  on the wrong-peak fraction per level and the cells kept, then once in the loop on the
+  outlier fraction, the fine band's error and coverage. The rule is written in D2b's note
+  before it runs, from D2a's numbers.
+- **D3 — coverage-first against expected information at `full`**, once the model contains or
+  rejects its outliers (the first plan's closing comparison; either outcome counts).
+- **D4 — the run to saturation**, unchanged.
+
+What would count, restated: outlier fraction at `full` halved without losing more than a
+tenth of the fine coverage; the picture's speckle gone without the median filter.
+
+---
+
+_The first plan, as written before D1a:_
 
 ## The question
 

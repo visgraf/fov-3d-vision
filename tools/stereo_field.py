@@ -141,11 +141,15 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
                   texture_min: float = 0.03, bound_max_cells: float = 1.0, kappa: float = 2.5,
                   lr_tol_cells: float = 1.0, finest_factor: float = 1.5, noise_rel: float | None = None,
                   margin_deg: float = 2.0, axis_deg: float = 5.0, min_valid: float = 0.6,
-                  smooth_from_level: int = 2, floor_cells: float = 0.3, lr: bool = True, extras: dict | None = None) -> dict:
+                  smooth_from_level: int = 2, floor_cells: float = 0.3, lr: bool = True, extras: dict | None = None,
+                  features: bool = False) -> dict:
     """L, R: dicts with 'theta', 'phi' (epipolar, deg), 'val' (N,), 'fp' (N,) sr, optional
     'val_b' (seed pair). gazeL/R: head-frame unit gaze directions. Returns the measurement rows
     (see module docstring) plus per-level diagnostics under 'levels' and, if extras is given
-    ({'name': per-sample array of L}), their finest-owns cell means as 'x_<name>'."""
+    ({'name': per-sample array of L}), their finest-owns cell means as 'x_<name>'. features=True
+    adds what a confidence test could read, per row, without changing anything else (D2; off in
+    the loop): ncc_peak, ncc_rival (the best score more than a cell from the peak), lr_resid_cells
+    (|shift_LR + shift_RL| at the matched R cell; NaN when R has no match there)."""
     (thL, phL), (thR, phR) = epipolar(gazeL), epipolar(gazeR)
     phi_c, theta_mid = 0.5 * (phL + phR), 0.5 * (thL + thR)
     edges = level_edges(E2, eval_factor, n_levels_for(E2, eval_factor, e_max))
@@ -154,6 +158,8 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
     visits = {k: [] for k in ("theta_L", "phi", "level", "cell_deg")}      # every owned cell, matchable or not (C2: the visit map)
     for k in (extras or {}):
         rows["x_" + k] = []
+    if features:
+        rows.update({"ncc_peak": [], "ncc_rival": [], "lr_resid_cells": []})
     levels = []
     e_lo = 0.0
     for l, e_hi in enumerate(edges):
@@ -201,7 +207,10 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
             bound = np.where(I_win > 0, 1.0 / np.sqrt(I_win), np.nan)                  # deg
         sigL, sigR = float(np.nanmedian(sigL_a)), float(np.nanmedian(sigR_a))
         tabs = 3.0 * float(np.nanmedian(np.sqrt(sigL_a ** 2 + sigR_a ** 2)))
-        sh_lr, _, tx_lr = ncc_match(AL, MR, h, S, texture_min, min_valid=min_valid, texture_abs=tabs)
+        if features:
+            sh_lr, pk_lr, tx_lr, rv_lr = ncc_match(AL, MR, h, S, texture_min, min_valid=min_valid, texture_abs=tabs, second=True)
+        else:
+            sh_lr, _, tx_lr = ncc_match(AL, MR, h, S, texture_min, min_valid=min_valid, texture_abs=tabs)
         sh_rl, _, tx_rl = ncc_match(AR, ML, h, S, texture_min, min_valid=min_valid, texture_abs=tabs)
         matchable = tx_lr & np.isfinite(sh_lr) & np.isfinite(bound) & (bound <= bound_max_cells * cell)
         # LR consistency: the R cell that L cell (r, j) matched, j + d, must match back to j
@@ -239,6 +248,9 @@ def field_of_pair(L: dict, R: dict, gazeL: np.ndarray, gazeR: np.ndarray, s0: fl
         rows["ecc_deg"].append(ecc[sel]); rows["row"].append(rr[sel]); rows["col"].append(cc[sel])
         for k in (extras or {}):
             rows["x_" + k].append(exL[k][:, c0:c0 + J][sel])
+        if features:
+            with np.errstate(invalid="ignore"):
+                rows["ncc_peak"].append(pk_lr[sel]); rows["ncc_rival"].append(rv_lr[sel]); rows["lr_resid_cells"].append(np.abs(sh_lr + back)[sel])
         e_lo = float(min(e_hi, e_max))
         if e_lo >= e_max:
             break

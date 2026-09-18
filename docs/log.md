@@ -1163,3 +1163,18 @@ The loop-run diagnoses print numpy RuntimeWarnings from stereo_instrument.py:244
 noise zero on some cells); the rebuilt rows equal the record, nothing changed. No code
 change. Figures in docs/reference (d1_diagnosis_classroom_full.png,
 d1_diagnosis_calib_room_full.png). D20's rule and the order D1b/D2 not decided here.
+
+## 2026-09-18 — D21: D1 closed as a diagnosis, coarse-to-fine not written; D2a written
+
+After D1a's report (a80342f). D21 in DECISIONS.md; the plan has a new head section; D2a is
+`docs/d2-wrong-or-right.md`. Code: `belief.metrics` splits gross = coarse + outlier (beyond
+25% and beyond 3 sigma), with a known-answer control in the self-test (outlier 0.10, coarse
+0.555 expected, measured 0.10 / in band); `active_eval.py` prints it from the replay;
+`ncc_match(second=True)` returns the rival peak; `field_of_pair(features=True)` adds ncc_peak,
+ncc_rival, lr_resid_cells (off in the loop, nothing else changes: (y1) on the stub loop run
+still 100.000% of 44459 rows); `gross_diagnosis.py` adds the uncured breakdown, the
+five-feature separation at 90% of the right peaks kept, `--tag` for what-ifs. Stub only
+(measured, sandbox): gross 0.359 = coarse 0.298 + outlier 0.061; parent disagreement rejects
+74-78% of wrong peaks at levels 0-1 (90% of search), peak and margin 40-50%, bound 4-6%; the
+oracle's uncured are 54-65% "inside the interval" at levels 1-3; `--window 1` raises wrong
+peaks at level 0 from 7% to 30% on the stub's noise texture.

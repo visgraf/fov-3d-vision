@@ -186,11 +186,15 @@ class SphereBelief:
             return None
         return float(self.S[m].sum() / self.P[m].sum())
 
-    def metrics(self, cap: np.ndarray, rel_inlier: float = 0.25) -> dict:
+    def metrics(self, cap: np.ndarray, rel_inlier: float = 0.25, out_sigmas: float = 3.0) -> dict:
         """Over the cap: coverage (any level / foveated at levels 0-1 / visited) as area fractions,
         and against the truth on the measured cells with truth: median |rho error|, inlier RMS
         (relative error <= rel_inlier), gross fraction, median |depth error| (m), calibration
-        z RMS on inliers."""
+        z RMS on inliers. The gross fraction is split in two (D21): COARSE, beyond rel_inlier but
+        within out_sigmas of the belief's own sigma — the model says it does not know rho to
+        25% there, and it does not: a right peak at a coarse level; and OUTLIER, beyond both —
+        what the variance model does not contain (wrong peaks, occlusions). coarse + outlier =
+        gross, exactly. D1a measured three quarters of the gross area as the first kind."""
         A = self.area; capA = A[cap].sum()
         meas = self.P > 0
         out = {"coverage_any": float(A[cap & meas].sum() / capA), "coverage_fine": float(A[cap & (self.best_level <= 1)].sum() / capA),
@@ -202,14 +206,17 @@ class SphereBelief:
             err = m - t; rel = np.abs(err) / np.maximum(t, 1e-6)
             inl = rel <= rel_inlier
             z = err / self.sigma()[j]
+            outl = ~inl & (np.abs(z) > out_sigmas)
             bl = self.best_level[j]; dep = np.abs(1.0 / np.maximum(m, 1e-6) - 1.0 / t)
             for band, sel in (("fine", bl <= 1), ("mid", bl == 2), ("coarse", bl >= 3)):
                 if sel.any():
                     out[f"{band}_cells"] = int(sel.sum()); out[f"{band}_rho_err_median"] = float(np.median(np.abs(err[sel])))
                     out[f"{band}_depth_err_median_m"] = float(np.median(dep[sel])); out[f"{band}_gross_frac"] = float(1.0 - inl[sel].mean())
+                    out[f"{band}_outlier_frac"] = float(outl[sel].mean())
             out.update({"judged_cells": int(j.sum()), "rho_err_median": float(np.median(np.abs(err))),
                         "rho_inlier_rms": float(np.sqrt(np.mean(err[inl] ** 2))) if inl.any() else None,
                         "gross_frac": float(1.0 - inl.mean()),
+                        "outlier_frac": float(outl.mean()), "coarse_frac": float((~inl & ~outl).mean()),
                         "depth_err_median_m": float(np.median(dep)),
                         "z_rms_inliers": float(np.sqrt(np.mean(z[inl] ** 2))) if inl.any() else None,
                         "z_median_abs": float(np.median(np.abs(z)))})
@@ -424,6 +431,22 @@ def self_test() -> list[str]:
     mt = b2.metrics(b2.cap_mask(60.0))
     if mt["judged_cells"] != 1 or abs(mt["rho_err_median"] - 0.5) > 1e-9:
         fails.append(f"metrics: {mt}")
+    # the gross split (D21): honest coarse measurements of rho 0.4 with sigma 0.2 are gross by the
+    # 25% rule and inside the model; one cell in ten is then made a wrong peak at the fine
+    # level's confidence. coarse + outlier = gross; the outliers are the tenth, the rest coarse.
+    rng = np.random.default_rng(3)
+    b8 = SphereBelief(1.0)
+    tt, pp = np.meshgrid(np.arange(80.5, 100.5, 1.0), np.arange(-19.5, 20.5, 1.0)); tt, pp = tt.ravel(), pp.ravel()   # one belief cell each (cell 0.98 below)
+    n8 = len(tt); bad = np.arange(n8) % 10 == 0
+    rho8 = np.where(bad, 1.2, 0.4 + rng.normal(0, 0.2, n8)); sg8 = np.where(bad, 0.02, 0.2)
+    b8.fuse({"theta_L": tt, "phi": pp, "cell_deg": np.full(n8, 0.98), "level": np.full(n8, 3, np.int8), "rho": rho8, "sigma_rho": sg8,
+             "consistent": np.ones(n8, bool)})
+    b8.add_truth(direction_of(tt, pp), np.full(n8, 2.5), np.full(n8, 1e-5))
+    m8 = b8.metrics(b8.cap_mask(60.0))
+    if abs(m8["outlier_frac"] + m8["coarse_frac"] - m8["gross_frac"]) > 1e-12:
+        fails.append(f"gross split: outlier {m8['outlier_frac']} + coarse {m8['coarse_frac']} != gross {m8['gross_frac']}")
+    if abs(m8["outlier_frac"] - 0.1) > 0.01 or not (0.4 < m8["coarse_frac"] < 0.65):
+        fails.append(f"gross split: outlier {m8['outlier_frac']:.3f} (expected 0.10), coarse {m8['coarse_frac']:.3f} (expected ~0.55 for sigma = 2 x the 25% band)")
     # the info policy prefers the unseen: with one fine fixation forward, the argmax is not forward
     b3 = SphereBelief(1.0)
     ls = LevelSigma(5)
