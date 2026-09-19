@@ -372,3 +372,32 @@ Authorize the additive read-only coverage audit on the existing small/64, full/2
 Why: frequent texture rejection identifies a gate, not whether rejected correspondences are correct; fixed pixel support, display clipping, quantization and genuinely weak evidence must be distinguished.
 Preserve the estimator, all thresholds, fixtures, reference denominators, provenance, failed records and prior decisions; no new acquisition or automatic adoption follows from counterfactual statistics.
 Overturned if: frozen source hashes, exact replay, gate reconstruction or reference metrics disagree; stop and return evidence before drawing a diagnostic conclusion.
+
+## D-FSG1c - Test a fixed soft HDR encoding on saved FSG1 observations (2026-09-19)
+Authorize one opt-in candidate: max(x,0)/(1+max(x,0)), then the existing sRGB transfer and uint8 quantization, shared by both eyes for SGBM and its texture score. Keep the original linear-RGB refiner and every numerical matching/acceptance/evaluation setting.
+Why: FSG1b identifies post-render clipping in the old encoding, while its tilted counterexample does not justify deleting the texture veto. No fitted exposure or threshold sweep is authorized.
+Compare on the existing small/64, full/256 and diagnostic-small/1024 seed-17 records, with exact legacy replay and unchanged fixed reference populations. Preserve all original files and failures; record the candidate separately. No new acquisition, default change, milestone promotion or FSG2 work.
+A numerical miss on small does not block the prescribed full comparison: all three existing records are processed once. A source, provenance, replay or integrity exception stops execution immediately. A candidate numerical miss is reported, not tuned away.
+The candidate is successful on the existing full record only if it satisfies the original per-case/per-instance 90% coverage, 1% median and 3% p95 range-error rules and identity checks. This is development-set evidence, not independent validation; the synthetic bright-full stress miss and the unexercised half-occlusion case remain explicit. Report any regression on other records.
+Overturned if: frozen-source/replay checks fail, or the candidate cannot recover coverage without violating the fixed accuracy rules. Stop for Luiz/Chat; do not alter the mapping, windows, thresholds, fixtures or tests.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1-hdr-candidate.md` Results and `docs/log.md`).
+Run once on the three saved records, exit 2. The full record is
+`CANDIDATE_PASS_ON_EXISTING_RECORD` with no fails: step foreground coverage
+79.319% -> 99.361%, pooled step 87.502% -> 99.445%, fronto 94.786% -> 99.019%,
+tilted 98.433% -> 98.912%, every median and p95 still inside 1% and 3%, and 8
+pixels lost on the failing instance. The newly accepted geometry is re-derived,
+not resurrected, scoring 0.176%/0.867% with none over 3%. The exit-2 miss is the
+small record's pre-existing background accuracy failure, unchanged because that
+instance had no clipped pixels. Mechanism: the encoding lowers median scores
+(4.508 -> 2.708) but collapses exactly-zero scores 14.243% -> 0.014% and removes
+all-channel saturation, so coverage returns by deleting the dead zone rather than
+by amplifying signal. NOT adopted and no default changed. Three limits stand: the
+analytic bright-full stress still fails coverage under this same encoding; on
+small/tilted all 29 old texture-only pixels are now accepted and measure
+1.914%/4.084%, so the candidate admits weak evidence the veto used to catch
+(n=29, an observation, not a population estimate); and half-occlusion is
+NOT_EXERCISED in all nine case-records. This is development-set evidence on the
+records that selected the candidate, not independent validation. The next step,
+for Luiz and Chat, is a held-out geometry and seed plus an additive mirrored-step
+or opposite-eye half-occlusion fixture BEFORE any fusion.

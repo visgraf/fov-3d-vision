@@ -1586,3 +1586,111 @@ Inspected diagnostic.png for full/step, full/fronto and small/step and audit.jso
 for all nine. No rejected hypothesis was exported, written back or filled. No
 render, no new seed, no acceptance change, no code fix needed. Stopped for
 Luiz/Chat; no fusion or surface growing.
+
+
+### 2026-09-19 - FSG1c fixed HDR encoding candidate: authorized, prospective entry (written before execution)
+
+Per `docs/fsg1-hdr-candidate.md` and D-FSG1c appended just above, one opt-in
+candidate encoding is about to be compared against the legacy encoder on the
+three already-saved seed-17 records. Written before the command:
+
+    .venv/bin/python tools/fsg_hdr_compare.py \
+      previews/fsg1/small-seed17 previews/fsg1/full-seed17 \
+      previews/fsg1/diag-small-spp1024-seed17 \
+      --out previews/fsg1/hdr-candidate-seed17
+
+The candidate is exactly `uint8 = round(255 * sRGB(max(x,0)/(1+max(x,0))))`,
+one fixed pointwise function, both eyes, every pixel, no histogram, percentile,
+per-eye exposure, gain search or truth. Verified by reading the kernel: it calls
+the frozen legacy `linear_to_u8` for the sRGB/quantization step, where that
+function's clip is a no-op, so only the pre-transfer compression is new. SGBM and
+the original 5x5 texture score see the encoded images; the bounded photometric
+refiner still sees ORIGINAL scene-linear float RGB. The 0.5-code-unit cutoff,
+windows, search bounds, instance guard, LR check, refinement iterations and every
+evaluator rule are unchanged.
+
+This is a NEW instrument candidate, not a cosmetic display edit: it changes the
+evidence for initial correspondence as well as acceptance. Zero new primary
+camera samples, no render, no seed or spp change, no default adopted.
+
+Known BEFORE running, from `docs/fsg1-hdr-validation.md`: Chat's analytic
+bright-full stress (`1.2 + 2*RGB` on both eyes) PASSES at small but FAILS full
+coverage - fronto 79.097%, tilted 78.828%, step pooled 86.809%, foreground
+85.760%, background 88.388% - with accepted errors inside the limits. The old
+clipped encoder accepts zero points in that stress. So avoiding the hard clamp
+does not guarantee an 8-bit fixed-window system retains every weak gradient, and
+a pass here would still be development-set evidence on records that already
+informed the diagnosis. Exit 0 means all requested gates passed, exit 2 a
+candidate numerical miss (both valid outcomes), exit 1 an integrity exception
+and a stop. Prior failures stand: small misses background accuracy, full misses
+step coverage 87.502% / foreground 79.319%. Half-occlusion stays NOT EXERCISED.
+All 167 record files fingerprinted beforehand into
+`previews/fsg1/hdr-candidate-logs/00-records-before.sha256`.
+
+Measured outcome, appended after the run. Process exit 2 - completed with one
+candidate numerical miss, and the miss is the SMALL record's pre-existing
+background accuracy failure, not a full-profile miss. Per run:
+small CANDIDATE_FAIL_ON_EXISTING_RECORD, **full CANDIDATE_PASS_ON_EXISTING_RECORD
+with no fails**, diag1024 CANDIDATE_PASS. Suite flags stay
+full_profile_milestone_pass false, fusion_authorized false, adopted_default false,
+status CANDIDATE_COMPARISON_COMPLETE_NOT_A_MILESTONE. 5.713 s, 0 new samples.
+
+Integrity: legacy diff vs 64e02af empty before and after; four frozen hashes
+pinned by the runtime; legacy_replay_exact and baseline_preserved true for all
+nine case-records; input_sha256_before == input_sha256_after over 167 paths, and
+I re-fingerprinted the same 167 files myself - byte-identical. Both baselines'
+evaluation.json still read status FAIL with two fails each. Checks 24/0, 29/0,
+34/0; the three deliberate negatives each exit 1.
+
+full record, legacy -> candidate on the same fixed reference: fronto 94.786% ->
+99.019%, tilted 98.433% -> 98.912%, step pooled 87.502% -> 99.445%, step
+foreground 79.319% -> 99.361% (median 0.137% -> 0.142%, p95 0.595% -> 0.649%),
+step background 99.819% -> 99.572% (0.785% -> 0.796%, 2.497% -> 2.572%).
+wrong_instance_accepted 0 for both estimators in all nine. So the full coverage
+miss is resolved with every accuracy criterion still met. The small background
+miss is essentially unchanged (1.136% -> 1.138% median, 4.111% -> 4.065% p95),
+which is correct: that instance had 0.000% clipped pixels, so the encoding has
+nothing to recover and its angular-resolution limit stands.
+
+Paired support on the failing instance: common 29,029, gained 7,345, lost 8,
+neither 226; 7,335 of the 7,549 old texture-only pixels now accepted (97.2%).
+The gain is not resurrection of the old diagnostic hypotheses - the newly
+accepted pixels are re-derived from the encoded images and independently score
+0.176% median / 0.867% p95 with none over 3%, against those hypotheses' 0.178% /
+0.889%; on common support the candidate is marginally better (0.137% -> 0.135%).
+Regressions are real and small: full/step background nets -60 pixels, full/tilted
+loses 481 while gaining 795, scattered.
+
+The FSG1b counterexample survives and is the sharpest caution. On small/tilted
+all 29 old texture-only pixels are now ACCEPTED and as candidate geometry measure
+1.914% median / 4.084% p95, far worse than that case's 0.457%/1.667%, consistent
+with the audit's 10-of-29 over 3%. They pass only because 29 pixels among 16,384
+cannot move an aggregate. n=29, a specific observation and not a population
+estimate - direct evidence the candidate admits some weak evidence along with the
+clipped-but-good evidence.
+
+Mechanism, stated honestly: the candidate does NOT find more texture. Median
+scores roughly HALVE under compression (full/step foreground 4.508 -> 2.708) -
+the encoded image has less contrast. What changes is the dead zone: exactly-zero
+scores collapse 14.243% -> 0.014% and nothing saturates to 255 in all channels
+anywhere. Coverage is recovered by removing hard saturation, not by amplifying
+signal. The halving is also the cost: with typical scores about half as large,
+the unchanged 0.5 cutoff sits relatively closer to the bulk, and 0.6-0.9% of
+full-profile reference pixels now fall below it against 0.000% at small. That is
+the regime of Chat's analytic bright-full stress, which still FAILS coverage
+under this same encoding (fronto 79.097%, tilted 78.828%, step pooled 86.809%,
+foreground 85.760%, background 88.388%). That limitation travels with the result.
+
+Boundary EXERCISED only on step and improves without being gated: full 2,362 ->
+2,819 accepted, median 0.604% -> 0.484%, p95 3.266% -> 2.857%. singly_visible is
+0 reference pixels in all nine for legacy and candidate alike: NOT_EXERCISED,
+unchanged, not a pass. Inspected comparison.png for full/step, full/tilted,
+full/fronto, small/tilted and comparison.json for all nine; candidate PLY for
+full/step has 63,409 vertices (legacy 55,675), no faces, instance medians Z
+-1.6002 and -3.4006 m in fixed H. Remaining holes shown as missing, never filled.
+
+Nothing adopted, no default changed, the legacy encoder remains the instrument.
+This is development-set evidence: these records produced the diagnosis and
+selected the candidate. Next would be a held-out geometry and seed plus an
+additive mirrored-step or opposite-eye half-occlusion fixture BEFORE fusion;
+neither is authorized and neither was performed. Stopped for Luiz/Chat.
