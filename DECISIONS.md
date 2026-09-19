@@ -401,3 +401,29 @@ NOT_EXERCISED in all nine case-records. This is development-set evidence on the
 records that selected the candidate, not independent validation. The next step,
 for Luiz and Chat, is a held-out geometry and seed plus an additive mirrored-step
 or opposite-eye half-occlusion fixture BEFORE any fusion.
+
+## D-FSG1d - frozen HDR prospective validation (2026-09-19)
+Preserve all FSG1/FSG1a failures, FSG1b diagnostics and FSG1c development-set outcomes. Keep the FSG1c encoding, matcher and acceptance unchanged. Authorize only the FSG1d two-fixture schedule: small seed 31 once, full seeds 31 and 73 once each, at their default spp. Keep the existing per-instance interior accuracy/coverage gates. Add a nonempty left-eye singly visible reference and zero accepted points in its fixed eroded core. A numerical small miss does not block the predeclared full tests; integrity or unexercised-reference failures do. Analyze every prescribed full record irrespective of numerical misses; no retry, tuning, default adoption, milestone closure, or fusion is authorized. A candidate validation pass is limited evidence on these new opaque textured planar fixtures. What would overturn it: a failed full case/instance/seed, an unsafe core acceptance, invalid reference/provenance, or input/source mutation. Stop for Luiz/Chat after the report.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1-prospective-validation.md` Results and
+`docs/log.md`). Executed exactly the authorized schedule: small seed 31 once, full
+seeds 31 and 73 once each, 865,075,200 primary samples as calculated, nothing
+repeated. Status `FROZEN_CANDIDATE_VALIDATION_FAIL`, with integrity intact
+throughout (frozen diff empty, eight pinned hashes verified, inputs unchanged,
+295 prior files byte-identical). Passed: `tilted_holdout` on both seeds at new
+gaze/range/tilt (99.76%/0.25%/1.11%), and the 1.8 m foreground, where the HDR
+candidate reproduced its coverage benefit prospectively (96.96% -> 99.87%, gained
+pixels at 0.166%/0.621%). Failed on two counts, neither tunable here. First, the
+3.2 m background misses median and p95 on both seeds for BOTH estimators
+(1.053%/3.123%), so it is not radiometric; the old 3.4 m background passed with
+less disparity, and the measurable difference is lower texture contrast - an
+observation, not an established cause. Second, the half-occlusion test is finally
+EXERCISED (4,608 raw / 3,528 core) and seed 31 leaks: both estimators accept 2
+core pixels whose truth is the 3.20 m background, the candidate placing them at
+1.824 m - on the foreground plane, a 1.377 m error - while every existing veto
+passed. The leak is the shared matcher's, not the encoding's, and it is
+seed-dependent, so one seed would not have shown it. Per this decision's overturn
+clause, a failed full instance and an unsafe core acceptance both apply: no
+limited adoption and no two-patch experiment follow. The next step is Luiz's and
+Chat's, and would need an explicit occlusion-rejection mechanism and a decision
+about the far-surface accuracy limit before any fusion.

@@ -1694,3 +1694,128 @@ This is development-set evidence: these records produced the diagnosis and
 selected the candidate. Next would be a held-out geometry and seed plus an
 additive mirrored-step or opposite-eye half-occlusion fixture BEFORE fusion;
 neither is authorized and neither was performed. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG1d prospective validation: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg1-prospective-validation.md` and D-FSG1d appended just above. Two
+NEW fixtures on the unchanged instrument, and the schedule is fixed in advance:
+
+    blender -b --python-exit-code 1 -P tools/fsg_validation_render.py -- --out previews/fsg1/validation-small-seed31 --profile small --seed 31 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_validation_eval.py previews/fsg1/validation-small-seed31 --mode smoke --out previews/fsg1/validation-small-evaluation
+    blender -b --python-exit-code 1 -P tools/fsg_validation_render.py -- --out previews/fsg1/validation-full-seed31 --profile full --seed 31 --device OPTIX --save-blend
+    blender -b --python-exit-code 1 -P tools/fsg_validation_render.py -- --out previews/fsg1/validation-full-seed73 --profile full --seed 73 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_validation_eval.py previews/fsg1/validation-full-seed31 previews/fsg1/validation-full-seed73 --mode full --out previews/fsg1/validation-full-evaluation
+
+Budget, calculated not measured: 26,214,400 + 419,430,400 + 419,430,400 =
+865,075,200 primary camera samples. Each entry runs ONCE; no retry, no
+replacement seed, no rerender for a favourable sample.
+
+`FSG1c-fixed-soft-hdr-srgb-v1` is frozen. Verified before writing this: the diff
+from `edfe1d2` over the fifteen original/audit/candidate modules, rig, bl_common
+and requirements-fsg.txt is empty, and `fsg_validation_scene.check_frozen()`
+confirms all eight pinned hashes against this checkout. Spec digest
+c7f8c67b56c73321315c1b32750fcec36de86af267eaec51433fbfc1730a7299. Read the new
+modules directly: Blender-side imports are numpy plus repo modules only (no cv2
+or PIL), the CLI has no --spp or --case override, seeds are restricted to (31,73)
+with small restricted to 31, and the fixtures match the frozen spec -
+tilted_holdout gaze (-12,+8) deg, centre 2.6 m, tilt -32 deg, 3.2x3.2 m; and
+step_right with the foreground on +X in [0,1.65] m at Z=-1.8 m against a
+background at Z=-3.2 m, reversing the old step's occluding edge.
+
+The question is narrow: does the fixed full-profile sensor keep its accuracy and
+coverage on NEW textured planar geometry while refusing a surface only the left
+eye can see. Gates are the original ones per case and per instance interior on
+each seed: coverage >=90%, median <=1%, p95 <=3%. The new safety criterion is
+zero accepted candidate points inside the ground-truth-selected eroded
+singly-visible core (full: >=256 raw, >=128 core, 2 px erosion). An empty or
+undersized reference is NOT_EXERCISED and is FATAL for step_right, never a pass;
+tilted_holdout is expected to report NOT_EXERCISED for that subtest only.
+
+Prior results stand unchanged and are not superseded by anything here: the small
+seed-17 background accuracy failure, the full seed-17 baseline coverage failure,
+FSG1b's diagnosis, and FSG1c's development-set-only pass together with its two
+recorded limitations - the 29-pixel weak-evidence cohort now accepted at
+1.914%/4.084%, and the analytic bright-full coverage failure, which these
+fixtures' different radiometry does not cancel. Chat has not seen these Cycles
+observations; its analytic numbers in
+`docs/fsg1-prospective-validation-checks.md` are a software proxy, so this is
+prospective simulator validation, not an independent real-world benchmark, and
+two Monte Carlo seeds are not two geometries. Outcome unknown at writing; a pass
+would be limited evidence for a later decision by Luiz/Chat, and authorizes no
+default adoption, milestone closure or fusion here.
+
+Measured outcome, appended after the run. **FROZEN_CANDIDATE_VALIDATION_FAIL.**
+Renders exit 0, smoke evaluation exit 2, paired full validation exit 2 - numerical
+misses, never an integrity exception. adopted_default, full_profile_milestone_pass,
+fusion_authorized and prospective_blender_validation_pass all false.
+
+Integrity: diff from edfe1d2 over the fifteen frozen modules empty before and
+after; check_frozen() confirmed all eight pinned hashes; spec digest
+c7f8c67b56c73321... echoed by every COMPLETE line and stored in each run.json;
+inputs_unchanged true over 32 new paths; predictions_saved_before_truth and
+original_interior_gates_unchanged true for all four full case-records; the 295
+files of every prior seed-17 record re-hashed byte-identical. Checks 24/29/34/48
+all zero failures, py_compile clean, three negatives exit 1 with their intended
+wording. Independent Blender checks: projection <=2.353e-4 px, ray-cast
+<=7.313e-7 m, 242 rays per case, IDs matching. Mesh, calibration and both
+instance masks byte-identical across seeds; only RGB differs (mean |d| 0.000643
+tilted, 0.002459 step) - two noise realisations of ONE geometry.
+
+PASSED: tilted_holdout on both seeds, at a gaze (-12,+8), range 2.6 m and tilt
+-32 deg the instrument had never seen - candidate 99.763%/0.251%/1.106% (s31) and
+99.768%/0.251%/1.092% (s73). The sensor transfers to new planar geometry.
+Also passed: step_right foreground at 1.8 m, where the HDR candidate reproduces
+its FSG1c benefit PROSPECTIVELY - coverage 96.959% -> 99.868% (s31) and 96.939%
+-> 99.904% (s73), gaining 747/758 pixels at 0.166%/0.621% and 0.177%/0.624% with
+nothing over 3%; legacy zero-score 1.375% -> candidate 0.000%, median score
+6.763 -> 3.382, so again dead-zone removal rather than added contrast.
+
+FAILURE 1 - the 3.2 m background, both seeds, BOTH estimators within 0.006 points
+of each other: legacy 1.053%/3.123%, candidate 1.053%/3.123% (s31) and
+1.060%/3.127% vs 1.066%/3.127% (s73), with 10.471%/11.097% of accepted pixels over
+3%. Not radiometric: that instance has 0.000% zero-score and nothing to unclip.
+Not simply angular resolution either - the old full seed-17 background at 3.4 m
+had 22.57 px of disparity and PASSED at 0.785%/2.497%, while this one at 3.2 m has
+about 23.98 px and FAILS. The measurable difference is texture: median legacy
+score 4.430 here against 5.052 there. An observation from two fixtures, not an
+established cause; the fixture was not changed to test it.
+
+FAILURE 2 - half-occlusion, which this fixture finally EXERCISES: 4,608 raw and
+3,528 core pixels at full (2 px erosion), 1,280/1,008 at small, against required
+256/128 and 64/32. tilted_holdout correctly NOT_EXERCISED for that subtest only.
+Seed 73: candidate 0 raw / 0 core accepted, legacy 2 raw / 0 core - pass. Seed 31:
+BOTH estimators accept 2 core pixels (0.0567%) - FAIL, limit is exactly zero.
+Read from saved outputs, the truth there is the background at 3.20 m and the
+estimates are geometrically impossible: candidate (83,145) and (84,145) at
+Z=-1.8240 m, essentially ON the 1.8 m foreground plane, a 1.377 m (43%) error;
+legacy (106,133) and (107,133) at Z=-2.5521/-2.5575 m, a nonexistent intermediate
+depth, 0.648/0.643 m error. Every existing veto passed on all four: LR residual
+0.148-0.359 px (limit 1.0), texture std 5.5-8.1 (cutoff 0.5), correct oracle
+label. These live in the singly-visible population the interior reference
+excludes, so no interior metric would ever have seen them - which is exactly why
+the separate safety test exists. Two attributions: the leak is NOT the HDR
+candidate's (legacy leaks the same two pixels on seed 31, and on seed 73 the
+candidate is strictly safer), it is the shared matcher/acceptance; and it is
+seed-dependent, so one passing seed would not have demonstrated safety.
+
+Boundary EXERCISED only on step_right: 2,304 ref, 1,261 -> 1,263 accepted at s31
+(median 0.318% -> 0.301%, p95 1.071% -> 1.034%), 1,260 -> 1,259 at s73. No
+invented threshold; the interior gate does not validate it. wrong_instance 0
+everywhere. Candidate PLYs head-frame, no faces: s31 tilted 65,381 (Z med
+-2.5458), step 58,590 (26,318 at -1.8006; 32,272 at -3.2007); s73 65,384 and
+58,593, same medians. Small record independently: foreground X [+0.010,+0.159],
+background X [-0.387,-0.038], tilt 32.5 deg from gaze - built and recovered as
+specified. Small seed 31 (a diagnostic, not a gate) also missed on its 3.2 m
+background, 94.11%/1.364%/5.613%, and exercised occlusion with 0 core accepted.
+
+Cost: calculated 26,214,400 + 419,430,400 + 419,430,400 = 865,075,200 primary
+samples; recorded exactly that. Inference added 0. Blender wall 1.705 / 3.964 /
+3.899 s, in-script 1.139 / 3.429 / 3.345 s, smoke evaluation 0.851 s, paired
+validation 6.381 s. Batch throughout.
+
+Nothing was tuned: no instrument, encoding, cutoff, window, reference, erosion,
+fixture, spp or seed change, and no repeated acquisition. Prior FSG1c limitations
+stand (29-pixel weak cohort; analytic bright-full coverage failure), as do all
+earlier failures. No default adopted, FSG1 not closed, no fusion. Stopped for
+Luiz/Chat.
