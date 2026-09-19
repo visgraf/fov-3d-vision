@@ -1493,3 +1493,96 @@ NOT EXERCISED, which is a test-coverage gap, not a pass. A mirrored step or an
 opposite-eye reference is Chat's separate additive step before fusion. The suite
 was not altered to close it here. Nothing tuned, no threshold/fixture/default
 changed, documentation only. Stopped for Luiz/Chat; no fusion or surface growing.
+
+
+### 2026-09-19 - FSG1b coverage audit: authorized, prospective entry (written before execution)
+
+Per `docs/fsg1-coverage-audit.md` and D-FSG1b appended just above, a read-only
+audit of the three already-saved seed-17 records is about to run. Written before
+the command so the intent is on record whatever it finds:
+
+    .venv/bin/python tools/fsg_coverage_audit.py \
+      previews/fsg1/small-seed17 previews/fsg1/full-seed17 \
+      previews/fsg1/diag-small-spp1024-seed17 \
+      --out previews/fsg1/coverage-audit-seed17
+
+Zero new primary camera samples: no render, no new seed, no sample-count change,
+no matcher/acceptance/gate/fixture/mask change. `git diff 8ac6137` over the FSG1
+executables, rig, bl_common and requirements-fsg.txt is empty; environment is
+unchanged at Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0, the
+same one that produced the records. All 167 files of the three records were
+SHA-256 fingerprinted beforehand into
+`previews/fsg1/coverage-audit-logs/00-records-before.sha256` so their
+preservation can be verified independently of the tool's own checks.
+
+The question: the earlier report's "99.7% fails texture" is not the same claim as
+"99.7% fails ONLY texture". The audit splits each fixed reference population into
+three disjoint, exhaustive groups - accepted, rejected solely by texture, rejected
+for another reason - and scores the texture-only group's already-stored
+hypotheses against the unchanged evaluation reference, alongside quantization,
+clipping, linear-contrast and angle-matched-support diagnostics.
+
+Expected `AUDIT_COMPLETE_NOT_A_MILESTONE`. Both FSG1 failures stand: small fails
+background accuracy, full fails step coverage 87.502% and foreground 79.319%.
+A counterfactual without the texture veto is labelled diagnostic and is not
+accepted output; nothing is adopted, and no FSG2 work follows. Half-occlusion
+stays NOT EXERCISED. Logs under `previews/fsg1/coverage-audit-logs/`.
+
+Measured outcome, appended after the audit. `AUDIT_COMPLETE_NOT_A_MILESTONE`,
+3 runs, 2.974 s, diagnostic_only true, fsg1_authorized_pass false,
+new_primary_samples 0. FSG1 remains FAIL; both baseline failures are preserved
+verbatim inside the audit output. Legacy checks 24/0, new audit checks 29/0, both
+deliberate negatives exit 1 ("replay mismatch in valid; no counterfactual
+analysis authorized" and "partition overlaps or misses reference pixels").
+`replay_exact` true for all nine case-records, every partition exact, original
+evaluator metrics reproduced. All 167 record files SHA-256 fingerprinted before
+and after: byte-identical, independently of the tool's own inputs_unchanged flag.
+
+The question was whether "99.7% fails texture" means "fails ONLY texture". It
+does. full/step instance 1: reference 36,608, accepted 29,037, rejected 7,571, of
+which 7,552 fail texture at all and 7,549 fail texture and nothing else; 22 fail
+only lr_consistent. Scored against the unchanged reference, those 7,549 discarded
+hypotheses are as accurate as the accepted ones - refined median 0.178%, p95
+0.889%, none over 3%, against the accepted 0.137%/0.595%. Labelled counterfactual
+with the texture veto absent and all other vetoes in force: coverage 79.319% ->
+99.940%, median 0.137% -> 0.144%, p95 0.595% -> 0.653%; pooled step 87.502% ->
+99.893%. Diagnostic arithmetic on stored hypotheses only - not accepted output,
+not a coverage number, not a pass, nothing adopted.
+
+Cause, and it revises the emphasis of the full-profile note: the fixture's
+foreground is over-exposed. 100.000% of that cohort has at least one RGB channel
+high-clipped and 92.489% has all three; the production conversion clips linear
+RGB to [0,1] before quantizing, so saturated neighbourhoods score exactly 0.
+Separating the two mechanisms: 51.835% of the cohort is already flat BEFORE
+quantization (clipping) and quantization flattens 17.2 points more, to 69.029%.
+The unclipped linear luminance score is never zero anywhere - 0.000% at every
+record - so the radiance variation is always present and the display conversion
+destroys it. Resolution is a real but secondary modulator: the saturated blobs
+are a fixed angular size, so the fixed pixel window sits deeper inside them at
+full and the zero-score share goes 59.932% -> 69.029% small to full on the same
+instance. The earlier "texture halves with resolution" is the median-contrast
+statement; true, but not the main mechanism.
+
+Three cautions against reading this as "drop the veto". Raw SGBM on these cohorts
+is often degenerate, median equal to p95 to four decimals (0.0992/0.0992 on step
+instance 1 at all three records), i.e. one constant disparity propagated across
+the saturated region by the smoothness term - correct only because the hidden
+surface really is a fronto-parallel plane. About half the cohort (3,678 of 7,549)
+has no contrast even in the 9x9 angle-matched window, and the contrast-bearing
+half scores 0.162%/0.773% against the whole cohort's 0.178%/0.889%, barely
+better - so the accuracy is propagation, not recovered local evidence. And the
+veto earns its keep elsewhere: on small/tilted the texture-only hypotheses are
+worse, median 1.406%, p95 4.084%, 34.483% of them over 3%, against raw SGBM's
+0.127%/1.366%. Interpretations A and D hold, B is not excluded. A fix belongs in
+the representation (exposure, or a score computed before the clip) as a separate
+prospective experiment evaluated as a NEW candidate against both baselines.
+
+singly_visible reference count is 0 in all nine case-records: NOT EXERCISED at
+both profiles and in the diagnostic; a zero denominator is not a pass and the
+mirrored/opposite-eye test stays a separate additive step before fusion. boundary
+NOT EXERCISED for fronto/tilted, EXERCISED on step only (1,280/395 small,
+4,608/2,362 full, 1,280/411 diag1024); still not validated by the interior gate.
+Inspected diagnostic.png for full/step, full/fronto and small/step and audit.json
+for all nine. No rejected hypothesis was exported, written back or filled. No
+render, no new seed, no acceptance change, no code fix needed. Stopped for
+Luiz/Chat; no fusion or surface growing.
