@@ -2503,3 +2503,161 @@ deferred, surfel normals unused, the proximity rule is not a calibrated
 uncertainty model, and the completeness grid samples only this known finite
 object. Nothing here speaks to active frontier selection, multi-object switching
 or uncontrolled scenes. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG3 Increment 3, active frontier growth: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg3-increment3.md` and D-FSG3a appended just above. Increment 3,
+authorized by D-FSG2a's close of Increment 2. Commands, written before running:
+
+    .venv/bin/python -u tools/fsg3_loop.py --repo . --out previews/fsg3/active-small-seed307 --profile small --seed 307 --device OPTIX
+    .venv/bin/python tools/fsg3_eval.py previews/fsg3/active-small-seed307 --mode smoke --out previews/fsg3/active-small-evaluation
+    .venv/bin/python -u tools/fsg3_loop.py --repo . --out previews/fsg3/active-full-seed307 --profile full --seed 307 --device OPTIX
+    .venv/bin/python tools/fsg3_eval.py previews/fsg3/active-full-seed307 --mode full --out previews/fsg3/active-full-evaluation
+
+**What changes in this increment is ONLY the choice and stopping of fixations.**
+No policy comparison, no learned policy, no pose estimation, no ICP, no
+meshing/filling, no object switching, no folds, no head motion, no vergence
+control - vergence is fixed at the prescribed 2.10 m and only gaze direction is
+active.
+
+**The policy decides the trajectory; I do not.** After each fixation it measures
+whether object ID 71 reaches the left/right edge band of the current core,
+computes robust 1%/99% head-yaw extents from the RECONSTRUCTED map only,
+considers just the two candidates at current yaw +/- 5 deg, requires an edge
+where the object continues, >= 4 deg map overlap, yaw within the frozen
+[-12,+18] range and no revisit, scores by predicted new angular support, and
+stops when no candidate predicts >= 1 deg. The document's "approximately five
+looks at -7, -2, +3, +8, +13 deg" is a design expectation and explicitly NOT an
+execution gate; whatever trajectory the policy produces is what I report.
+
+Frozen and unchanged: FSG1 instrument
+`FSG1-HDR-SGBM-one-original-update-original-validity-v1`; oracle segmentation
+with only ID 71 entering the map (background 72 excluded); fixed head frame H;
+exact calibrated poses, no registration; 12 mm association radius and hash cell;
+SPP 64 small / 256 full; master seed 307 with a deterministic distinct L/R Cycles
+seed per step. Verified by reading the code before running: `fsg3_loop.py` and
+`fsg3_policy.py` import NO fixture geometry and touch no `evaluation_only` asset
+- only `fsg3_eval.py` does - and the loop calls `compute_once` with
+`check_kernel_equivalence`, never `compute_variants`.
+
+Prospective gates, all fixed in advance. Loop: 4-6 fixations including the seed;
+termination reason must be `no_frontier`, not budget exhaustion; every saccade
+nonzero and <= 5 deg; no repeat. Per patch: oracle-object measurement coverage
+>= 90%. Every non-seed overlap: >= 5,000 points associate, median <= 10 mm,
+p95 <= 25 mm, duplicate replay exactly idempotent. Extension: >= 15% of points
+new on every NONTERMINAL added patch, >= 5% on the TERMINAL boundary-closing
+patch - an asymmetric rule fixed prospectively because the last placement is
+expected to re-see reconstructed surface plus only the remaining strip.
+Persistent surface on the fixed evaluation-only grid: final coverage >= 90%;
+>= 35 pp improvement over the seed patch; every nonterminal post-seed fixation
+>= 10 pp; the terminal one >= 2 pp; no step may lose more than 0.5 pp; final
+point-to-plane median <= 10 mm and p95 <= 30 mm; every map point ID 71.
+
+Preflight verified: clean main at 8e4bcb2 with 7b8d39b an ancestor; the FSG1/FSG2
+frozen diff over the nineteen pinned modules empty; ten files added; environment
+Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0, Blender 5.2.1 LTS on
+an RTX 4090; `previews/fsg3` absent.
+`[fsg3-scene] PASS angular_span=[-10.075,15.190] seed=-7.0 five_looks_reach=true`,
+`[fsg3-map] PASS B=552/648 C=504/696 idempotent=true`,
+`[fsg3-policy] PASS map_state_changes_direction=true resolved_frontier_stops=true`,
+`[fsg3-check] SUMMARY passed=5 failed=0`. All four negatives exit 1 (hard-coded
+frontier direction, failure to stop at a resolved boundary, 5 cm registration
+error, duplicate replay). All nine FSG1/FSG2 regression suites pass:
+24/29/34/48/37/46/7/8/4.
+
+ONE full active run only, seed 307. The number of rendered fixations is the
+policy's decision, not mine after seeing results. No rerender, new seed,
+threshold change, scene change, step change, association-radius change,
+instrument change or manual gaze edit after a numerical miss. A small-profile
+numerical miss is diagnostic; integrity failure, wrong instrument, truth leakage,
+repeated fixation, renderer failure, invalid object ID, non-idempotent map or a
+policy/runtime bug violating the written algorithm stops before full. Outcome
+unknown at writing: a full pass closes Increment 3 and authorizes - but must NOT
+implement - the next experiment, and establishes feasibility, NOT optimality,
+since no competing gaze policy is evaluated. Logs under `previews/fsg3/logs/`.
+
+Measured outcome, appended after the run. **FSG3_INCREMENT3_PASS** on the single
+prescribed full seed-307 active run, exit 0, empty fails list, final surface
+coverage **100.0%**. **Increment 3 is closed; the next experiment is AUTHORIZED
+BUT NOT IMPLEMENTED** - no competing policy, learned policy, pose estimation,
+ICP, meshing, hole filling, object switching, folds, head motion or vergence
+control was written. Feasibility, not optimality: no competing gaze policy was
+evaluated.
+
+Integrity: FSG1/FSG2 frozen diff from 7b8d39b empty; ten files added, none
+modified. Verified by reading the code before running - fsg3_loop.py and
+fsg3_policy.py import no fixture geometry and touch no evaluation_only asset
+(only fsg3_eval.py does), and the loop calls compute_once with
+check_kernel_equivalence, never compute_variants. prediction_manifest records
+truth_opened=false with policy_inputs limited to map xyz_h, current rectified
+oracle mask, raw calibration support, calibration and fixation history; the
+trajectory, five patches, five map snapshots and final map were all written
+before the evaluator opened geometry. Scene/map/policy self-tests PASS
+(angular_span=[-10.075,15.190] seed=-7.0 five_looks_reach=true; B=552/648
+C=504/696 idempotent=true; map_state_changes_direction=true
+resolved_frontier_stops=true), [fsg3-check] SUMMARY passed=5 failed=0, all four
+negatives exit 1, and all nine FSG1/FSG2 suites pass 24/29/34/48/37/46/7/8/4.
+
+**The policy chose the trajectory, not me**: 5 fixations at yaw -7, -2, +3, +8,
++13, every saccade exactly +5 deg and nonzero, no repeat, terminating on
+no_frontier. The reasoning is genuinely frontier-driven at both ends. At the seed
+the object does NOT reach the left edge (left_fraction 0.0) so only one candidate
+exists; at each middle step both edges touch but the leftward candidate is
+excluded as a revisit; at +13 the object no longer reaches the right edge
+(right_fraction 0.0) so no candidate remains and the loop stops. Map yaw extent
+grew [-9.709,-2.400] -> [-9.619,+2.873] -> [-9.534,+8.160] -> [-9.525,+13.272]
+-> [-9.523,**+14.632**] against the fixture's analytic right boundary of +15.190,
+so it stopped at the visible object boundary from segmentation and map evidence
+alone.
+
+Per-patch oracle-object coverage 94.050 / 96.564 / 96.603 / 96.723 / 94.756%
+(gate >=90), point counts 28,405 / 45,134 / 45,962 / 46,580 / 31,819. Overlaps
+(gate >=5,000 matched, median <=10 mm, p95 <=25 mm, idempotent): fix_01 25,720
+matched / 43.014% new / 1.992 / 6.336 mm; fix_02 26,514 / 42.313% / 1.966 /
+6.104; fix_03 26,608 / 42.877% / 1.823 / 5.455; fix_04 26,426 / **16.949%** /
+1.924 / 5.695. All idempotent. Nonterminal new fractions >=15% and the terminal
+16.949% clears its relaxed 5% rule by a wide margin, so the asymmetric allowance
+was not actually needed.
+
+Persistent surface: 92,632 surfels, support histogram {1: 39,551, 2: 47,660,
+3: 5,421}, 15 distinct provenance masks, snapshots 28,405 -> 47,819 -> 67,267 ->
+87,239 -> 92,632. Fixed-grid coverage 33.613 -> 54.601 -> 74.785 -> 94.758 ->
+**100.000%**, gains +20.987 / +20.184 / +19.974 / +5.242 pp, improvement over the
+seed 66.387 pp, no step losing any coverage. Final point-to-plane median
+**4.219 mm** and p95 **13.587 mm** (gates 10 / 30). Object purity absolute: all
+92,632 map points ID 71, every snapshot and every patch pure 71, background 72
+never present.
+
+Small smoke ran the same trajectory, exit 2, missing four gates - fix_00 and
+fix_04 oracle coverage 89.513% and 89.547%, final plane median 11.884 mm and p95
+31.972 mm. Diagnostic under the handoff, and none of the stop conditions applied,
+so full proceeded; all four cleared at full (94.050%, 94.756%, 4.219 mm,
+13.587 mm). Nothing tuned, rerendered or re-seeded; no code fix required.
+
+Visuals: growth.png (truth-free, from the loop) shows a narrow strip at -7
+widening rightward through -2, +3, +8, +13. growth_truth.png shows the same
+against the fixed grid at 33.6 -> 54.6 -> 74.8 -> 94.8 -> 100.0%, final panel
+fully covered. The five patch masks confirm the edge evidence directly: at fix_00
+the object's left boundary sits inside the core while it runs off the right edge;
+fix_01-fix_03 fill the width; at fix_04 background appears at the right edge -
+the boundary that ends the loop. Final map Z median -2.0992 m, X [-0.385,+0.546],
+Y [-0.157,+0.156]. Missing geometry stays missing - no meshing, filling,
+interpolation or registration anywhere.
+
+Cost: smoke 65,536,000 and full 1,048,576,000 primary camera samples. Small loop
+8.234 s wall (2.623 s inside Blender), full loop 59.411 s, full evaluation
+42.817 s.
+
+Scope: a truth-free frontier policy, from one seed fixation, chose four further
+5-deg saccades from the evolving map and its segmentation frontier, stopped
+itself at the visible object boundary, and grew a coherent head-frame surface
+from 33.6% to 100% of the visible object at 4.2 mm median plane accuracy, with
+the FSG1 instrument frozen and no registration estimated. It is one opaque
+diffuse textured planar tilted rectangle under oracle segmentation, horizontal
+saccades only, fixed 2.10 m vergence, one seed, one policy and a 12 mm
+association rule fixed in advance. No competing gaze policy was evaluated, so
+nothing here speaks to optimality - the fixed-scan comparison was deliberately
+deferred until the active loop worked, which it now does. Folds, self-occlusion,
+multi-object switching, head motion, vergence control, calibrated uncertainty and
+hidden-surface completeness remain open. Stopped for Luiz/Chat.

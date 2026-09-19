@@ -233,4 +233,180 @@ If the full run passes, fill a Results section here and update `README.md`, `DEC
 
 ## Results
 
-Pending workstation execution.
+Run 2026-09-19 on the workstation by Code. Every number is read from files under
+`previews/fsg3/`.
+
+**`FSG3_INCREMENT3_PASS`** on the single prescribed full seed-307 active run.
+Every prospective gate is met with an empty `fails` list, and the final surface
+reaches **100.0%** of the fixed evaluation grid. **Increment 3 is closed. The next
+experiment is AUTHORIZED BUT NOT IMPLEMENTED** - no competing policy, learned
+policy, pose estimation, ICP, meshing, hole filling, object switching, fold
+reconstruction, head motion or vergence control was written.
+
+This is feasibility, not optimality: no competing gaze policy was evaluated here.
+
+### Integrity and evidence ordering
+
+HEAD `8e4bcb247bdd69d1edeb1a8f396361256ac7d4bc` on clean `main`, `7b8d39b` an
+ancestor. The FSG1/FSG2 frozen diff over the nineteen pinned modules, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY; ten files added by the
+handoff and none modified. Python 3.12.3, NumPy 2.2.6, OpenCV 4.13.0, Pillow
+12.3.0; Blender 5.2.1 LTS, OPTIX on an RTX 4090. D-FSG3a and a prospective
+`docs/log.md` entry were recorded BEFORE any acquisition.
+
+Two structural invariants were verified by reading the code before running, not
+inferred: `fsg3_loop.py` and `fsg3_policy.py` import no fixture geometry and
+touch no `evaluation_only` asset - only `fsg3_eval.py` does - and the loop calls
+`compute_once` with `check_kernel_equivalence`, never `compute_variants`. Every
+patch and both runs report instrument
+`FSG1-HDR-SGBM-one-original-update-original-validity-v1`.
+`prediction_manifest.json` records `truth_opened: false` with
+`policy_inputs = [persistent map xyz_h, current rectified oracle instance mask,
+raw calibration support, calibration, fixation history]`, and the complete
+trajectory, all five patches, all five map snapshots and the final map were
+written before the evaluator opened any geometry.
+
+`[fsg3-scene] PASS angular_span=[-10.075,15.190] seed=-7.0 five_looks_reach=true`,
+`[fsg3-map] PASS B=552/648 C=504/696 idempotent=true`,
+`[fsg3-policy] PASS map_state_changes_direction=true resolved_frontier_stops=true`,
+`[fsg3-check] SUMMARY passed=5 failed=0`. All four negatives exit 1:
+
+    [fsg3-check] FAIL AssertionError deliberate hard-coded/wrong frontier direction detected
+    [fsg3-check] FAIL AssertionError deliberate failure to stop at resolved boundary detected
+    [fsg3-check] FAIL AssertionError deliberate 5cm registration error detected
+    [fsg3-check] FAIL AssertionError duplicate patch correctly refused to change map
+
+All nine FSG1/FSG2 regression suites pass unchanged: 24 / 29 / 34 / 48 / 37 /
+46 / 7 / 8 / 4.
+
+### The trajectory the policy chose
+
+The policy produced **5 fixations at yaw -7, -2, +3, +8, +13 degrees**, every
+saccade exactly +5 degrees and nonzero, no repeat, terminating on
+**`no_frontier`** rather than budget exhaustion. I selected nothing; the document's
+"approximately five looks" was a design expectation and not an execution gate.
+
+`policy_trace.json`, step by step - map yaw extent is measured from the
+reconstructed map alone, edge evidence from the current oracle mask:
+
+| step | yaw | map yaw extent (deg) | edge touch L / R | candidates | decision |
+| ---: | ---: | --- | --- | --- | --- |
+| 0 | -7 | [-9.709, -2.400] | false / true (0.719) | +5 -> -2, overlap 5.600, new 6.400 | continue |
+| 1 | -2 | [-9.619, +2.873] | true / true | +5 -> +3, overlap 5.873, new 6.127 | continue |
+| 2 | +3 | [-9.534, +8.160] | true / true | +5 -> +8, overlap 6.160, new 5.840 | continue |
+| 3 | +8 | [-9.525, +13.272] | true / true | +5 -> +13, overlap 6.272, new 5.728 | continue |
+| 4 | +13 | [-9.523, **+14.632**] | true / **false (0.000)** | none | **stop: no_frontier** |
+
+The reasoning is genuinely frontier-driven at both ends. At the seed the object
+does not reach the left edge (`left_fraction 0.0`), so only one candidate exists
+and the policy moves right. At every middle step both edges touch, but the
+leftward candidate is excluded as a revisit. At the terminal fixation the object
+no longer reaches the right edge at all, so no candidate remains and the loop
+stops. The map's right extent finished at **+14.632 degrees** against the
+fixture's analytic right boundary of **+15.190** - it stopped at the visible
+object boundary, from segmentation and map evidence only.
+
+### Per-patch measurement (gate >= 90% oracle-object coverage)
+
+| step | patch | yaw | points | object measurement coverage |
+| ---: | --- | ---: | ---: | ---: |
+| 0 | fix_00 | -7 | 28,405 | 94.050% |
+| 1 | fix_01 | -2 | 45,134 | 96.564% |
+| 2 | fix_02 | +3 | 45,962 | 96.603% |
+| 3 | fix_03 | +8 | 46,580 | 96.723% |
+| 4 | fix_04 | +13 | 31,819 | 94.756% |
+
+### Overlap and surface extension (every post-seed patch)
+
+| patch | matched | new | new fraction | affected surfels | overlap median | overlap p95 | idempotent |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| fix_01 | 25,720 | 19,414 | 43.014% | 14,924 | 1.992 mm | 6.336 mm | true |
+| fix_02 | 26,514 | 19,448 | 42.313% | 13,616 | 1.966 mm | 6.104 mm | true |
+| fix_03 | 26,608 | 19,972 | 42.877% | 15,304 | 1.823 mm | 5.455 mm | true |
+| fix_04 | 26,426 | 5,393 | **16.949%** | 14,658 | 1.924 mm | 5.695 mm | true |
+
+All matched counts clear the 5,000 minimum by more than fivefold; all medians are
+under 2 mm against a 10 mm gate and all p95 under 6.4 mm against 25 mm. The three
+nonterminal patches each keep >= 15% new (43.0 / 42.3 / 42.9%), and the terminal
+boundary-closing patch keeps 16.9% against its prospectively relaxed 5% rule -
+comfortably above it, so the asymmetric allowance was not actually needed here.
+Duplicate replay is exactly idempotent at every step.
+
+### Persistent surface
+
+Final map **92,632 surfels**, support histogram **{1: 39,551, 2: 47,660,
+3: 5,421}** with 15 distinct provenance masks. Snapshots grow 28,405 -> 47,819 ->
+67,267 -> 87,239 -> 92,632. Coverage on the fixed evaluation-only grid:
+
+| after fixation | yaw | coverage | gain |
+| ---: | ---: | ---: | ---: |
+| 0 | -7 | 33.613% | (seed) |
+| 1 | -2 | 54.601% | +20.987 pp |
+| 2 | +3 | 74.785% | +20.184 pp |
+| 3 | +8 | 94.758% | +19.974 pp |
+| 4 | +13 | **100.000%** | +5.242 pp |
+
+Final coverage 100.000% (gate >= 90%), improvement over the seed 66.387 pp
+(gate >= 35), each nonterminal post-seed fixation ~20 pp (gate >= 10), the
+terminal one 5.242 pp (gate >= 2), and no step lost any coverage at all (gate:
+no loss beyond 0.5 pp). Final point-to-plane **median 4.219 mm** (gate <= 10) and
+**p95 13.587 mm** (gate <= 30).
+
+Object purity holds everywhere: all 92,632 map points carry instance ID 71, every
+map snapshot is pure 71, every patch NPZ is pure 71, and background ID 72 never
+enters the map.
+
+### Small active smoke, diagnostic
+
+Same trajectory (-7, -2, +3, +8, +13, `no_frontier`), exit 2, missing four gates:
+`fix_00` and `fix_04` object measurement coverage at 89.513% and 89.547% against
+90%, and final plane error median 11.884 mm and p95 31.972 mm against 10 and 30.
+Every loop, overlap, extension, idempotence and coverage gate passed at small,
+with final grid coverage 95.741% and a 65.961 pp gain. Under the handoff a
+small-profile numerical miss is diagnostic; none of the stop conditions applied -
+instrument correct, no truth leakage, no repeated fixation, no renderer failure,
+no invalid object ID, map idempotent, policy within its written algorithm - so
+the full run proceeded. All four cleared at full: 89.513% -> 94.050%, 89.547% ->
+94.756%, 11.884 -> 4.219 mm, 31.972 -> 13.587 mm. Nothing was tuned, rerendered
+or re-seeded, and no code fix was required.
+
+### Visual inspection
+
+`growth.png` (truth-free, written by the loop) shows the accumulated map after
+each fixation: a narrow strip at yaw -7 widening rightward through -2, +3, +8 and
++13. `growth_truth.png` (evaluator) shows the same growth against the fixed truth
+grid with coverage 33.6% -> 54.6% -> 74.8% -> 94.8% -> 100.0%, the final panel
+fully covered. The five `patches/fix_XX_mask.png` confirm the policy's edge
+evidence directly: at `fix_00` the object's left boundary sits inside the core
+while the object runs off the right edge; `fix_01`-`fix_03` fill the full width;
+at `fix_04` a strip of background appears at the right edge, which is the
+boundary that ends the loop. Final map geometry is consistent with the fixture:
+Z median -2.0992 m, X spanning [-0.385, +0.546] m and Y [-0.157, +0.156] m.
+Missing geometry stays missing - no meshing, filling, interpolation or
+registration anywhere in the pipeline.
+
+### Cost
+
+Measured primary camera samples: smoke 65,536,000 (5 fixations x 2 eyes x 320^2 x
+64); full **1,048,576,000** (5 x 2 x 640^2 x 256). Timings: small loop 8.234 s
+wall with 2.623 s recorded inside Blender, smoke evaluation exit 2; full loop
+59.411 s wall, full evaluation 42.817 s wall. Batch class throughout.
+
+### Scope
+
+A truth-free frontier policy, given one seed fixation on a segmented object,
+chose four further 5-degree saccades from the evolving persistent map and its
+current segmentation frontier, stopped by itself at the visible object boundary,
+and grew a coherent head-frame surface from 33.6% to 100% of the visible object
+at 4.2 mm median plane accuracy - with the FSG1 instrument frozen and no
+registration estimated.
+
+It is one opaque diffuse textured planar tilted rectangle under oracle
+segmentation, horizontal saccades only, fixed 2.10 m vergence, one seed, one
+policy, and a 12 mm Euclidean association rule fixed in advance. **No competing
+gaze policy was evaluated, so nothing here speaks to optimality** - a fixed-scan
+comparison was deliberately deferred until the active loop worked, which it now
+does. Folds, self-occlusion, multi-object switching, head motion, vergence
+control, calibrated uncertainty and hidden-surface completeness all remain open.
+The next experiment is authorized on that basis and was not implemented. Stopped
+for Luiz and Chat.

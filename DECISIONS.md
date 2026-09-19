@@ -572,3 +572,34 @@ covers one finite planar tilted object under oracle segmentation, two fixations
 Euclidean association rule; it makes no claim about folds, self-occlusion,
 calibrated uncertainty, active frontier selection, multi-object switching or
 uncontrolled scenes.
+
+## D-FSG3a - Automatic single-object frontier growth (2026-09-19)
+Starting from the frozen seed fixation, test whether the evolving persistent RGB-D map plus oracle segmentation can choose nearby horizontal 5-degree saccades, stop when the segmented surface frontier is resolved, and grow one visible object surface under the fixed FSG1 instrument and FSG2 head-frame fusion principle. Use seed 307, the frozen geometry/policy/fusion parameters and the prospective gates in `docs/fsg3-increment3.md`. A full pass closes Increment 3 and authorizes - but does not implement - the next experiment. It does not establish policy optimality because no competing gaze policy is evaluated here.
+
+A miss is preserved and returned to Luiz/Chat. Code may fix only demonstrated implementation/orchestration defects that violate this written algorithm, never the checks, geometry, seed, policy parameters, SPP, instrument, fusion radius or numerical gates to obtain a pass.
+
+Outcome 2026-09-19 (evidence: `docs/fsg3-increment3.md` Results and
+`docs/log.md`). **FSG3_INCREMENT3_PASS** on the single prescribed full seed-307
+active run, empty fails list. The POLICY chose the trajectory: 5 fixations at yaw
+-7, -2, +3, +8, +13, every saccade exactly +5 deg, no repeat, terminating on
+`no_frontier` - at the seed the object does not reach the left edge so only one
+candidate exists, and at +13 it no longer reaches the right edge so none does.
+The map's right extent finished at +14.632 deg against the fixture's analytic
++15.190, i.e. it stopped at the visible object boundary from segmentation and map
+evidence alone, with the loop and policy verified to import no fixture geometry
+and open no evaluation_only asset. Every gate met: per-patch oracle coverage
+94.050-96.723%; overlaps 25,720-26,608 matched with medians 1.823-1.992 mm and
+p95 5.455-6.336 mm, all idempotent; nonterminal new fractions 42.3-43.0% and the
+terminal 16.949%; fixed-grid coverage 33.613% -> **100.000%** with gains
++20.987/+20.184/+19.974/+5.242 pp and no step losing coverage; final
+point-to-plane median 4.219 mm and p95 13.587 mm; all 92,632 map points ID 71
+with background 72 never present. The small smoke missed four gates
+diagnostically and all four cleared at full; nothing was tuned, rerendered or
+re-seeded and no code fix was required. Per this decision, **Increment 3 is
+CLOSED and the next experiment is AUTHORIZED BUT NOT IMPLEMENTED.** The result is
+feasibility, not optimality - no competing gaze policy was evaluated - on one
+opaque diffuse planar tilted rectangle under oracle segmentation, horizontal
+saccades only, fixed 2.10 m vergence, one seed and a prospectively fixed 12 mm
+association rule. Folds, self-occlusion, multi-object switching, head motion,
+vergence control, calibrated uncertainty and hidden-surface completeness remain
+open.
