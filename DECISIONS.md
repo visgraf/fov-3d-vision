@@ -458,3 +458,31 @@ single right pixel - so endpoint checking alone would catch five of six. Matchin
 IDs, ID-boundary distance and right-bin collision counts would have flagged none.
 Nothing was adopted, changed or swept; per this decision no gate change or fusion
 follows, and the reused seeds 31/73 are now diagnostic data rather than a holdout.
+
+## D-FSG1f - One update and footprint-supported reciprocity (2026-09-19)
+Authorize one opt-in HDR candidate: exactly one original photometric update, separate checks on all positive-weight right disparity contributors, and full 5x5 reciprocal support around both matched endpoints. Encoding, matcher settings, geometric calibration, original vetoes, reference masks and numerical evaluation gates remain unchanged.
+Why: FSG1e confirms damaging repeated updates and mixed interpolation failures, including one self-consistent wrong cycle. Report one-update-only and endpoint-only controls to separate geometry changes from support rejection; neither is an automatic fallback candidate.
+Run the seven existing full-profile pairs once, replay both stored baselines exactly, persist RGB-only predictions before evaluation and preserve all historical failures. Seeds 17/31/73 are development/diagnostic data; no new rays, tuning, default, closure or fusion is authorized.
+Overturned if: source/provenance/replay/reference integrity fails, or the named candidate fails any unchanged full per-instance interior gate or the existing zero-accepted-occlusion-core rule. Complete numerical comparisons, then return the results; never select whichever control happens to pass.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1-supported-candidate.md` Results and
+`docs/log.md`). One comparison on the seven existing full pairs, zero new samples,
+exact replay and inputs byte-identical. Status `CANDIDATE_PASS_ON_DIAGNOSTIC_RECORDS`:
+the named candidate meets every unchanged interior gate on all seven pairs and
+both instances, with no fail line anywhere - every NUMERICAL_FAIL emitted belongs
+to a stored baseline. The two failing backgrounds move from 1.053%/3.123% and
+1.066%/3.127% to 0.383%/1.606% and 0.382%/1.632%, the gain measured on common
+support (median 1.053% -> 0.388%, >3% 10.466% -> 0.152%), and the mandatory 3.4 m
+regression case IMPROVES rather than regressing (0.796% -> 0.333% median). The
+candidate accepts 0 raw and 0 core singly-visible pixels on both seeds and no new
+leak appeared. Attribution stays open: all six tracked locations have
+one_step_valid=False, so the one-step validity already rejects them before either
+new veto, and the endpoint and footprint rules reject them too - the records
+cannot show which mechanism matters. Costs are real and charged: the footprint
+rule removes 2.611% and 2.413% of accepted interior on the occluded background
+(coverage 94.555%/94.665%, clearing 90% by ~4.5 points) and roughly half the
+boundary population. Per this decision nothing is adopted: seeds 17/31/73 are
+development/diagnostic data, so this is not validation and cannot be relabelled
+prospective; no default, milestone closure or fusion follows, and neither control
+was selected. The next step - whether to propose a fresh validation geometry and
+seed for this candidate - belongs to Luiz and Chat.

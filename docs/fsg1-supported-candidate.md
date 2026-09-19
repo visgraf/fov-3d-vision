@@ -294,5 +294,204 @@ Commit and push to main per CLAUDE.md, then stop for Luiz/Chat even on a pass.
 
 ## 7. Results
 
-Pending Code execution. Chat's separate software-validation record is
-`docs/fsg1-supported-checks.md`; synthetic results are not Cycles measurements.
+Run 2026-09-19 on the workstation by Code. Every number is read from
+`previews/fsg1/supported-candidate-comparison/`. Chat's software record in
+`docs/fsg1-supported-checks.md` is untouched and none of its synthetic numbers is
+repeated as a Cycles result. **Zero new primary camera samples**; no Blender ran.
+
+**Status `CANDIDATE_PASS_ON_DIAGNOSTIC_RECORDS`**, exit 0,
+`candidate_all_gates_pass=true`, `inputs_unchanged=true`, 16.625 s, 7 pairs.
+`full_profile_milestone_pass`, `adopted_default`, `fusion_authorized` all false;
+`development_data_only=true`. **This is not validation.** Seeds 17, 31 and 73 have
+all been inspected in earlier steps, so a pass here cannot be relabelled
+prospective; it supports proposing a fresh validation later, nothing more.
+
+### Integrity
+
+HEAD `f3eb838cb3219a04e13b1816c9ef2364810b3e12` on clean `main`, `7073594` an
+ancestor. The diff from `7073594` over the twenty-one instrument modules, checks,
+`rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY before and after;
+only five files were added by the handoff and none was modified. Python 3.12.3,
+NumPy 2.2.6, OpenCV 4.13.0, Pillow 12.3.0 - the environment that produced the
+saved predictions. D-FSG1f and a prospective log entry were recorded BEFORE the
+comparison.
+
+`exact_legacy_and_hdr_replay`, `predictions_saved_before_truth` and
+`same_fixed_references` are true for all seven pairs. The tool hashed 268 input
+files before and after; I re-hashed the same 268 independently: byte-identical.
+Before running I read the module and confirmed the frozen spec: `range(1)` with a
+structural check admitting only `range(3)` -> `range(1)`; endpoint reciprocity
+tested at each strictly-positive-weight contributor separately, no coordinate
+rounding, exactly-zero-weight neighbours ignored; 5x5 reciprocal footprint in the
+left image and at every active right contributor; the old interpolated LR check
+retained in the intersection.
+
+Checks: `[fsg-check] passed=24 failed=0`, `[fsg-audit-check] passed=29 failed=0`,
+`[fsg-hdr-check] passed=34 failed=0`, `[fsg-validation-check] passed=48 failed=0`,
+`[fsg-failure-check] passed=37 failed=0`, `[fsg-supported-check] passed=46
+failed=0`, all `blender_executed=False`; `py_compile` clean on all three new
+files. The four negatives each exit 1:
+
+    [fsg-supported-check] FAIL AssertionError: first update must equal stage 1, not the old three-update result
+    [fsg-supported-check] FAIL AssertionError: averaged cancellation must not pass the endpoint gate
+    [fsg-supported-check] FAIL AssertionError: isolated endpoint agreement does not establish patch support
+    [fsg-supported-check] FAIL ValueError: replay mismatch in disparity_px; no counterfactual analysis authorized
+
+No unexpected exception occurred and no script was fixed.
+
+### All five instruments, per pair and instance (gates 90% / 1% / 3%)
+
+Coverage / median / p95 / fraction over 3%, on the unchanged fixed reference.
+
+| pair / instance | ref | legacy | hdr | one_step | endpoint | **candidate** |
+| --- | ---: | --- | --- | --- | --- | --- |
+| s17/fronto inst 1 | 65536 | 94.786/0.284/1.159/0.000 | 99.019/0.284/1.112/0.000 | 99.104/0.098/0.359/0.000 | 99.104/0.098/0.359/0.000 | **99.104/0.098/0.359/0.000** |
+| s17/tilted inst 1 | 65536 | 98.433/0.319/1.348/0.000 | 98.912/0.318/1.366/0.000 | 99.062/0.116/0.490/0.000 | 99.054/0.116/0.490/0.000 | **98.892/0.116/0.488/0.000** |
+| s17/step inst 1 | 36608 | 79.319/0.137/0.595/0.000 **FAIL** | 99.361/0.142/0.649/0.000 | 99.399/0.055/0.220/0.000 | 99.399/0.055/0.220/0.000 | **99.399/0.055/0.220/0.000** |
+| **s17/step inst 2 (3.4 m)** | 24320 | 99.819/0.785/2.497/2.781 | 99.572/0.796/2.572/3.023 | 99.737/0.333/1.176/0.173 | 99.737/0.333/1.176/0.173 | **99.737/0.333/1.176/0.173** |
+| s31/tilted_holdout | 65536 | 99.951/0.258/1.123/0.031 | 99.763/0.251/1.106/0.026 | 99.785/0.112/0.448/0.000 | 99.785/0.112/0.448/0.000 | **99.785/0.112/0.448/0.000** |
+| s31/step_right inst 1 | 25088 | 96.959/0.195/0.722/0.000 | 99.868/0.183/0.705/0.000 | 99.904/0.103/0.293/0.000 | 99.904/0.103/0.293/0.000 | **99.904/0.103/0.293/0.000** |
+| **s31/step_right inst 2 (3.2 m)** | 33536 | 96.338/1.053/3.123/10.830 **FAIL** | 96.225/1.053/3.123/10.471 **FAIL** | 97.090/0.391/1.678/0.175 | 96.988/0.391/1.661/0.138 | **94.555/0.383/1.606/0.035** |
+| s73/tilted_holdout | 65536 | 99.962/0.258/1.109/0.020 | 99.768/0.251/1.092/0.006 | 99.786/0.111/0.447/0.000 | 99.786/0.111/0.447/0.000 | **99.786/0.111/0.447/0.000** |
+| s73/step_right inst 1 | 25088 | 96.939/0.194/0.717/0.000 | 99.904/0.182/0.706/0.000 | 99.908/0.101/0.293/0.000 | 99.908/0.101/0.293/0.000 | **99.908/0.101/0.293/0.000** |
+| **s73/step_right inst 2** | 33536 | 96.246/1.060/3.127/11.386 **FAIL** | 96.225/1.066/3.127/11.097 **FAIL** | 97.006/0.390/1.688/0.111 | 96.923/0.390/1.680/0.102 | **94.665/0.382/1.632/0.000** |
+
+Every `NUMERICAL_FAIL` line emitted belongs to a stored BASELINE, preserved as
+historical fact. The named candidate has no fail line on any pair or instance, and
+`wrong_instance_accepted_count` is 0 for all five instruments everywhere.
+
+The accuracy change is not marginal. On the same reference the candidate's median
+error is roughly a third of the HDR baseline's on every surface, and on the two
+failing backgrounds it moves 1.053% -> 0.383% and 1.066% -> 0.382% with p95
+3.123% -> 1.606% and 3.127% -> 1.632%. The fraction over 3% collapses from
+10.5-11.1% to 0.035% and 0.000%.
+
+### HDR baseline -> one step, on common support
+
+| pair / instance | common | gained | lost | neither | common median | common p95 | common >3% |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| s17/fronto | 64893 | 56 | 0 | 587 | 0.284% -> 0.098% | 1.112% -> 0.359% | 0.000% -> 0.000% |
+| s17/tilted | 64823 | 98 | 0 | 615 | 0.318% -> 0.116% | 1.366% -> 0.489% | 0.000% -> 0.000% |
+| s17/step inst 1 | 36374 | 14 | 0 | 220 | 0.142% -> 0.055% | 0.649% -> 0.220% | 0.000% -> 0.000% |
+| **s17/step inst 2** | 24216 | 40 | 0 | 64 | **0.796% -> 0.333%** | **2.572% -> 1.169%** | 3.023% -> 0.173% |
+| s31/tilted_holdout | 65381 | 14 | 0 | 141 | 0.251% -> 0.112% | 1.106% -> 0.447% | 0.026% -> 0.000% |
+| s31/step_right inst 1 | 25055 | 9 | 0 | 24 | 0.183% -> 0.103% | 0.705% -> 0.293% | 0.000% -> 0.000% |
+| **s31/step_right inst 2** | 32267 | 293 | 3 | 973 | **1.053% -> 0.388%** | **3.123% -> 1.653%** | 10.466% -> 0.152% |
+| s73/step_right inst 2 | 32259 | 273 | 11 | 993 | 1.066% -> 0.387% | 3.127% -> 1.666% | 11.079% -> 0.093% |
+
+The improvement is on the SAME pixels, not from a changed support: the common
+population is 32,267 of 33,536 on the failing background and its median drops by a
+factor of 2.7 while the >3% fraction falls 69-fold. The 3 pixels lost there had a
+median error of 4.10% with two-thirds over 3%; the 293 gained sit at 1.03% median.
+
+First-update shifts on accepted support run to the original +/-0.5 per-update clip
+and no further, so the old +/-0.75 total cap is unreachable in one update, as the
+handoff stated. On the failing background the shift median is -0.037 px.
+
+**The mandatory regression case does not regress.** FSG1e warned that removing
+refinement would break the older 3.4 m background, whose true disparity phase is
+near half-integer. One update improves it as well: 0.796% -> 0.333% median,
+2.572% -> 1.176% p95, coverage 99.572% -> 99.737%, over-3% 3.023% -> 0.173%. One
+update is the better stage for both the near-integer and the half-integer surface
+on these records; no per-scene update count was used or needed.
+
+### The two additional vetoes, and what they cost
+
+| pair / instance | one_step accepted | rejected by endpoints | rejected by footprint | candidate accepted | total cost |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| s17/fronto | 64949 | 0 | 0 | 64949 | 0.000% |
+| s17/tilted | 64921 | 5 | 106 | 64810 | 0.171% |
+| s17/step inst 1 | 36388 | 0 | 0 | 36388 | 0.000% |
+| s17/step inst 2 | 24256 | 0 | 0 | 24256 | 0.000% |
+| s31/tilted_holdout | 65395 | 0 | 0 | 65395 | 0.000% |
+| s31/step_right inst 1 | 25064 | 0 | 0 | 25064 | 0.000% |
+| **s31/step_right inst 2** | 32560 | 34 | **816** | 31710 | **2.611%** |
+| s73/step_right inst 2 | 32532 | 28 | **757** | 31747 | **2.413%** |
+
+The footprint rule is where the cost sits, and it is concentrated entirely on the
+occluded step background: 2.6% and 2.4% of accepted interior, against 0.17% or
+nothing elsewhere. Coverage there falls to 94.555% and 94.665%, which still clears
+the 90% floor with about 4.5 points to spare. That cost is charged against the
+unchanged reference; no mask was shrunk.
+
+Boundary is not gated but the cost there is larger and must be stated: on
+`s31/step_right` accepted boundary pixels go 1,279 (one step) -> 1,278 (endpoint)
+-> **762** (candidate) of 2,304, and on `s17/step` 2,885 -> 2,801 -> **1,381** of
+4,608. Boundary accuracy improves on what remains (s31 median 0.123% -> 0.106%,
+p95 0.312% -> 0.293%), but roughly half the boundary population is rejected. The
+interior gate does not validate boundary behaviour and this is a real reduction.
+
+### Occlusion: every tracked location, and an honest attribution
+
+Fixed denominators are unchanged: 4,608 raw and 3,528 core singly-visible pixels
+per `step_right` seed, `NOT_EXERCISED` on all three `full-seed17` cases and both
+`tilted_holdout` seeds (zero reference, never an invented pass).
+
+| instrument | s31 raw / core accepted | s73 raw / core accepted |
+| --- | ---: | ---: |
+| legacy_baseline | 2 / 2 **FAIL** | 2 / 0 |
+| hdr_baseline | 2 / 2 **FAIL** | 0 / 0 |
+| one_step_control | 0 / 0 | 0 / 0 |
+| endpoint_control | 0 / 0 | 0 / 0 |
+| **candidate** | **0 / 0** | **0 / 0** |
+
+`occlusion_tracking.csv` holds six rows - the union of every previously accepted
+singly-visible location - and **no new leak appeared anywhere**. All six are
+rejected by the candidate. Per row: four at seed 31 are `in_core=True` (two that
+the HDR baseline accepted at u=337, v=275/276 with 1.377 m error, and two that the
+legacy baseline accepted at u=325, v=298/299 with 0.648/0.643 m error), and the
+two seed-73 rows are `in_core=False` raw-strip points the legacy baseline accepted
+at 0.571 m error.
+
+The attribution must be stated carefully, because these records cannot separate
+the mechanisms. For all six rows `one_step_valid=False` - the one-step original
+validity ALREADY rejects every one of them, before either new veto applies - AND
+`endpoint_left=False` with `max_active_endpoint_residual` between 7.0 and 43.6 px
+against the 1.0 px tolerance, AND `footprint_left=False` and
+`supported_cycle=False`. The rejection is redundant three times over. **So this
+comparison does not demonstrate that the support rule is what prevents leakage**;
+it shows only that the candidate leaks nothing on these records. Zero leaks here
+is an observed result on two fixtures at two seeds, not a theorem, and the
+software suite deliberately retains a test showing a coherent wrong reciprocal
+field can still pass the support rule.
+
+### Visuals and point clouds
+
+Inspected `supported_comparison.png` for `validation-full-seed31/step_right` and
+`full-seed17/step`, and the candidate head-frame PLYs for all seven pairs. On the
+seed-31 sheet the four instruments share identical RGB; the baseline's
+"Interior error / 3%" panel is almost entirely white across the background while
+one_step, endpoint and candidate are progressively darker, so the accuracy gain is
+visible rather than only tabulated. The candidate's validity panel shows a
+slightly wider rejected band at the occlusion strip - the footprint cost, visible
+and counted. The "Unsafe accepted occlusion core" panel is a single minute white
+mark for the baseline and entirely black for all three new variants.
+
+Candidate PLYs are head-frame with no faces and correct depths: `s31/step_right`
+57,536 vertices (25,826 at Z = -1.8015 m; 31,710 at -3.2007 m) and `s73` 57,572
+(25,825 at -1.8014; 31,747 at -3.2007) against the frozen -1.8 / -3.2;
+`s17/step` 62,025 (-1.6004 / -3.4047); `s17/fronto` 64,949 at -1.9992;
+`tilted_holdout` 65,395 / 65,396 at -2.5464 / -2.5460. Missing regions remain
+missing - nothing is filled, meshed, registered or fused.
+
+### What this does and does not establish
+
+The named candidate, fixed in advance, meets every unchanged interior gate on all
+seven pairs and both instances, leaks nothing into either occlusion population,
+and improves accuracy roughly three-fold over the HDR baseline while keeping the
+mandatory 3.4 m regression case comfortably better than before. The two controls
+are reported for attribution only; the named candidate passed, so no question of
+selecting a control arises, and neither is a fallback.
+
+Against that: these seven pairs are development and diagnostic data that produced
+the hypothesis, so this is not validation of any kind. The one-step rule is chosen
+from FSG1e's evidence, not proven optimal, and the gradient denominator it uses is
+still the ill-conditioned one. The footprint rule costs 2.4-2.6% of interior
+coverage and roughly half the boundary population on the occluded step, and it can
+reject correct interiors near missing correspondences or thin structure. A
+spatially coherent wrong reciprocal field can still pass it. All prior failures
+stand unaltered: the small-profile misses, the analytic bright-full stress, and
+FSG1d's `FROZEN_CANDIDATE_VALIDATION_FAIL` on its own records.
+
+No default adopted, no milestone closed, no fusion, no gate or reference changed,
+nothing tuned and no control selected. Stopped for Luiz and Chat.

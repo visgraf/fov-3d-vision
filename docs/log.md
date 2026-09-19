@@ -1943,3 +1943,148 @@ Audit only. Nothing tuned, no candidate, no threshold selected, no script fixed,
 no unexpected failure. All prior failures stand. No default adopted, no milestone
 closed, no gate changed, no fusion. Seeds 31/73 are now diagnostic data, not a
 fresh holdout. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG1f one-update supported-reciprocity candidate: authorized, prospective entry (written before execution)
+
+Per `docs/fsg1-supported-candidate.md` and D-FSG1f appended just above. One
+opt-in candidate plus TWO PREDEFINED ablation controls, on the seven existing
+full-profile pairs. Zero new camera samples, no render. The command, written
+before running it:
+
+    .venv/bin/python -u tools/fsg_supported_compare.py \
+      --development previews/fsg1/full-seed17 \
+      --development-results previews/fsg1/hdr-candidate-seed17 \
+      --validation previews/fsg1/validation-full-seed31 previews/fsg1/validation-full-seed73 \
+      --validation-results previews/fsg1/validation-full-evaluation \
+      --out previews/fsg1/supported-candidate-comparison
+
+Five instruments reported in a fixed order: stored legacy baseline, stored HDR
+baseline, fresh one_step_control, endpoint_control, and the named candidate. The
+last three share the same new disparity arrays and their supports are nested, so
+accuracy changes separate from rejection changes. **The named candidate is fixed
+in advance; a control that happens to pass is NOT a fallback and must not be
+selected afterwards.**
+
+The candidate is: exactly one original photometric update (`range(3)` ->
+`range(1)`, everything inside identical, structurally checked); plus separate
+reciprocity at EVERY strictly-positive-weight right contributor (not their
+weighted average, no coordinate rounding, exactly-zero-weight neighbours
+ignored); plus full 5x5 reciprocal footprint support in the left image and at
+every active right contributor. Verified by reading the module before running.
+The old interpolated LR check is retained in the intersection - this is an extra
+veto, not a relaxed replacement. Encoding, SGBM settings, calibration, the 0.5 px
+per-update clip, texture cutoff, reference masks and all numerical gates are
+unchanged.
+
+Motivated by FSG1e's measurements: repeated updates damage a near-integer-phase
+surface (raw 0.099%/0.359% degraded to 1.053%/3.123%, ~88% of bad pixels at a
+cap), while the old 3.4 m background NEEDS refinement (raw 1.620% would fail the
+1% gate, final 0.785% passes) - so the old background is a mandatory regression
+case and no per-scene update count is permitted. Five of the six known leaks were
+interpolation of incompatible endpoints; one was a valid single-endpoint cycle
+that was still wrong, which this support rule is NOT guaranteed to catch.
+
+Known before running, from `docs/fsg1-supported-checks.md`: on Chat's ANALYTIC
+fixtures the candidate passes, but its seed-31/73 right-step background coverage
+is already only ~94.9%, so the two-sided footprint rule's coverage cost is real
+and could miss the 90% floor on the actual Cycles records. That cost is charged
+against the UNCHANGED reference; reference masks must not shrink to accommodate
+it. A coherent wrong disparity field can still pass the support rule - a software
+test asserts that limitation deliberately, and zero leaks would be an observed
+result, not a theorem.
+
+Preflight verified: clean main at f3eb838 with 7073594 an ancestor, the frozen
+diff over the twenty-one instrument modules, rig, bl_common and
+requirements-fsg.txt empty, all five input roots and 14 saved predictions
+present, environment Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0
+matching the saved predictions, and all 268 input files fingerprinted beforehand.
+
+Outcome unknown at writing. A pass on all seven is only
+`CANDIDATE_PASS_ON_DIAGNOSTIC_RECORDS` - seeds 17/31/73 have all been inspected
+and are development/diagnostic data, so this can never be relabelled prospective
+validation; it would at most support proposing a fresh validation later. Exit 2
+is a numerical miss (reported, retained); exit 1 is an integrity stop.
+`full_profile_milestone_pass`, `adopted_default` and `fusion_authorized` stay
+false either way. All prior failures stand. Logs under
+`previews/fsg1/supported-candidate-logs/`.
+
+Measured outcome, appended after the run. **CANDIDATE_PASS_ON_DIAGNOSTIC_RECORDS**,
+exit 0, candidate_all_gates_pass true, inputs_unchanged true, 7 pairs, 16.625 s,
+zero new camera samples. Flags full_profile_milestone_pass / adopted_default /
+fusion_authorized all false, development_data_only true.
+
+Integrity: frozen diff from 7073594 empty before and after, five files added and
+none modified, environment matching the saved predictions,
+exact_legacy_and_hdr_replay / predictions_saved_before_truth /
+same_fixed_references true for all seven pairs, 268 input files re-hashed
+byte-identical by me as well as by the tool. Checks 24/29/34/48/37/46 with zero
+failures; the four negatives exit 1 with their stated causes. No script fixed, no
+unexpected exception.
+
+Every NUMERICAL_FAIL line emitted belongs to a stored BASELINE; the named
+candidate has none on any pair or instance, and wrong_instance is 0 for all five
+instruments everywhere. Candidate per instance (coverage/median/p95):
+fronto 99.104/0.098/0.359; tilted 98.892/0.116/0.488; s17 step fg
+99.399/0.055/0.220 and bg 99.737/0.333/1.176; s31 tilted_holdout
+99.785/0.112/0.448; s31 step_right fg 99.904/0.103/0.293 and bg
+94.555/0.383/1.606; s73 tilted_holdout 99.786/0.111/0.447; s73 step_right fg
+99.908/0.101/0.293 and bg 94.665/0.382/1.632.
+
+The two failing backgrounds move from 1.053%/3.123% and 1.066%/3.127% to
+0.383%/1.606% and 0.382%/1.632%, with the over-3% fraction collapsing from
+10.5-11.1% to 0.035% and 0.000%. On COMMON support (32,267 of 33,536 pixels at
+seed 31) the median falls 1.053% -> 0.388% and >3% 10.466% -> 0.152%, so the gain
+is on the same pixels rather than from a changed support; 3 pixels lost there had
+median error 4.10%, the 293 gained sit at 1.03%. First-update shifts reach the
+original +/-0.5 per-update clip and no further, so the old +/-0.75 total cap is
+unreachable in one update.
+
+**The mandatory regression case does not regress.** FSG1e warned that deleting
+refinement would break the older 3.4 m background (near half-integer phase); one
+update improves it too, 0.796% -> 0.333% median and 2.572% -> 1.176% p95 with
+coverage 99.572% -> 99.737%. One update is the better stage for both the
+near-integer and half-integer surface here; no per-scene update count was used.
+
+Cost of the two extra vetoes, concentrated entirely on the occluded step
+background: endpoints reject 34 (s31) and 28 (s73) pixels, the footprint rejects
+816 and 757, total 2.611% and 2.413% of accepted interior, against 0.171% on
+tilted and nothing elsewhere. Coverage there is 94.555% and 94.665%, clearing the
+90% floor by about 4.5 points. Boundary is not gated but the reduction is larger
+and real: accepted boundary goes 1,279 -> 762 of 2,304 on s31/step_right and
+2,885 -> 1,381 of 4,608 on s17/step, i.e. roughly half the boundary population
+rejected, while accuracy on what remains improves slightly.
+
+Occlusion: fixed denominators unchanged (4,608 raw / 3,528 core per step_right
+seed; NOT_EXERCISED on all three full-seed17 cases and both tilted_holdout
+seeds). The candidate accepts 0 raw and 0 core on BOTH seeds, against the legacy
+baseline's 2/2 at seed 31 and 2/0 at seed 73 and the HDR baseline's 2/2 at seed
+31. occlusion_tracking.csv holds six rows - the union of all previously accepted
+locations - and NO new leak appeared; all six are rejected. But the attribution
+must stay honest: every row has one_step_valid=False, so the one-step original
+validity ALREADY rejects all six before either new veto applies, and also
+endpoint_left=False (max active endpoint residual 7.0-43.6 px vs a 1.0 px
+tolerance) and footprint_left=False. The rejection is redundant three times over,
+so these records do NOT demonstrate that the support rule is what prevents
+leakage. Zero leaks is an observed result on two fixtures at two seeds, not a
+theorem; the suite deliberately retains a test showing a coherent wrong
+reciprocal field can pass the support rule.
+
+Visuals: supported_comparison.png for s31/step_right and s17/step. Identical RGB
+across instruments; the baseline's interior-error panel is almost entirely white
+across the background while one_step/endpoint/candidate are progressively darker;
+the candidate's validity band at the occlusion strip is visibly wider (the
+counted footprint cost); the unsafe-accepted-core panel goes from one minute mark
+to entirely black. Candidate PLYs head-frame, no faces, correct depths
+(s31/step_right 57,536 pts at Z -1.8015 / -3.2007 against the frozen -1.8 / -3.2;
+s17/step 62,025 at -1.6004 / -3.4047; fronto 64,949 at -1.9992; tilted_holdout
+65,395/65,396 at -2.5464/-2.5460). Holes remain missing; nothing filled or fused.
+
+This is NOT validation: seeds 17/31/73 have all been inspected, so a pass here
+cannot be relabelled prospective and at most supports proposing a fresh
+validation later. One step is chosen from FSG1e evidence, not proven optimal, and
+still uses the ill-conditioned denominator. All prior failures stand unaltered,
+including the small-profile misses, the analytic bright-full stress and FSG1d's
+FROZEN_CANDIDATE_VALIDATION_FAIL on its own records. Nothing tuned, no control
+selected (the named candidate passed, so the question did not arise), no default
+adopted, no milestone closed, no fusion. Stopped for Luiz/Chat.
