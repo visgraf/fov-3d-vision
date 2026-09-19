@@ -97,7 +97,7 @@ def execute(args) -> dict:
         raise ValueError("unknown FSG4 policy")
 
     yaws=[]; patch_stats=[]; assoc_stats=[]; policy_trace=[]
-    samples=0; render_seconds=0.0; snapshots=[]; supports=[]; sm=None
+    samples=0; new_samples=0; reused_views=0; render_seconds=0.0; snapshots=[]; supports=[]; sm=None
     yaw = public.SEED_GAZE_YAW_DEG
     termination = None
     t0 = time.perf_counter()
@@ -105,8 +105,14 @@ def execute(args) -> dict:
     for step in range(public.MAX_BUDGET_FIXATIONS):
         if any(abs(yaw-z) < 1e-9 for z in yaws):
             raise AssertionError("policy revisited an existing fixation")
-        case, rr = run_blender(args, step, yaw, args.out/"acquisitions")
+        provider = getattr(args, "view_provider", None)
+        if provider is None:
+            case, rr = run_blender(args, step, yaw, args.out/"acquisitions")
+        else:
+            case, rr = provider(args, step, yaw, args.out/"acquisitions")
         samples += int(rr["primary_camera_samples"])
+        new_samples += int(rr.get("new_primary_camera_samples", rr["primary_camera_samples"]))
+        reused_views += int(bool(rr.get("paired_observation_reused", False)))
         render_seconds += float(rr["total_wall_seconds"])
         c, obs = hdr.read_observation(case)
         rec, meta, _ = compute_once(c, obs)
@@ -188,10 +194,12 @@ def execute(args) -> dict:
         "seed":args.seed,"policy":args.policy_name,"fixation_yaws_deg":yaws,"termination_reason":termination,
         "patch_stats":patch_stats,"association_stats":assoc_stats,"truth_opened":False,
         "policy_inputs":["persistent map xyz_h","current rectified oracle instance mask","raw calibration support","calibration","fixation history"] if args.policy_name=="active" else [],
-        "primary_camera_samples":samples,"blender_recorded_wall_seconds":render_seconds,"loop_wall_seconds":time.perf_counter()-t0,
+        "primary_camera_samples":samples,"new_primary_camera_samples":new_samples,
+        "paired_observation_reuse_count":reused_views,
+        "blender_recorded_wall_seconds":render_seconds,"loop_wall_seconds":time.perf_counter()-t0,
     }
     json_write(args.out/"prediction_manifest.json", manifest)
-    print("[fsg4-run] COMPLETE", json.dumps({"fixture":args.fixture,"seed":args.seed,"policy":args.policy_name,"fixations":len(yaws),"yaws":yaws,"termination":termination,"samples":samples}, sort_keys=True), flush=True)
+    print("[fsg4-run] COMPLETE", json.dumps({"fixture":args.fixture,"seed":args.seed,"policy":args.policy_name,"fixations":len(yaws),"yaws":yaws,"termination":termination,"samples":samples,"new_samples":new_samples,"reused_views":reused_views}, sort_keys=True), flush=True)
     return manifest
 
 
