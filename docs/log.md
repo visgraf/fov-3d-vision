@@ -1819,3 +1819,127 @@ fixture, spp or seed change, and no repeated acquisition. Prior FSG1c limitation
 stand (29-pixel weak cohort; analytic bright-full coverage failure), as do all
 earlier failures. No default adopted, FSG1 not closed, no fusion. Stopped for
 Luiz/Chat.
+
+
+### 2026-09-19 - FSG1e stage and visibility audit: authorized, prospective entry (written before execution)
+
+Per `docs/fsg1-stage-visibility-audit.md` and D-FSG1e appended just above. A
+read-only replay and instrumentation of EXISTING predictions. Zero new camera
+samples, no render, no estimator change. The command, written before running it:
+
+    .venv/bin/python -u tools/fsg_failure_audit.py \
+      --development previews/fsg1/full-seed17 \
+      --development-results previews/fsg1/hdr-candidate-seed17 \
+      --validation previews/fsg1/validation-full-seed31 previews/fsg1/validation-full-seed73 \
+      --validation-results previews/fsg1/validation-full-evaluation \
+      --out previews/fsg1/stage-visibility-audit
+
+The seven full-profile pairs, fourteen instrument-pair combinations: development
+`full-seed17` fronto/tilted/step (legacy and HDR candidate), and validation
+seeds 31 and 73, `tilted_holdout` and `step_right` (legacy and HDR candidate).
+
+**These validation observations are now DIAGNOSTIC data.** Seeds 31 and 73 have
+been inspected in detail here, so they are no longer a fresh holdout for any
+future fix; a later candidate needs new validation geometry as well as these
+preserved records.
+
+Two open questions, neither assumed: (1) does the failing 3.2 m background have
+usable discrete SGBM estimates that the bounded refinement then damages, and do
+the error atoms sit on the +/-0.75 px cap - the arithmetic is suggestive, since
+with d_true = 23.97619842464091 px an initialization of 24 capped to 23.25 gives
+23.97619842464091/23.25 - 1 = 0.03123434084477 against the reported seed-31 p95 of
+0.031234338696499123, and 24.75 gives about 3.12647%, but that is a CALCULATION
+from calibration and a hypothetical initialization, not a measured cap
+population; and (2) for each accepted half-occluded point, is the small LR
+residual an average of incompatible right endpoints or a genuinely
+self-consistent but wrong correspondence. Both are possibilities. The audit must
+confirm or refute, and the regression on the original 3.4 m background matters:
+success near an integer disparity cannot justify deleting refinement everywhere.
+
+Preflight verified before writing this: clean main at 3ca52de with d274fac an
+ancestor, the instrument diff over the nineteen pinned modules, rig, bl_common
+and requirements-fsg.txt empty, all seven input pairs complete, and saved
+prediction metadata NumPy 2.2.6 / OpenCV 4.13.0 matching this venv. Exit 0 means
+the audit completed with equal replay - never that FSG1 passed. An integrity
+exception stops immediately. Outputs without a final audit.json are INCOMPLETE.
+All prior failures stand, including FSG1d's FROZEN_CANDIDATE_VALIDATION_FAIL,
+the two seed-31 core leaks and the 3.2 m background miss. No default adoption,
+milestone closure, gate change, new candidate or fusion follows. Logs under
+`previews/fsg1/stage-visibility-logs/`.
+
+Measured outcome, appended after the audit. `AUDIT_COMPLETE_NOT_A_MILESTONE`,
+exit 0, 7 pairs / 14 combinations, exact_replay true, inputs_unchanged true,
+15.948 s, zero new camera samples. Integrity: instrument diff from d274fac empty
+before and after, 11 frozen source hashes verified by the tool, 268 input files
+re-hashed byte-identical by me as well, exact_replay / no_acceptance_change /
+trace_saved_before_truth true for all 14, prior gate results untouched
+(full-seed17 FAIL, FSG1d FROZEN_CANDIDATE_VALIDATION_FAIL). Checks 24/29/34/48/37
+with zero failures; three negatives exit 1 with their intended wording.
+
+**Q1/Q2 - the cap explanation is CONFIRMED.** On the failing 3.2 m background the
+RAW SGBM estimate is excellent: median 0.099%, p95 0.359%, well inside the gate.
+Each refinement update makes it monotonically worse - 0.386/1.650, 0.741/2.886,
+1.053/3.123 - and 3,482 of the 3,499 bad pixels were GOOD before refinement
+(only 71 went the other way). The true phase is 0.976198, so d_true =
+23.976198 px, and SGBM initialises at exactly integer 24 for 90.5% of accepted
+background pixels. The top two final-disparity atoms are 23.25 px (1,631 px,
+5.05%) and 24.75 px (1,240 px, 3.84%) - exactly 24 -/+ 0.75. The lower-cap
+cohort's median relative range error is 0.031234340844770295 against the
+predicted 0.03123434084477, the upper-cap cohort's 0.03126471011551888 against
+the predicted ~3.12647%, and the reported seed-31 p95 was 0.031234338696499123.
+The two caps are ~11% of accepted pixels and ~88% of every pixel over 3%.
+Driver: iteration-1 gradient variance median 2.20e-05 with unbounded steps from
+-42.19 to +15.86 px - ill-conditioned Gauss-Newton clipped to 0.5/iteration and
+accumulating to the 0.75 bound. Tail pixels are 2.9-43x worse conditioned than
+the rest of the same surface.
+
+**Q5 - aggregate regularity, noise-selected membership.** Across seeds the
+signed-error correlation on that background is only 0.045 (legacy) / 0.048 (hdr),
+bad-pixel Jaccard 0.150 / 0.145, 910 of 6,083 union-bad pixels bad in both, and
+per-pixel seed differences span -3.91% to +3.85%. The foreground correlates at
+0.711 and tilted_holdout at 0.810. So the caps recur in near-identical proportion
+but land on different pixels. Two seeds of one geometry prove no independence.
+
+**Q3/Q6 - the regression that forbids simply deleting refinement.** On the
+ORIGINAL 3.4 m background the true phase is 0.565833, near half-integer, so the
+discrete peak cannot be nearly right: raw median 1.620% would FAIL the 1% gate
+on its own, and refinement takes it to 0.785%, a pass, with tail shift median
++0.5232 px toward truth and only 21.78% of its bad pixels at a cap. Same
+direction elsewhere: fronto 0.787% -> 0.285%, tilted 0.366% -> 0.318%,
+tilted_holdout 0.472% -> 0.258%, step_right foreground 0.729% -> 0.195%.
+Refinement helps wherever the true disparity is NOT near an integer and hurts
+where it is. A bigger cap or no cap is not the indicated response.
+
+**Q4 - six accepted half-occluded points, and they are NOT one mechanism.** Six
+exist across all 14 combinations; every other CSV is empty (not proof of safety).
+Four at seed 31 are inside the eroded core (2 legacy, 2 hdr); the two seed-73
+legacy rows are raw-strip points outside the core, which is why FSG1d scored
+seed 73 a pass. cycle_both_endpoints_pass is False in ALL six while the
+interpolated check passes in all six. One is true cancellation - s31/hdr
+(337,275): x0 +18.472 and x1 -1.074, NEITHER passing alone, cancelling to +0.148.
+Four are endpoint masking: the near endpoint passes (|res| 0.125-0.938) at weight
+0.81-0.94 while the far one is 6-18 px wrong. One - s31/legacy (325,299) - has
+weight1_ideal 0.0, so the interpolated residual IS the single-endpoint residual
+-0.25 px: a genuinely self-consistent cycle that is still wrong by 0.643 m.
+Endpoint checking would have caught five of six and NOT the sixth, so it is
+insufficient on its own. The ID check passes on all six because the match lands
+on another part of the SAME background 6-18 px from the true projection
+(right_x_predicted ~294.9 vs right_x_true_surface 300-313); ID-boundary distance
+is 3-16 px; right-bin collision count is 1 with margin 0.0 on every row, so that
+diagnostic would not have flagged them either. All six ALSO sit at exactly the
+-0.75 px cap with unbounded steps -0.33 to -13.72 px - the cap did not cause the
+leak, since SGBM's initial peak was already grossly wrong (42.8/30.8/29.9 vs
+23.976), but the same conditioning symptom appears in both failures.
+
+Visuals: stage_visibility.png for s31 step_right (legacy and hdr), s73
+step_right, full-seed17/step and s31 tilted_holdout. On the new step the raw-error
+panel is almost entirely black, update 1 speckles and update 3 is heavily white;
+the cap panel is a dense speckle over the same region; accepted-in-core is black
+but for one mark at seed 31; "cycle interpolation pass only" clusters along the
+occlusion strip. full-seed17/step is the converse - uniformly mid-grey raw
+background that update 1 visibly darkens, with an empty occlusion core.
+
+Audit only. Nothing tuned, no candidate, no threshold selected, no script fixed,
+no unexpected failure. All prior failures stand. No default adopted, no milestone
+closed, no gate changed, no fusion. Seeds 31/73 are now diagnostic data, not a
+fresh holdout. Stopped for Luiz/Chat.

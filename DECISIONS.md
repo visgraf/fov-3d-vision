@@ -427,3 +427,34 @@ clause, a failed full instance and an unsafe core acceptance both apply: no
 limited adoption and no two-patch experiment follow. The next step is Luiz's and
 Chat's, and would need an explicit occlusion-rejection mechanism and a decision
 about the far-surface accuracy limit before any fusion.
+
+## D-FSG1e - diagnose refinement and false cycles without changing the instrument (2026-09-19)
+Keep FSG1d's validation FAIL, the HDR candidate, and all earlier results unchanged.
+Replay seven existing full-profile pairs and audit raw SGBM, each of the three
+frozen refinement updates, and every accepted singly-visible point; no new rays.
+Why: the 3.1234% tail is numerically compatible with a refinement cap, and two
+false matches pass all existing vetoes. Neither mechanism is established yet.
+Overturned if: exact replay/provenance fails or the fixed support/reference cannot
+be reproduced; stop rather than interpreting those diagnostics. No default
+adoption, milestone closure, gate change, new candidate, or fusion is authorized.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1-stage-visibility-audit.md` Results and
+`docs/log.md`). Audit completed with exact replay on all 14 combinations, inputs
+byte-identical, zero new samples. CONFIRMED the cap explanation: on the failing
+3.2 m background raw SGBM is 0.099%/0.359% median/p95, refinement degrades it
+monotonically to 1.053%/3.123%, 3,482 of 3,499 bad pixels were good beforehand,
+d_true = 23.976198 px with 90.5% of initialisations at integer 24, the top final
+atoms are 23.25 px (1,631) and 24.75 px (1,240), and the cap cohorts' median
+errors are 0.031234340844770295 and 0.03126471011551888 against the predicted
+0.03123434084477 and ~3.12647%. The caps are ~11% of accepted and ~88% of all
+>3% pixels, driven by an ill-conditioned gradient denominator (tail 2.9-43x worse
+than safe). REFUTED any simple removal: on the ORIGINAL 3.4 m background, whose
+true phase is 0.565833, raw median 1.620% would fail the gate and refinement
+rescues it to 0.785%. The half-occlusion leaks are NOT one mechanism: all six
+accepted points fail cycle_both_endpoints_pass while passing the interpolated
+check, but one is true cancellation of two failing endpoints, four are masking by
+a passing near endpoint, and one is a genuinely self-consistent wrong cycle at a
+single right pixel - so endpoint checking alone would catch five of six. Matching
+IDs, ID-boundary distance and right-bin collision counts would have flagged none.
+Nothing was adopted, changed or swept; per this decision no gate change or fusion
+follows, and the reused seeds 31/73 are now diagnostic data rather than a holdout.
