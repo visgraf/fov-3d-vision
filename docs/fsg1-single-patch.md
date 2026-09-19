@@ -1,9 +1,11 @@
 # FSG1 - Single-patch foveal stereo instrument
 
-Status: run on the workstation 2026-09-19. Software checks and both deliberate
-negatives pass; the real small-profile Blender suite FAILS the interior gate on
-the `step` background instance and the full profile was therefore not run. See
-the Workstation Results section; the Chat/synthetic record below it is as written.
+Status: run on the workstation 2026-09-19, small and then full. Software checks
+and both deliberate negatives pass. The small/64-spp suite FAILS the interior gate
+on the `step` 3.4 m background (accuracy); the full/256-spp suite authorized by
+D-FSG1a FAILS it on the `step` 1.6 m foreground (coverage), while every accuracy
+target in the suite is met. No `MILESTONE_PASS`. Half-occlusion is NOT EXERCISED.
+See the Workstation Results section; the Chat/synthetic record below it is as written.
 
 ## Question and scope
 
@@ -425,6 +427,164 @@ point at which the next step is Luiz's and Chat's decision, not Code's. The open
 question for that decision is whether `small` should be expected to meet a gate
 written for the reported configuration, or whether the gate is a full-profile
 statement that `small` is simply too coarse to satisfy at 3.4 m.
+
+### Full-profile follow-up under D-FSG1a (2026-09-19) - also FAILS, on a different criterion
+
+Run under `docs/fsg1-full-profile-followup.md`, which authorized exactly one
+unchanged full/256-spp suite at seed 17 and superseded only the small-pass
+prerequisite in sections 4-5 of the execution prompt. D-FSG1a was appended to
+DECISIONS.md and a prospective entry written to `docs/log.md` BEFORE acquisition.
+The small/64-spp FAIL above stands unedited, and `previews/fsg1/small-seed17` and
+the 1024-spp diagnostic directory are preserved untouched.
+
+Preflight: branch `main`, HEAD `6fd8a78b116144ba3ae0169af5235784eee9f60e`, clean
+tree. `git diff 03029a2` over `fsg_geometry.py`, `fsg_scene.py`, `fsg_render.py`,
+`fsg_stereo.py`, `fsg_evaluate.py`, `dev/check_fsg.py`, `dev/fake_blender_fsg.py`,
+`rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY, so this is the same
+estimator that produced the small result. Same environment as above. Logs and
+reports under the new `previews/fsg1/full-followup-logs/`.
+
+Software checks reconfirmed on the unchanged implementation:
+`[fsg-check] SUMMARY passed=24 failed=0 seconds=1.847 blender_executed=False`,
+and both deliberate negatives again exit 1 with byte-identical FAIL lines
+(baseline 0.798831399 m, crop 2.37076271 m).
+
+Acquisition `previews/fsg1/full-seed17`: every case `source: blender_cycles`,
+`device: OPTIX`, Blender 5.2.1 LTS, `profile: full`, `spp: 256` equal to the
+recorded `profile_default_spp`, `adaptive_sampling: false`, distinct L/R seeds
+(170000/170001, 170100/170101, 170200/170201), `run.json` complete, 640x640 raw
+per eye and a 256x256 accepted core, 209,715,200 primary samples per case and
+629,145,600 for the suite - the prescription exactly. In-session checks against
+limits of 0.002 px and 20 um: projection max 8.609e-05 / 1.577e-04 / 8.609e-05 px
+and ray-cast max 3.755e-07 / 5.085e-07 / 7.305e-07 m for fronto / tilted / step,
+242 rays each, all object IDs matching. Times: render L+R 0.9633 / 0.9025 / 0.9874 s,
+oracle 0.1826 / 0.1756 / 0.2654 s, case 1.6220 / 1.5335 / 1.7133 s,
+`total_wall_seconds` 4.8691, whole Blender process 5.403 s; stereo 0.1612 /
+0.1244 / 0.1275 s. Batch-class as estimated, nowhere near the 5-minute stop rule.
+
+Interior results (`previews/fsg1/full-seed17/<case>/evaluation/metrics.json`),
+frozen gate 90% / 1% / 3% at the existing 8 px full-profile boundary margin:
+
+| case / instance | coverage | median rel. range | p95 rel. range | ref px |
+| --- | ---: | ---: | ---: | ---: |
+| fronto | 94.786% | 0.285% | 1.159% | 65536 |
+| tilted | 98.433% | 0.318% | 1.348% | 65536 |
+| step (pooled) | **87.502%** | 0.268% | 1.950% | 60928 |
+| step instance 1 (1.6 m) | **79.319%** | 0.137% | 0.595% | 36608 |
+| step instance 2 (3.4 m) | 99.819% | 0.785% | 2.497% | 24320 |
+
+`wrong_instance_accepted_count` is 0 in all three cases. Evaluator exit code 1,
+`[fsg-eval] FAIL`, `evaluation.json:status` `FAIL`,
+`full_profile_milestone_pass: false`. No `MILESTONE_PASS` was emitted.
+
+Verbatim accuracy FAIL lines, both of which are coverage, not error:
+
+    [fsg-eval] FAIL step: coverage=0.8750164128151261 fails min 0.9
+    [fsg-eval] FAIL step: instance 1: coverage=0.7931872814685315 fails min 0.9
+
+The predicted effect did occur. Step instance 2, the 3.4 m background that failed
+at small with 1.136% median and 4.111% p95, now measures 0.785% and 2.497% and
+passes every criterion. Every median and p95 in the suite is now inside the gate.
+What fails is a criterion that passed before: the 1.6 m foreground's coverage,
+which was 90.361% at small - clearing the 90% floor by 0.36 points - and is
+79.319% here. The small and full failures are different instances failing
+different criteria, so neither result supersedes the other.
+
+#### Why coverage fell, measured from the stored arrays
+
+Diagnosis is evaluation-side and uses only quantities the existing tools already
+store (`left_gray_std`, `lr_error_px`, `raw_support_L`, `valid` in `result.npz`,
+against the evaluator's own interior reference). No production code was written.
+
+Of the 7,571 rejected interior pixels on step instance 1, **99.7% fail the fixed
+textureless test** `left_gray_std < 0.5` in the fixed uint8 conversion; 0.3% fail
+the 1-pixel left-right residual and none lack raw support. The same holds for
+fronto (98.6% of rejections low-texture) and tilted (91.5%). Only step instance 2,
+which loses just 44 pixels, is dominated by the left-right test.
+
+The cause is that the cutoff is a fixed absolute number while the texture is
+magnified. Doubling the linear resolution spreads the same painted texture over
+twice as many pixels, so local contrast in the fixed 5x5 window roughly halves,
+and the low tail crosses a threshold that does not move with it:
+
+| interior reference | small: median std / frac <0.5 | full: median std / frac <0.5 |
+| --- | ---: | ---: |
+| fronto | 9.460 / 1.60% | 5.056 / 5.14% |
+| tilted | 9.399 / 0.18% | 5.109 / 1.43% |
+| step instance 1 | 8.325 / 9.64% | 4.508 / 20.63% |
+| step instance 2 | 8.930 / 0.00% | 5.052 / 0.00% |
+
+Step instance 1 was already the suite's weakest surface at small, with 9.64% of
+its interior below the cutoff, and that share doubles to 20.63% at full. Its 5th
+percentile local std is 0.000 at both profiles: this fixture's foreground really
+does contain flat patches, and they are simply resolved as flat once magnified.
+The contact sheet shows the same thing - the full rectified RGB is visibly
+smoother than the small one, and the black holes in `validity.png` sit exactly on
+the low-contrast patches, clustered in the left/foreground half of `step` while
+the background half is nearly solid white.
+
+This is a property of the fixture and the fixed cutoff together, not a geometry,
+calibration or integration defect. The independent Blender checks passed by three
+to four orders of magnitude, and the recovered head-frame geometry is tighter at
+full than at small: step instance medians Z = -1.6002 and -3.4001 m against -1.6
+and -3.4, fronto Z = -1.9995 m, and the tilted plane normal 25.288 degrees from
+the gaze direction against a specified 25. Per D-FSG1a this is a miss to return
+to Luiz and Chat with the evidence, not something to tune, so the cutoff, the
+window, the fixture and every threshold are untouched.
+
+#### Disparity bias and scatter, and a correction to the noise reading
+
+On accepted interior pixels only - a different support at each profile, so these
+compare estimators on what each accepted, not on a common pixel set:
+
+| case / instance | d_truth | SGBM median | SGBM std | refined median | refined std |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| full fronto | 38.362 px | -0.2994 | 0.0386 | +0.0089 | 0.2093 |
+| full tilted | 39.499 px | +0.0102 | 0.1587 | +0.0011 | 0.2429 |
+| full step inst 1 | 47.952 px | +0.0476 | 0.0067 | -0.0075 | 0.1399 |
+| full step inst 2 | 22.566 px | +0.3717 | 0.0834 | +0.0012 | 0.2920 |
+
+The refinement again removes SGBM's pixel-locking bias everywhere (|median|
+<= 0.009 px at full). But the earlier note's reading needs qualifying, and the
+follow-up handoff asked for exactly this care. Full's accuracy gain is NOT reduced
+noise. Refined scatter in pixels actually grew at full on every surface - step
+instance 2 goes 0.2185 -> 0.2920 px, fronto 0.1287 -> 0.2093 - for the same reason
+coverage fell, since weaker per-pixel gradients make photometric alignment noisier.
+The gain is purely geometric: the rectified focal length doubles to 1217.839 px,
+so the 3.4 m background carries 22.566 px of disparity instead of 11.283, and
+0.2920/22.566 = 1.29% beats 0.2185/11.283 = 1.94% despite the worse pixel scatter.
+
+The two knobs therefore act on different failure modes, which the equal-cost pair
+shows directly. The 1024-spp small diagnostic and this full suite have the same
+629,145,600 nominal primary samples. On step, the diagnostic gives instance 1
+coverage 90.284% and instance 2 0.618% / 1.846%; full gives 79.319% and
+0.785% / 2.497%. More samples cut refinement scatter (0.2185 -> 0.1089 px) while
+leaving the texture cutoff almost untouched (9.64% -> 9.72% below it); more
+resolution buys disparity but halves per-pixel contrast, costing coverage. As the
+handoff states, this equal-count comparison cannot isolate resolution from noise,
+support size or acceptance differences, and no end-to-end efficiency claim follows
+from it. It is a calibration observation about two fixtures at one seed.
+
+#### Boundary, half-occlusion and what is NOT established
+
+Boundary on step: 4,608 reference pixels, 51.259% coverage, median 0.605%, p95
+3.266%, and 5.843% of accepted boundary pixels over 3% relative error. Boundary
+has no FSG1 threshold and is reported, not gated. The interior gate says nothing
+about boundary accuracy and must not be read as validating it.
+
+`singly_visible` has 0 reference pixels in all three cases at full, as at small.
+**Half-occlusion rejection is NOT EXERCISED by this suite.** A zero denominator is
+not a pass. The foreground half-plane lies on the left of the frame, so the
+background the left eye can see is never the part the foreground hides from the
+right eye; the half-occluded strip belongs to the right eye and cannot appear in a
+left-eye reference grid. Repairing that coverage gap needs a mirrored depth step
+or an explicitly opposite-eye reference, which the follow-up assigns to Chat as a
+separate additive step before surface fusion is authorized. The existing three-case
+suite was deliberately not altered here to close it.
+
+A pass on these fixtures would in any case have applied only to controlled opaque
+textured planes at this configuration and seed. There was no pass, and FSG2 is not
+authorized. Stopped here for Luiz and Chat.
 
 ## Source interfaces reviewed
 

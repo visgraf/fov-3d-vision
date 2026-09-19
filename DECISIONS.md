@@ -360,3 +360,9 @@ Passing these controlled fixtures justifies considering two overlapping patches;
 it does not demonstrate complex-scene or complete-object reconstruction.
 
 Details, validation limits and Results: `docs/fsg1-single-patch.md`.
+
+## D-FSG1a - Assess the unchanged full profile after the small-profile miss (2026-09-19)
+Authorize one default full/256-spp FSG1 suite at seed 17; small/64-spp remains FAIL, and no FSG2 work is authorized.
+Why: software/calibration checks passed; the remaining small-profile miss warrants measuring the already-declared reporting configuration, not retuning it.
+Supersedes only the small-pass prerequisite in sections 4-5 of fsg1-code-prompt.md; preserve every threshold, fixture, estimator setting, failed record and per-instance gate.
+Overturned if: calibration/provenance fails or full misses its gate; stop and return the evidence to Luiz/Chat without tuning or beginning fusion.

@@ -1408,3 +1408,88 @@ occlusion belongs to the right eye and is absent from a left-eye reference grid.
 Open for Luiz/Chat per D-FSG1: whether `small` is expected to meet a gate written
 for the reported configuration, or whether the full profile is the only
 configuration the 90/1/3 targets are a statement about.
+
+
+### 2026-09-19 - FSG1 full-profile follow-up: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg1-full-profile-followup.md` and the D-FSG1a block appended to
+DECISIONS.md just above this entry, one unchanged full-profile suite is authorized
+and about to run. Written before the command, so the intent is on record whatever
+the outcome:
+
+    blender -b --python-exit-code 1 -P tools/fsg_render.py -- \
+      --out previews/fsg1/full-seed17 --profile full --device OPTIX --seed 17 --save-blend
+    .venv/bin/python tools/fsg_stereo.py previews/fsg1/full-seed17
+    .venv/bin/python tools/fsg_evaluate.py previews/fsg1/full-seed17
+
+Settings are frozen at the 03029a2 baseline: `git diff 03029a2` over the FSG1
+executables, rig, bl_common and requirements-fsg.txt is empty. Default 256 spp,
+seed 17, no `--spp`, no `--allow-synthetic`, no denoising or adaptive sampling.
+Prescription to check against: 640x640 per eye, 256x256 accepted core, three
+cases, 629,145,600 primary camera samples. Frozen gate: >=90% coverage, <=1%
+median and <=3% p95 relative left-eye range error, per case and per adequately
+supported instance, at the existing 8 px full-profile boundary margin.
+
+The small/64-spp suite remains FAIL and its records under
+`previews/fsg1/small-seed17` are preserved untouched, as is the 1024-spp
+diagnostic. This is one acquisition, not attempts until a seed passes. Full may
+fail; that is a reportable outcome and not permission to tune. Logs under
+`previews/fsg1/full-followup-logs/`.
+
+Measured outcome, appended after the run. The full suite also FAILS, on a
+different criterion from small. `previews/fsg1/full-seed17`, 629,145,600 primary
+samples, 640x640 per eye, 256x256 core, spp 256 = recorded default, every case
+blender_cycles/OPTIX with complete run.json, projection max 1.577e-4 px and
+ray-cast max 7.305e-7 m against 0.002 px and 20 um, IDs matching, 242 rays each.
+Render L+R 0.96/0.90/0.99 s, oracle 0.18/0.18/0.27 s, total_wall 4.869 s, whole
+process 5.403 s, stereo 0.16/0.12/0.13 s. Software checks reconfirmed first:
+passed=24 failed=0; both negatives exit 1 with byte-identical FAIL lines.
+`git diff 03029a2` over the FSG1 executables, rig, bl_common and
+requirements-fsg.txt was empty, so this is the same estimator.
+
+Interior: fronto 94.786%/0.285%/1.159% PASS, tilted 98.433%/0.318%/1.348% PASS,
+step pooled 87.502%/0.268%/1.950%, step inst 1 (1.6 m) 79.319%/0.137%/0.595%,
+step inst 2 (3.4 m) 99.819%/0.785%/2.497%. wrong_instance_accepted 0 everywhere.
+Evaluator exit 1, status FAIL, full_profile_milestone_pass false:
+
+    [fsg-eval] FAIL step: coverage=0.8750164128151261 fails min 0.9
+    [fsg-eval] FAIL step: instance 1: coverage=0.7931872814685315 fails min 0.9
+
+So the predicted effect did happen - instance 2 went 1.136%/4.111% to
+0.785%/2.497% and passes, and every median and p95 in the suite is now inside the
+gate - but the 1.6 m foreground's coverage, which cleared 90% by 0.36 points at
+small, fell to 79.319%. Different instance, different criterion; neither result
+supersedes the other.
+
+Cause, measured from stored arrays only (no new code): 99.7% of step instance 1's
+7,571 rejected interior pixels fail the fixed `left_gray_std < 0.5` textureless
+test; 0.3% fail the 1 px LR residual; none lack raw support. Fronto 98.6% and
+tilted 91.5% of rejections are likewise low-texture. The cutoff is absolute while
+the texture is magnified: doubling linear resolution halves local contrast in the
+fixed 5x5 window. Median std / fraction below cutoff, small -> full: fronto
+9.460/1.60% -> 5.056/5.14%; tilted 9.399/0.18% -> 5.109/1.43%; step inst 1
+8.325/9.64% -> 4.508/20.63%; step inst 2 8.930/0.00% -> 5.052/0.00%. Step
+instance 1's p5 std is 0.000 at both profiles - the fixture's foreground has
+genuinely flat patches, resolved as flat once magnified. Not a calibration or
+integration defect: head-frame geometry is tighter at full than small (step Z
+-1.6002/-3.4001, fronto -1.9995, tilted normal 25.288 deg from gaze vs spec 25).
+
+Correction to the earlier noise reading, per the follow-up's instruction to keep
+it qualified: full's accuracy gain is NOT reduced noise. Refined scatter in pixels
+GREW at full on every surface (step inst 2 0.2185 -> 0.2920 px, fronto 0.1287 ->
+0.2093), for the same weak-gradient reason coverage fell. The gain is geometric -
+the rectified focal doubles to 1217.839 px, so the background carries 22.566 px of
+disparity instead of 11.283. Equal-cost pair at 629,145,600 samples: the 1024-spp
+small diagnostic gives step inst 1 coverage 90.284% and inst 2 0.618%/1.846%;
+full gives 79.319% and 0.785%/2.497%. Samples cut scatter (0.2185 -> 0.1089 px)
+and barely move the cutoff (9.64% -> 9.72%); resolution buys disparity but halves
+per-pixel contrast and costs coverage. This cannot isolate resolution from noise,
+support or acceptance, and no efficiency claim follows.
+
+Boundary on step: 4,608 ref px, 51.259% coverage, median 0.605%, p95 3.266%,
+5.843% over 3%. Reported, not gated; the interior gate does not validate it.
+`singly_visible` is 0 reference pixels in all cases: half-occlusion rejection is
+NOT EXERCISED, which is a test-coverage gap, not a pass. A mirrored step or an
+opposite-eye reference is Chat's separate additive step before fusion. The suite
+was not altered to close it here. Nothing tuned, no threshold/fixture/default
+changed, documentation only. Stopped for Luiz/Chat; no fusion or surface growing.
