@@ -144,10 +144,12 @@ remove the removable ones, represent the rest (D20, `docs/phase-d-plan.md`).
 
 Phases A, B and C are complete and summarised; Phase C ended 2026-09-17 with the engine
 above and the finding that, at equal rays, the policy that does not look twice is as good as
-the principled one (D19). Phase D is under way (D20, D21; `docs/phase-d-plan.md`): its diagnosis
-(`docs/d1-gross-diagnosis.md`) found that three quarters of what the loop called gross is coarse
-right peaks inside the variance model and about a tenth of the judged area is outside it, so
-coarse-to-fine was not written and the next step is telling wrong peaks from right ones. Still open beyond it: the warp as an action, the fixed head, truth beyond what the eyes
+the principled one (D19). Phase D is complete and summarised (`docs/phase-d-summary.md`, D21–D23): three quarters of
+what the loop called gross was coarse right peaks inside the variance model; the real outliers
+are a tenth of the area, of which about 8% — depth edges and half-occlusions — is the block
+matcher's floor at one look; and two looks are a test where one is not, so a consensus among a
+cell's fine looks (`--fusion consensus`, an option) takes the fine band's error from 0.0187 to
+0.0151 /m on the same 500 fixations. Still open beyond it: the warp as an action, the fixed head, truth beyond what the eyes
 sampled.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been

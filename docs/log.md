@@ -1334,3 +1334,12 @@ Predictions: 1 fine outlier held (0.171), outlier failed by 0.0007; 2 fine cover
 0.0025, undecided held (3.2% of cap, 10.9% of the fine cells); 3 failed on all three (median
 -5.6%, fine -19%, p90 -0.3%); 4 failed downward (z RMS 1.66 -> 1.27); 5 failed (in between).
 No code change. Phase D closes.
+
+## 2026-09-18 — Phase D closed: the summary
+
+`docs/phase-d-summary.md`, written after a5048b0 from the committed Results of D1a, D2a, D2b,
+D4 and D5 and the log. D5's rule landed in between (outlier 0.1257 for 0.125, fine coverage
+0.2625 for 0.265); the default fusion stays the mean and the question opens the next phase.
+One code change with it: `active_eval.py --refuse` compares against the run's own fusion as
+replayed, so a record older than the judge split no longer prints nan on the comparison line.
+README's State paragraph rewritten.

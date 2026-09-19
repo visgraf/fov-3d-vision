@@ -260,7 +260,7 @@ def main():
             if d0 > 1e-9:
                 fails.append(f"(r) {tag}: re-fused with {args.refuse}, fixation 0 covers {steps2[0]['coverage_any']:.6f} of the cap against the record's {lj['steps'][0]['coverage_any']:.6f}: the looks are not the record's")
             print_checkpoints(tag, steps2, lj["steps"], args.checkpoints if len(steps2) > 60 else str(len(steps2)), f"re-fused {args.refuse}")
-            e2, e1 = steps2[-1], lj["steps"][-1]
+            e2, e1 = steps2[-1], (r if r else lj["steps"][-1])      # the run's own fusion, replayed: a record older than the judge split has no outlier keys
             print(f"[eval] {tag} re-fused {args.refuse} vs recorded at K = {len(steps2)}: outlier {e1.get('outlier_frac', float('nan')):.3f} -> {e2['outlier_frac']:.3f}, fine outlier {e1.get('fine_outlier_frac', float('nan')):.3f} -> {e2['fine_outlier_frac']:.3f}, "
                   f"fine coverage {e1['coverage_fine']:.3f} -> {e2['coverage_fine']:.3f}, rho err {e1['rho_err_median']:.4f} -> {e2['rho_err_median']:.4f} (fine {e1['fine_rho_err_median']:.4f} -> {e2['fine_rho_err_median']:.4f}), "
                   f"z RMS {e1['z_rms_inliers']:.2f} -> {e2['z_rms_inliers']:.2f}; (u) fixation-0 cells {fixed2.get('start', float('nan')):.4f} -> {fixed2.get('end', float('nan')):.4f}; (r) fixation 0 coverage differs by {d0:.1e}")
