@@ -551,3 +551,24 @@ diagnostic small-profile miss. The pass covers one local patch under controlled
 opaque, diffuse, planar, calibrated conditions with oracle segmentation; it makes
 no claim about arbitrary scenes, complete boundaries, thin structure, calibrated
 uncertainty or multi-patch reconstruction.
+
+## D-FSG2a - Minimal two-patch fusion (2026-09-19)
+Test whether two prescribed, overlapping foveal RGB-D observations from the frozen FSG1 instrument can extend and fuse one segmented object surface in the fixed head frame without registration or hole filling. Use the prospectively fixed geometry, seed 211, fusion radius 12 mm, and gates in `docs/fsg2-increment2.md`. A full-profile pass authorizes Increment 3 (automatic single-object frontier growth) but does not implement it. A miss is preserved and returned to Luiz/Chat; Code may fix only demonstrated orchestration/implementation bugs, never the checks, fixture, thresholds, seed, instrument, or fusion parameters to obtain a pass.
+
+Outcome 2026-09-19 (evidence: `docs/fsg2-increment2.md` Results and
+`docs/log.md`). **FSG2_INCREMENT2_PASS** on the single prescribed full seed-211
+acquisition, empty fails list. Every gate met: patch coverage 99.132% / 100.000%;
+32,222 B points matched; 50.833% of B new; matched A/B distance median 1.907 mm
+and p95 6.187 mm; fused point-to-true-plane median 3.548 mm and p95 9.740 mm;
+fixed-grid coverage 90.225% with a 30.485 pp gain over patch A alone; idempotent
+replay true. The fused map holds 91,941 surfels, 16,860 with two-look support,
+containing only object ID 61 with background 62 absent. The small smoke missed
+only the two plane-error gates (13.837 mm / 34.370 mm) - diagnostic under the
+handoff - and both cleared at full. Nothing was tuned, rerendered or re-seeded,
+and no code fix was required. Per this decision, **Increment 3 (automatic
+single-object frontier growth) is AUTHORIZED BUT NOT IMPLEMENTED.** The pass
+covers one finite planar tilted object under oracle segmentation, two fixations
+3 deg apart, one seed, exact calibrated poses and a prospectively fixed 12 mm
+Euclidean association rule; it makes no claim about folds, self-occlusion,
+calibrated uncertainty, active frontier selection, multi-object switching or
+uncontrolled scenes.

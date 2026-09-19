@@ -2371,3 +2371,135 @@ stereo, complete boundary coverage, thin-structure performance, calibrated
 uncertainty or multi-patch reconstruction. Earlier limitations stand: the
 small-profile misses, the analytic bright-full stress, and the FSG1c/FSG1f
 development-set caveats. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG2 Increment 2, two-patch fusion: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg2-increment2.md` and D-FSG2a appended just above. The first step of
+Increment 2, authorized by D-FSG1h's close of Increment 1. Commands, written
+before running them:
+
+    blender -b --python-exit-code 1 -P tools/fsg2_render.py -- --out previews/fsg2/two-patch-small-seed211 --profile small --seed 211 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg2_eval.py previews/fsg2/two-patch-small-seed211 --mode smoke --out previews/fsg2/two-patch-small-evaluation
+    blender -b --python-exit-code 1 -P tools/fsg2_render.py -- --out previews/fsg2/two-patch-full-seed211 --profile full --seed 211 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg2_eval.py previews/fsg2/two-patch-full-seed211 --mode full --out previews/fsg2/two-patch-full-evaluation
+
+**The FSG1 instrument is frozen and unchanged.** Verified by reading
+`tools/fsg2_eval.py` before running: it imports `compute_once` and
+`check_kernel_equivalence` from `fsg_stereo_supported`, never `compute_variants`.
+The `git diff 4637961` over the fifteen pinned FSG1 modules, rig, bl_common and
+requirements-fsg.txt is empty. This step adds only scene, fusion, render and
+evaluation code; it changes no part of the validated instrument.
+
+What is being tested, and only this: whether two independently reconstructed
+local patches accumulate into ONE persistent surface in the fixed head frame.
+No active frontier selection, ICP or any pose estimation (the calibrated
+head/eye transforms are exact inputs), no learned fusion, no meshing, no hole
+filling, no multi-object switching.
+
+Frozen geometry and parameters, read from `fsg2_scene.SPEC`: two fixations at
+yaw -3 deg (`fix_left`) and +3 deg (`fix_right`), pitch 0, default 2 m vergence;
+one finite tilted object ID 61 centred at (0, 0, -2.05) m, 0.68 x 0.48 m, tilted
+12 deg; background plane ID 62 at Z = -3.4 m; **only ID 61 enters the surface
+map**; seed 211; spp 64 small / 256 full; association radius 12 mm, hash cell
+12 mm, truth-cover radius 15 mm, truth grid 170 x 120.
+
+Map model: patch A initializes one surfel per accepted object point; patch B
+associates ONLY against the snapshot of A by same object ID and Euclidean
+distance <= 12 mm; matched surfels average with their B observations and record
+two-patch support; unmatched B observations extend the map; samples within B are
+never collapsed with one another; replaying the same patch ID must leave the map
+byte-identical. This is an engineering baseline, not a claim that Euclidean
+nearest-neighbour fusion is a final surface model.
+
+Prospective gates, all fixed before execution: per patch, eroded object-reference
+coverage >= 90%. Overlap/fusion: >= 5,000 B points associated to A; >= 15% of B
+points remain new; matched A/B distance median <= 10 mm and p95 <= 25 mm;
+fused-map point-to-true-plane median <= 10 mm and p95 <= 30 mm; fixed
+object-surface grid coverage after fusion >= 70%; fusion raises that grid
+coverage by >= 12 percentage points over patch A alone; replaying patch B is
+idempotent. The truth grid and plane are evaluation-only, and the RGB-derived
+patches and fused map are written BEFORE those geometry metrics are computed.
+
+Preflight verified before writing this: clean main at bd67270 with 4637961 an
+ancestor; seven files added; environment Python 3.12.3 / NumPy 2.2.6 / OpenCV
+4.13.0 / Pillow 12.3.0, Blender 5.2.1 LTS on an RTX 4090; `previews/fsg2` absent.
+`[fsg2-scene] PASS cases=2 object=61 overlap_prescribed=true`,
+`[fsg2-map] PASS matched=658 new=842 idempotent=true`,
+`[fsg2-check] SUMMARY passed=4 failed=0`, and the three negatives each exit 1
+(5 cm shift collapses overlap; wrong-instance patch detected; duplicate patch
+refused to alter the map). All eight FSG1 regression suites pass:
+24/29/34/48/37/46/7/8.
+
+ONE full acquisition only, at seed 211. No rerender, seed change, spp change,
+threshold change, association-radius change or instrument change after seeing a
+numerical miss. A numerical miss at small is diagnostic and does not change the
+full gates; an integrity failure, geometry mismatch, non-idempotence or wrong
+instrument wiring stops the step. Outcome unknown at writing: a full pass
+authorizes Increment 3 (automatic single-object frontier growth) but must NOT
+implement it; any full miss is preserved and returned to Luiz/Chat. Logs under
+`previews/fsg2/logs/`.
+
+Measured outcome, appended after the run. **FSG2_INCREMENT2_PASS** on the single
+prescribed full seed-211 acquisition, exit 0, empty fails list. **Increment 3
+(automatic single-object frontier growth) is AUTHORIZED BUT NOT IMPLEMENTED** -
+no frontier selection, policy, ICP, meshing or hole filling was written.
+
+Integrity: FSG1 frozen-instrument diff from 4637961 empty; seven files added,
+none modified; instrument wiring read before running (compute_once +
+check_kernel_equivalence, never compute_variants) and both runs report
+instrument FSG1-HDR-SGBM-one-original-update-original-validity-v1;
+prediction_manifest truth_opened=false in both, so patches and the fused map were
+written before any geometry metric. Scene/map/self-test PASS with
+matched=658 new=842 idempotent=true and SUMMARY passed=4 failed=0; the three
+negatives each exit 1 (5 cm shift collapses overlap, wrong-instance detected,
+duplicate replay refused). All eight FSG1 regression suites pass: 24/29/34/48/
+37/46/7/8.
+
+Full seed 211, every gate: patch coverage fix_left 99.132% and fix_right
+100.000% (>=90%); 32,222 B points matched (>=5,000); 50.833% of B remains new
+(>=15%); matched A/B distance median 1.907 mm and p95 6.187 mm (<=10 / <=25);
+fused point-to-true-plane median 3.548 mm and p95 9.740 mm (<=10 / <=30);
+fixed-grid coverage 90.225% (>=70%); gain 30.485 pp over patch A alone (>=12);
+idempotent replay true. Patch points 58,627 and 65,536. The fused map holds
+91,941 surfels of which 16,860 carry two-look support and 75,081 one look -
+consistent with 32,222 matches collapsing to 16,860 fused surfels plus 33,314 new
+B points extending the surface. Fixed-grid coverage rises 59.740% -> 90.225%.
+Only ID 61 in the map (91,941 points) and in both patch NPZs; background 62
+absent. No numerical FAIL line at full.
+
+Small smoke was FSG2_INCREMENT2_FAIL, exit 2, on exactly two gates - fused plane
+error median 13.837 mm and p95 34.370 mm - with every other gate passing
+(coverage 97.474%/100.000%, matched 7,950, new 51.477%, overlap 3.812/8.330 mm,
+grid 85.005% with 30.363 pp gain, idempotent, no background ID). Per the handoff
+a small miss is diagnostic and does not alter the full gates; integrity,
+geometry, idempotence and wiring were sound, so full proceeded. Both cleared at
+full (13.837 -> 3.548 mm, 34.370 -> 9.740 mm, about 3.9x and 3.5x), consistent
+with the resolution dependence measured throughout FSG1. Nothing tuned,
+rerendered or re-seeded; no code fix was needed.
+
+Visuals: fusion.png at both profiles shows fix A covering the left of the object,
+fix B the right, and a fused panel visibly wider than either with a distinctly
+darker central band - the 16,860 two-look surfels - flanked by lighter one-look
+wings. surface_map.ply carries "comment fixed head frame H", 91,941 vertices, no
+faces, and a per-vertex support property with values exactly {1: 75,081,
+2: 16,860}. Head-frame geometry matches the fixture: Z median -2.0497 m against
+the prescribed -2.05, spans 0.621 x 0.444 m against a 0.68 x 0.48 m object.
+Missing regions stay missing - no meshing, fill or interpolation, and no
+registration was estimated.
+
+Cost: smoke 26,214,400 and full 419,430,400 primary camera samples. Smoke render
+1.717 s, full render 3.966 s (0.930 / 1.008 s per fixation), full evaluation
+37.539 s wall.
+
+Scope of the pass: two prescribed overlapping foveal RGB-D patches from the
+frozen FSG1 instrument accumulate into one persistent surface in the fixed head
+frame, extending coverage 59.7% -> 90.2% while holding plane accuracy at 3.5 mm
+median, with exact calibrated poses and no registration. It is one finite planar
+tilted object under oracle segmentation, two fixations 3 deg apart, one seed, and
+a 12 mm Euclidean nearest-neighbour rule fixed in advance - an engineering
+baseline, not a final surface model. Same-object folds and self-occlusions are
+deferred, surfel normals unused, the proximity rule is not a calibrated
+uncertainty model, and the completeness grid samples only this known finite
+object. Nothing here speaks to active frontier selection, multi-object switching
+or uncontrolled scenes. Stopped for Luiz/Chat.
