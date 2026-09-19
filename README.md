@@ -154,3 +154,15 @@ sampled.
 
 The scene tooling was first developed in the `visgraf/w3d-scenes` repository and has been
 folded in here; see D6 in `DECISIONS.md`.
+
+
+<!-- FSG1_HANDOFF_20260919 -->
+## Foveal Surface Growing - FSG1 (opt-in experiment)
+
+| Step | State |
+| --- | --- |
+| FSG1: single-patch local stereo | Implementation handed over; 23 Chat software checks and synthetic fixtures pass; real Blender/workstation results pending. See `docs/fsg1-single-patch.md`; execution prompt: `docs/fsg1-code-prompt.md`. |
+
+Oracle object IDs, RGB-derived geometry, fixed head/cyclopean map frame. Direct
+perspective patch acquisition, not a change to the Phase C/D OSL sensor or loop.
+No multi-patch fusion or surface-growing policy is enabled in this milestone.

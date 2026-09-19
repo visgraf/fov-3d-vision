@@ -1343,3 +1343,22 @@ D4 and D5 and the log. D5's rule landed in between (outlier 0.1257 for 0.125, fi
 One code change with it: `active_eval.py --refuse` compares against the run's own fusion as
 replayed, so a record older than the judge split no longer prints nan on the comparison line.
 README's State paragraph rewritten.
+
+
+<!-- FSG1_HANDOFF_20260919 -->
+### 2026-09-19 - FSG1 implementation handoff (applied, not workstation-tested)
+
+Applied to checkout HEAD `84ddf94ca18d71b113091797746549d722da7186`. Chat reviewed public-main interfaces via
+web on 2026-09-19; git clone was unavailable in its execution sandbox, so no
+upstream commit identity or Blender integration run was claimed there.
+
+23 software checks passed in Chat (NumPy/OpenCV; no bpy). Synthetic small/full
+calibration fixtures passed the fixed 90%/1%/3% interior targets after a bounded
+photometric refinement addressed SGBM subpixel bias; these are NOT Cycles results.
+Implementation and diagnostic history are in `docs/fsg1-single-patch.md`.
+
+Agreed scope recorded from the conversation: oracle instance IDs; fixed head
+reference at the eye midpoint; RGB-only inferred geometry; single-patch milestone
+first. Defaults and code of Phases C/D are unchanged. Code runs
+`docs/fsg1-code-prompt.md`, records measured results, commits and reports. No
+surface-growing policy or multi-patch fusion is authorized in this handoff.

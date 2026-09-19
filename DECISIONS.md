@@ -318,3 +318,29 @@ and the record to judge it on already exists.
 Overturned if: the undecided cells, given a third look, do not resolve (a loop that looks
 where its looks disagree and stays undecided has found the scene's 8%, not a test).
 
+
+
+<!-- FSG1_HANDOFF_20260919 -->
+## D-FSG1 - A local stereo measurement before surface growing
+
+Agreed experimental scope, not a measured Blender result: use per-eye Blender
+`pass_index` masks as oracle instance segmentation only; infer geometry from RGB
+and calibration; store positions in the fixed head frame with its origin at the
+midpoint of the eyes. Blender world and the rotating fixation frames are distinct.
+
+Acquire padded perspective pairs for fronto, tilted and depth-step fixtures. Use
+SGBM plus bounded RGB-only subpixel refinement, then retain only the central core.
+Truth is exported separately for evaluation. Keep all Phase C/D code and defaults.
+No fusion, frontier policy, peripheral preview or object switching in FSG1.
+
+Prospective interior gate per case/per adequately supported instance: >=90%
+coverage, <=1% median and <=3% p95 relative left-eye range error. The full profile
+at its declared default spp is the reported instrument result. Boundary and
+singly-visible regions are separately reported, never silently filled.
+
+What would change the next step: a real full-profile miss without a demonstrated
+implementation bug requires a decision from Luiz/Chat before surface fusion.
+Passing these controlled fixtures justifies considering two overlapping patches;
+it does not demonstrate complex-scene or complete-object reconstruction.
+
+Details, validation limits and Results: `docs/fsg1-single-patch.md`.

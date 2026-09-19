@@ -1,0 +1,4 @@
+# Add-on for the EXISTING host .venv; do not install into Blender's interpreter.
+# NumPy and Pillow are already in requirements.txt. No existing pin is changed.
+# Use only ONE OpenCV distribution in the workstation environment.
+opencv-python-headless==4.13.0.92
