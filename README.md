@@ -161,7 +161,7 @@ folded in here; see D6 in `DECISIONS.md`.
 
 | Step | State |
 | --- | --- |
-| FSG1: single-patch local stereo | Implementation handed over; 23 Chat software checks and synthetic fixtures pass; real Blender/workstation results pending. See `docs/fsg1-single-patch.md`; execution prompt: `docs/fsg1-code-prompt.md`. |
+| FSG1: single-patch local stereo | Run on the workstation 2026-09-19 (Blender 5.2.1, OPTIX). 24 software checks pass, both deliberate negatives fail as designed. Real `small` suite: fronto 98.4%/0.39%/1.31% and tilted 99.8%/0.46%/1.68% pass the 90%/1%/3% interior gate; `step` fails on its 3.4 m background instance (99.8%/1.14%/4.11%), diagnosed as refinement scatter against only 11.3 px of disparity - 1024 spp halves it to a pass, SGBM's bias is unmoved. Not an implementable bug, so the full profile was NOT run and there is no `MILESTONE_PASS`; the next step is a decision under D-FSG1. See `docs/fsg1-single-patch.md`; execution prompt: `docs/fsg1-code-prompt.md`. |
 
 Oracle object IDs, RGB-derived geometry, fixed head/cyclopean map frame. Direct
 perspective patch acquisition, not a change to the Phase C/D OSL sensor or loop.

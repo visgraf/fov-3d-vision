@@ -1362,3 +1362,49 @@ reference at the eye midpoint; RGB-only inferred geometry; single-patch mileston
 first. Defaults and code of Phases C/D are unchanged. Code runs
 `docs/fsg1-code-prompt.md`, records measured results, commits and reports. No
 surface-growing policy or multi-patch fusion is authorized in this handoff.
+
+
+### 2026-09-19 - FSG1 small-profile run: passes fronto/tilted, FAILS the step background
+
+Ran `docs/fsg1-code-prompt.md` on the workstation from HEAD `1fbe81c`. Blender
+5.2.1 LTS, OPTIX on an RTX 4090; host Python 3.12.3, NumPy 2.2.6, Pillow 12.3.0,
+OpenCV 4.13.0 installed fresh from `requirements-fsg.txt` (only OpenCV present,
+no existing pin moved).
+
+`[fsg-check] SUMMARY passed=24 failed=0 seconds=1.829 blender_executed=False`,
+including the real repository rig integration check. Both deliberate negatives
+exit 1 with their geometry FAIL lines (baseline 0.799 m, crop 2.371 m errors).
+
+Real small suite in `previews/fsg1/small-seed17`, 39,321,600 primary samples,
+2.1 s of Blender wall; every acquisition.json says `blender_cycles` / `OPTIX`
+with `independent_blender_checks: true`, projection error <=8.19e-5 px and
+ray-cast error <=7.22e-7 m against limits of 0.002 px and 20 um.
+
+Interior: fronto 98.395% / 0.388% / 1.315%, tilted 99.823% / 0.463% / 1.680% -
+both pass. step pools to 94.101% / 0.358% / 2.965%, which also passes, but the
+per-instance rule catches the background: instance 2 at 3.4 m gives 99.751%
+coverage, 1.136% median and 4.111% p95, missing the 1% and 3% targets. Instance 1
+at 1.6 m is 90.361% / 0.187% / 0.792%. `evaluation.json:status` is `FAIL`.
+
+Diagnosed before touching anything, by recomputing truth disparity on the same
+core grid: the refinement removes SGBM's pixel-locking bias correctly everywhere
+(|median| <= 0.022 px), but its scatter on instance 2 is 0.2185 px against only
+11.28 px of disparity at 3.4 m, which is the 1.136%/4.111% arithmetic. A labelled
+diagnostic re-render at 1024 spp (`previews/fsg1/diag-small-spp1024-seed17`)
+halved that scatter to 0.1089 px and took the case to 0.618%/1.846%, i.e. a pass,
+while SGBM's bias stayed at -0.1579 px exactly. Noise, then, not geometry;
+texture is ample (instance 2 local std median 8.94, p5 4.05 vs a 0.5 cutoff).
+Head-frame geometry independently checks out: step levels Z = -1.5991/-3.3937 m,
+fronto -1.999 m, tilted plane normal 25.5 deg from gaze (specified 25).
+
+So this is instrument resolution, not an implementable bug: `small` puts 11.28 px
+of disparity on the farthest surface at 64 spp, and the relief - about 1218 px of
+rectified focal and 256 spp - lives in the full profile. Per the execution prompt
+the full run was NOT started, the matcher was not tuned, and no threshold,
+fixture or margin was touched. No code changed. `singly_visible` is 0 reference
+pixels in all cases: the foreground half-plane sits on the left, so the half
+occlusion belongs to the right eye and is absent from a left-eye reference grid.
+
+Open for Luiz/Chat per D-FSG1: whether `small` is expected to meet a gate written
+for the reported configuration, or whether the full profile is the only
+configuration the 90/1/3 targets are a statement about.

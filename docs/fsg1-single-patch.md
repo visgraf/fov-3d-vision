@@ -1,7 +1,9 @@
 # FSG1 - Single-patch foveal stereo instrument
 
-Status: implementation handoff. Synthetic software checks run in Chat;
-Blender rendering and workstation accuracy measurements NOT YET RUN.
+Status: run on the workstation 2026-09-19. Software checks and both deliberate
+negatives pass; the real small-profile Blender suite FAILS the interior gate on
+the `step` background instance and the full profile was therefore not run. See
+the Workstation Results section; the Chat/synthetic record below it is as written.
 
 ## Question and scope
 
@@ -272,23 +274,157 @@ versions are saved so the workstation can inspect that engineering choice.
 
 This is a development-fixture check, not a held-out algorithm benchmark.
 
-## Workstation Results - NOT RUN
+## Workstation Results - small profile RUN and FAILED; full profile NOT RUN
 
-Code fills this section from files, without replacing the Chat validation record.
+Run 2026-09-19 on the workstation by Code. Every number below is read from a file
+under `previews/fsg1/`; the Chat/synthetic record above is unchanged. The small
+profile missed the gate on one instance, so under `docs/fsg1-code-prompt.md` step 5
+the full-profile suite was NOT run and there is no `MILESTONE_PASS`.
 
-* Checkout HEAD before/after:
-* Blender version, GPU/backend, Python, NumPy, OpenCV:
+* Checkout HEAD before/after: `1fbe81ce5f7603d4c706cf26ebc32972a54a8442` before;
+  this write-up is the only change after. Working tree was clean at preflight.
+* Blender version, GPU/backend, Python, NumPy, OpenCV: Blender 5.2.1 LTS
+  (hash 9e2066aef7ef, build 2026-08-25), device `OPTIX` on an NVIDIA GeForce
+  RTX 4090 (driver 595.84); host Python 3.12.3, NumPy 2.2.6, Pillow 12.3.0,
+  OpenCV 4.13.0 (`opencv-python-headless==4.13.0.92`, newly installed from
+  `requirements-fsg.txt`; it was the only OpenCV in the venv and no existing pin
+  moved). NumPy is the repository's pinned 2.2.6, not the sandbox's 2.3.5.
 * Exact commands and output directories:
-* Repo-rig / software summary lines:
-* Deliberate-negative exit codes and verbatim FAIL lines:
-* Per-eye projection/ray-cast checks from acquisition.json:
-* Small and full per-case and per-instance metrics from metrics.json:
-* Boundary and singly-visible diagnostics:
-* Primary samples, render/stereo/annotation/process times:
-* Files viewed (RGB, validity, predicted/truth depth, error, point cloud):
-* Fixes, with diagnosis and affected file (or none):
-* Every unexpected FAIL line:
-* Gate status and whether further work is authorized: stop after FSG1 report.
+  `tools/rig.py --self-test`, `tools/fsg_geometry.py --self-test`,
+  `tools/fsg_scene.py --self-test`,
+  `tools/dev/check_fsg.py --self-test --repo-check --report previews/fsg1/software-checks.json`,
+  `tools/dev/check_fsg.py --negative baseline`, `--negative crop`;
+  `blender -b --python-exit-code 1 -P tools/fsg_render.py -- --out previews/fsg1/small-seed17 --profile small --device OPTIX --seed 17 --save-blend`;
+  `tools/fsg_stereo.py previews/fsg1/small-seed17`; `tools/fsg_evaluate.py previews/fsg1/small-seed17`.
+  Labelled diagnostic only: the same acquisition with `--spp 1024` into
+  `previews/fsg1/diag-small-spp1024-seed17`, plus its stereo pass. No full profile.
+* Repo-rig / software summary lines: `[rig] self-test ok`,
+  `[fsg-geometry] self-test PASS`, `[fsg-scene] self-test PASS`, and
+  `[fsg-check] SUMMARY passed=24 failed=0 seconds=1.829 blender_executed=False`.
+  The 24th is `PASS current repository rig integration` against this checkout's
+  `tools/rig.py`; `blender_executed=False` is correct, the suite claims no render.
+* Deliberate-negative exit codes and verbatim FAIL lines: both exit 1, both a
+  geometry failure rather than an import error.
+  `[fsg-check] FAIL deliberate baseline mutation: max known-point 3D error=0.798831399 m; limit=1e-7 m`
+  `[fsg-check] FAIL deliberate crop mutation: max known-point 3D error=2.37076271 m; limit=1e-7 m`
+* Per-eye projection/ray-cast checks from `acquisition.json` (limits 0.002 px and
+  20 um; 242 rays checked per case, 121 per eye, all IDs matching):
+
+  | case | projection_max_error_px | raycast_max_error_m |
+  | --- | ---: | ---: |
+  | fronto | 3.774e-05 | 3.667e-07 |
+  | tilted | 8.189e-05 | 5.797e-07 |
+  | step | 3.774e-05 | 7.219e-07 |
+
+  Every `acquisition.json` reads `source: blender_cycles`, `device: OPTIX`,
+  `blender_version: 5.2.1 LTS`, `adaptive_sampling: false`, distinct L/R seeds,
+  and `independent_blender_checks: true`. No `synthetic_stub` anywhere.
+* Small per-case and per-instance metrics from `metrics.json` (interior; targets
+  >=90% coverage, <=1% median, <=3% p95):
+
+  | case / instance | coverage | median rel. range | p95 rel. range | ref px |
+  | --- | ---: | ---: | ---: | ---: |
+  | fronto | 98.395% | 0.388% | 1.315% | 16384 |
+  | tilted | 99.823% | 0.463% | 1.680% | 16384 |
+  | step (pooled) | 94.101% | 0.358% | 2.965% | 15104 |
+  | step instance 1 (1.6 m) | 90.361% | 0.187% | 0.792% | 9088 |
+  | step instance 2 (3.4 m) | 99.751% | **1.136%** | **4.111%** | 6016 |
+
+  `fronto` and `tilted` pass on every criterion. The pooled `step` figures also
+  pass; the per-instance split is what catches the background, which is exactly
+  what the per-object rule in D-FSG1 exists to prevent being hidden.
+  `wrong_instance_accepted_count` is 0 in all three cases.
+  Full profile: not run, so no numbers are claimed.
+* Boundary and singly-visible diagnostics: only `step` has any boundary reference
+  pixels (1280): coverage 30.859%, median 0.900%, p95 7.456%, and 31.139% of
+  accepted boundary pixels exceed 3% relative error. That is the expected cost of
+  SGBM regularisation across an 1.8 m discontinuity and has no pass threshold in
+  FSG1. `singly_visible` has 0 reference pixels in all three cases, including
+  `step`. This is geometry, not a missing test: the foreground half-plane lies on
+  the left of the frame, so the background the left eye can see is never the part
+  the foreground hides from the right eye. The half-occluded strip belongs to the
+  right eye and so is absent from a left-eye reference grid. A fixture with the
+  step mirrored would be needed to exercise a left-eye half-occlusion.
+* Primary samples, render/stereo/annotation/process times: 13,107,200 primary
+  camera samples per case and 39,321,600 for the suite, matching the prescription
+  in this note. Per case, render (L+R) / oracle annotation / case seconds:
+  fronto 0.2666 / 0.0469 / 0.6122; tilted 0.2125 / 0.0406 / 0.4870;
+  step 0.2122 / 0.0586 / 0.5070. `run.json:total_wall_seconds` 1.6064; the whole
+  Blender process took 2.149 s wall. Stereo: fronto 0.0503 s, tilted 0.0343 s,
+  step 0.0283 s. These are Interactive-class, well inside the estimate.
+* Files viewed (RGB, validity, predicted/truth depth, error, point cloud): the
+  rectified L/R pair, `disparity.png`, `range_left.png`, `validity.png`,
+  `truth_range_left.png`, `relative_range_error.png`, `reference_interior.png`
+  and `reference_boundary.png` for all three cases, as one contact sheet.
+  `fronto` is a flat mid-grey disparity field; `tilted` shows a monotonic gradient
+  whose sign agrees with its truth range map, which rules out a vertical flip;
+  `step` shows the near half bright in disparity and dark in range, with the
+  interior/boundary masks complementary across a vertical band at the edge, and
+  visibly noisier relative error on the far half - the failing instance is visible
+  in the image, not only in the metric. Independent of the images, the head-frame
+  point geometry is right: `step` instance medians Z = -1.5991 m and -3.3937 m
+  against -1.6 and -3.4; `fronto` Z = -1.999 m; and the `tilted` plane normal fits
+  at 25.5 degrees from the gaze direction (specified 25) while sitting 13.2 degrees
+  from head -Z, so the fixed head frame is not being confused with Blender world.
+  `points_head.ply` parses as 14,608 vertices, no faces, the head-frame comment,
+  and the two depth levels above.
+* Fixes, with diagnosis and affected file: none. No repository file was changed
+  other than this note, `docs/log.md`, `README.md` and `DECISIONS.md`. No check,
+  threshold, fixture, margin or matcher parameter was touched.
+* Every unexpected FAIL line: none unexpected. The two expected negatives are
+  quoted above. The two real gate failures are:
+  `[fsg-eval] FAIL step: instance 2: median_relative_range_error=0.011358246628436037 fails max 0.01`
+  `[fsg-eval] FAIL step: instance 2: p95_relative_range_error=0.04111456787779029 fails max 0.03`
+* Gate status and whether further work is authorized: `[fsg-eval] FAIL`, and
+  `evaluation.json:status` is `FAIL` with `full_profile_milestone_pass: false`.
+  Stop after this report; no fusion, surface growing or policy work begun.
+
+### Diagnosis of the step instance-2 miss
+
+Measured, by comparing the stored disparities against a truth disparity recomputed
+from `evaluation_only/mesh.npz` on the same rectified core grid (rectified focal
+608.919 px, baseline 0.063000 m, so 11.28 px of disparity at 3.4 m against 23.98 px
+at 1.6 m):
+
+| case / instance | SGBM median err | SGBM std | refined median err | refined std |
+| --- | ---: | ---: | ---: | ---: |
+| fronto | -0.1185 px | 0.0303 | +0.0100 px | 0.1287 |
+| tilted | +0.0747 px | 0.1528 | -0.0019 px | 0.1615 |
+| step inst 1 | +0.0238 px | 0.0116 | +0.0127 px | 0.0939 |
+| step inst 2 | -0.1579 px | 0.0370 | +0.0216 px | 0.2185 |
+
+The refinement is doing its declared job and doing it correctly: it removes SGBM's
+sub-pixel pixel-locking bias everywhere (|median| <= 0.022 px on all four), which
+also confirms its Gauss-Newton sign. What limits the result is its scatter. At
+3.4 m a 0.2185 px scatter on an 11.28 px disparity is a 1.9% one-sigma range error,
+and the 1.136% median and 4.111% p95 follow arithmetically from it.
+
+That scatter is stochastic render noise, not a geometry error. Re-rendering the
+identical fixture at 1024 spp (16x the samples) and re-running only the estimator
+halved the instance-2 refinement scatter, 0.2185 -> 0.1089 px, and carried the case
+to median 0.618% and p95 1.846%, which would pass; instance 1 went 0.187% ->
+0.104%. Over the same change SGBM's bias was unmoved, -0.1579 -> -0.1579 px, which
+is what a deterministic interpolation bias should do and what a geometry,
+orientation, indexing or calibration fault could not do. Texture is not the
+constraint either: instance 2's local luminance std is a median 8.94 and a 5th
+percentile 4.05 in the fixed uint8 conversion, far above the 0.5 rejection cutoff,
+and its coverage is 99.751%. The residual ~0.10 px floor at 1024 spp is the
+bilinear remap, the 5x5 window and the linear-gradient approximation, not noise.
+
+So this is an instrument-resolution result, not an implementation bug. The small
+profile puts only 11.28 px of disparity on the farthest surface at 64 spp; the two
+terms that would relieve it both belong to the full profile, which doubles the
+rectified focal length to about 1218 px, and so the disparity at 3.4 m to about
+22.6 px, and quadruples the samples to 256. Neither is available by fixing code.
+
+Because the miss is a genuine algorithm/resolution limit and not one of the
+plainly identified bug classes the execution prompt allows to be fixed in place,
+the matcher was not tuned, the thresholds and fixtures were not touched, and the
+full run was not used to bury a small-profile failure. Per D-FSG1 this is the
+point at which the next step is Luiz's and Chat's decision, not Code's. The open
+question for that decision is whether `small` should be expected to meet a gate
+written for the reported configuration, or whether the gate is a full-profile
+statement that `small` is simply too coarse to satisfy at 3.4 m.
 
 ## Source interfaces reviewed
 

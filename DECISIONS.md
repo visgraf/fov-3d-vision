@@ -340,6 +340,22 @@ singly-visible regions are separately reported, never silently filled.
 
 What would change the next step: a real full-profile miss without a demonstrated
 implementation bug requires a decision from Luiz/Chat before surface fusion.
+
+Outcome 2026-09-19 (small profile only; evidence in `docs/fsg1-single-patch.md`
+Workstation Results and `docs/log.md`): the real `small` suite passes `fronto`
+and `tilted` on every criterion and fails `step` instance 2, the 3.4 m
+background, at 1.136% median and 4.111% p95 against the 1% and 3% targets. The
+per-instance rule in this decision is what caught it; the pooled `step` figures
+passed. Measured diagnosis: bounded refinement removes SGBM's subpixel bias
+everywhere (|median| <= 0.022 px) but scatters 0.2185 px on an 11.28 px
+disparity; a 1024 spp diagnostic re-render halves the scatter to a pass while
+SGBM's bias is unchanged, so it is render noise at the small profile's angular
+resolution, not a geometry, orientation, indexing or calibration fault. No code,
+threshold, fixture or matcher parameter was changed, and the full profile was not
+run. The gate itself is not challenged; what is open is whether `small` was ever
+in its scope, since the decision names the full profile at its default spp as the
+reported instrument result. Nothing here yet speaks to a full-profile miss, which
+is the case this decision's rule above was written for.
 Passing these controlled fixtures justifies considering two overlapping patches;
 it does not demonstrate complex-scene or complete-object reconstruction.
 
