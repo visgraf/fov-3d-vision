@@ -603,3 +603,33 @@ saccades only, fixed 2.10 m vergence, one seed and a prospectively fixed 12 mm
 association rule. Folds, self-occlusion, multi-object switching, head motion,
 vergence control, calibrated uncertainty and hidden-surface completeness remain
 open.
+
+## D-FSG4a - Compare active frontier growth with one fixed symmetric scan (2026-09-19)
+Keep the closed FSG1 instrument, FSG3 frontier policy in substance, FSG3 multi-look head-frame fusion and all metric-geometry gates. On two new mirrored planar placements with distinct textures and fresh seeds 401/443, compare the active policy against the single frozen non-adaptive scan `0,-5,+5,-10,+10` at a five-fixation camera budget. Pair rendering noise by fixture/seed/yaw/eye. The primary number is truth-grid surface coverage versus budget and its fixed normalized AUC. A pass requires all four active runs to remain valid, all four scan maps to remain metrically valid, exact same-yaw pairing, active AUC wins in 4/4 pairs, mean AUC advantage >=0.10 and mean final-coverage advantage >=0.10. No alternative scan or threshold may be selected after results.
+
+If the full comparison passes, close Increment 4 and record that active frontier feedback improves sampling efficiency over this fixed-scan control on the controlled mirrored planar family. Authorize, but do not implement, the next experiment. If it misses, preserve all pairs and stop for Luiz/Chat. Code may fix only demonstrated implementation/orchestration defects that violate this written experiment; never change the instrument, policy, scan, geometry, texture, seed, fusion radius, budget or gates to obtain a pass.
+
+Outcome 2026-09-19 (evidence: `docs/fsg4-increment4.md` Results and
+`docs/log.md`). **STOPPED at the small paired smoke on an integrity failure; the
+four full paired trials and `fsg4_compare.py` were NOT run, so this decision's
+comparison gates were never reached and no FSG4_INCREMENT4_PASS/FAIL status
+exists.** `AssertionError: paired observation differs at shared yaw -10.0`,
+`fsg4_pair.py` exit 1. Diagnosis: at every shared yaw the Cycles seeds are
+identical and the oracle masks bit-exact; only RGB differs by one to two float32
+ulp (max 5.96e-07). Rendering the identical command twice - same fixture, seed,
+yaw and step - reproduces the same discrepancy as two renders at different steps,
+with identical seeds in all three, so the paired-seed rule is confirmed
+step-independent and the cause is non-associative GPU floating-point
+accumulation, not policy or step leakage. The control's purpose is met in
+substance: at the shared yaw every reconstruction statistic is bit-identical
+between policies. I did not fix it - `fsg4_pair.py` faithfully implements the
+written "exactly identical" requirement, so the issue is the specification's
+bit-exactness assumption, not a delegated implementation defect, and relaxing it
+would change gate C5 and blunt the `--negative pairing` control. Nothing was
+altered: no change under `tools/`, and no scan, policy, geometry, texture, seed,
+fusion radius, budget, threshold or gate touched. **Increment 4 remains OPEN and
+no next experiment is authorized.** The decision for Luiz/Chat is whether
+"exactly identical" stays bit-exact - requiring a deterministic rendering path -
+or is restated as bit-exact seeds and oracle masks plus an explicit RGB tolerance
+with gate C5 reworded. The four pairs and the AUC aggregation remain unrun and
+unprejudiced.

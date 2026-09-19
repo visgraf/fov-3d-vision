@@ -205,3 +205,136 @@ Return a paste-ready report containing:
 - any code fix, one sentence each;
 - final status exactly `FSG4_INCREMENT4_PASS` or `FSG4_INCREMENT4_FAIL`;
 - if PASS, state Increment 4 closed and the next experiment authorized but not implemented. Do not design or implement the next increment.
+
+## Results
+
+Run 2026-09-19 on the workstation by Code. Every number is read from files under
+`previews/fsg4/`.
+
+**Execution STOPPED at the small paired smoke on an integrity failure. The four
+full paired trials and the comparison were NOT run. Increment 4 is NOT closed and
+no next experiment is authorized.** No `FSG4_INCREMENT4_PASS` / `FSG4_INCREMENT4_FAIL`
+status exists, because `fsg4_compare.py` was never executed.
+
+    AssertionError: paired observation differs at shared yaw -10.0
+
+`fsg4_pair.py` exit 1. Under section 2 an integrity/provenance/runtime failure
+stops before full, and the handoff states explicitly that a paired-observation
+mismatch "is an integrity failure, not a numerical policy result". This is **not**
+a numerical result about either policy.
+
+### Diagnosis: the renderer is not bit-reproducible on this GPU
+
+The paired-noise rule itself is implemented exactly as written and works. At all
+three shared yaws the Cycles seeds are identical and the oracle instance masks are
+bit-exact; only the RGB float arrays differ, by one to two float32 ulp:
+
+| shared yaw | active step / scan step | seeds_lr equal | instance_L/R equal | rgb_L / rgb_R differing elements | max abs diff |
+| ---: | --- | --- | --- | --- | ---: |
+| 0.0 | 0 / 0 | true (40100050, 40100051) | true | 177,748 / 186,798 of 307,200 | 5.96e-07 |
+| -5.0 | 1 / 1 | true (40100040, 40100041) | true | 175,544 / 175,029 | 4.77e-07 |
+| -10.0 | 2 / 3 | true (40100030, 40100031) | true | 173,508 / 174,289 | 4.77e-07 |
+
+A controlled reproducibility test settles the cause. Rendering the **identical
+command** twice - same fixture, seed, yaw AND same step - produces the same
+discrepancy as two renders at different steps:
+
+| comparison | seeds | instance masks | rgb differing elements | max abs diff |
+| --- | --- | --- | --- | ---: |
+| r1 vs r2, identical command, same step 2 | identical | bit-exact | 174,461 / 173,449 | 4.768e-07 |
+| r1 vs r3, same yaw, step 2 vs step 3 | identical | bit-exact | 174,386 / 173,221 | 4.768e-07 |
+
+The seed rule is confirmed step-independent - all three renders report
+`seeds_lr = [40100030, 40100031]`. So the difference is **not** policy or step
+leakage: Cycles/OptiX floating-point accumulation is non-associative under
+parallel scheduling, and identical inputs give last-ulp differences on this
+hardware. `fsg4_public.render_seed(fixture, seed, yaw_deg, eye_id)` takes no
+policy or step argument and behaves exactly as specified.
+
+The scientific purpose of the pairing control - that both policies see the same
+observation at a shared yaw - is satisfied in substance. At yaw -10.0 every
+reconstruction statistic is bit-identical between the two policies:
+
+| quantity at shared yaw -10.0 | active step 2 | scan step 3 | identical |
+| --- | ---: | ---: | --- |
+| point_count / object_valid_count | 10,911 | 10,911 | yes |
+| object_reference_count | 11,754 | 11,754 | yes |
+| object_measurement_fraction | 0.9282797345584481 | 0.9282797345584481 | yes |
+| matched / new | 6,069 / 4,842 | 6,069 / 4,842 | yes |
+| overlap median | 0.003912357932249099 m | 0.003912357932249099 m | yes |
+
+### Why I did not fix it
+
+`fsg4_pair.py` uses `np.array_equal`, which faithfully implements the written
+requirement that the arrays "must be exactly identical". The implementation is
+not defective; the specification's bit-exactness assumption is unachievable for
+RGB on this renderer. That makes it a specification question, not "a demonstrated
+implementation/orchestration defect that violates the written experiment", which
+is the only category D-FSG4a delegates to Code.
+
+Relaxing the comparison to a tolerance would also change gate C5 - "all
+shared-yaw observations must be **exactly** paired as specified above" - and
+would blunt the `--negative pairing` control, whose whole purpose is to prove
+this check can fail. Choosing a tolerance is a scientific judgement with no
+prescribed value. Nothing was altered: `git diff` against the handoff commit
+shows no change under `tools/`, and no scan, policy, geometry, texture, seed,
+fusion radius, budget, threshold or gate was touched.
+
+### What the smoke did show, diagnostic only
+
+The small paired smoke completed both runs before the pairing assertion, so these
+numbers exist but are **small-profile diagnostics on one pair, not a result**, and
+the prescribed full comparison was not run. Both runs reported
+`FSG4_..._RUN_FAIL` on their own small-profile gates (plane error median/p95 for
+both; `fix_03` object coverage 89.76% for active).
+
+The active policy chose `0, -5, -10, -15` degrees and stopped on `no_frontier`
+after 4 fixations using 52,428,800 samples, reaching 94.67% coverage. The fixed
+scan spent all five fixations and 65,536,000 samples, reaching 85.73%. Its third
+look at +5 added 2.33 percentage points and its fifth at +10 landed essentially
+off-object - 384 reference points, 58 valid, `skipped_too_few_object_points: true`
+- adding 0.00 points of coverage. That is precisely the "poor spatial allocation"
+the experiment is built to measure, and the handoff is explicit that it is not an
+integrity failure for the scan. It is also exactly why these numbers must not be
+reported as the outcome: one small-profile pair is not the four-pair full
+comparison, and the AUC aggregation never ran.
+
+### Integrity of everything else
+
+HEAD `4166d0c14702f41e9ccbd997adab8177108d67a8` on clean `main`, `cf3601a` an
+ancestor. The FSG1/FSG2/FSG3 frozen diff over the twenty-one pinned modules,
+`rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY; eleven files added
+by the handoff and none modified. Python 3.12.3, NumPy 2.2.6, OpenCV 4.13.0,
+Pillow 12.3.0; Blender 5.2.1 LTS, OPTIX on an RTX 4090. D-FSG4a and a prospective
+`docs/log.md` entry were recorded BEFORE any acquisition.
+
+Structural invariants verified by reading the code beforehand: `fsg4_run.py` and
+`fsg4_policy.py` import no fixture geometry and open no evaluator-only asset;
+the loop calls `compute_once` with `check_kernel_equivalence`, never
+`compute_variants`; `SCAN_YAWS_DEG = (0.0, -5.0, 5.0, -10.0, 10.0)` is the single
+frozen control.
+
+`[fsg4-scene] PASS case_a=[-19.847,4.189] scan_ideal=0.840 case_b=[-3.874,21.329] scan_ideal=0.789`,
+`[fsg4-policy] PASS mirrored_frontiers=true resolved_frontier_stops=true`,
+`[fsg4-metrics] PASS known_auc_gain=0.220000 early_stop_padding=true`,
+`[fsg4-check] SUMMARY passed=6 failed=0`. All four negatives exit 1:
+
+    [fsg4-check] FAIL AssertionError deliberate hard-coded/wrong frontier direction detected
+    [fsg4-check] FAIL AssertionError deliberate fixture-favouring scan mutation detected
+    [fsg4-check] FAIL AssertionError deliberate paired-noise mismatch detected
+    [fsg4-check] FAIL AssertionError deliberate no-active-advantage curve detected
+
+All ten FSG1/FSG2/FSG3 regression suites pass unchanged: 24 / 29 / 34 / 48 / 37 /
+46 / 4 / 5 / 7 / 8.
+
+### What has to be decided
+
+The pairing criterion needs a decision that is Chat's and Luiz's, not mine:
+whether "exactly identical" should remain bit-exact - in which case this
+comparison cannot run on this GPU as specified and needs a deterministic
+rendering path - or whether the control should be restated as bit-exact seeds and
+oracle masks plus an explicit RGB tolerance, with a stated value and gate C5
+reworded to match. Either way the four full pairs and the AUC aggregation remain
+unrun and unprejudiced; no alternate scan, threshold, placement, seed or AUC
+definition has been seen or selected. Increment 4 stays open. Stopped for Luiz
+and Chat.

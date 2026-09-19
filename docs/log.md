@@ -2661,3 +2661,154 @@ nothing here speaks to optimality - the fixed-scan comparison was deliberately
 deferred until the active loop worked, which it now does. Folds, self-occlusion,
 multi-object switching, head motion, vergence control, calibrated uncertainty and
 hidden-surface completeness remain open. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG4 Increment 4, active versus fixed scan: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg4-increment4.md` and D-FSG4a appended just above. The question moves
+from "can the loop work?" (FSG3, closed) to "does the feedback buy sampling
+efficiency over a non-adaptive scan at equal budget?". Commands, written before
+running them:
+
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4/smoke-case_a-seed401 --profile small --fixture case_a --seed 401 --mode smoke --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4/full-case_a-seed401 --profile full --fixture case_a --seed 401 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4/full-case_a-seed443 --profile full --fixture case_a --seed 443 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4/full-case_b-seed401 --profile full --fixture case_b --seed 401 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4/full-case_b-seed443 --profile full --fixture case_b --seed 443 --mode full --device OPTIX
+    .venv/bin/python tools/fsg4_compare.py previews/fsg4/full-case_a-seed401 previews/fsg4/full-case_a-seed443 previews/fsg4/full-case_b-seed401 previews/fsg4/full-case_b-seed443 --out previews/fsg4/full-comparison
+
+**Everything scientific is frozen and was verified by reading the code before
+running.** FSG1 instrument `FSG1-HDR-SGBM-one-original-update-original-validity-v1`
+via `compute_once`, never `compute_variants`; FSG3 frontier rule in substance;
+FSG3 multi-look map with 12 mm association/hash; vergence 2.10 m; 5-degree active
+steps; five-fixation budget; **the non-adaptive control is the single frozen
+sequence `SCAN_YAWS_DEG = (0.0, -5.0, 5.0, -10.0, 10.0)`**, identical for every
+fixture and seed, consulting neither RGB, segmentation, map nor geometry. The
+active host and policy import NO fixture geometry (`fsg4_run.py`,
+`fsg4_policy.py`) - only the evaluator does - and the active code never branches
+on the opaque fixture names.
+
+Paired noise is the design's key control: `render_seed(fixture, seed, yaw_deg,
+eye_id)` takes no policy or step argument, so whenever active and scan visit the
+same yaw their RGB and oracle arrays must be EXACTLY identical. A mismatch is an
+integrity failure, not a numerical result.
+
+Design: two NEW mirrored placements of the same 0.95 x 0.32 m tilted rectangle at
+z ~ -2.10 m with distinct textures - `case_a` frontier pointing left, `case_b`
+its mirror pointing right - x two fresh MC seeds 401 and 443 = four paired
+trials. Both policies start at yaw 0. Analytic design check (an estimate, NOT a
+result and NOT an acceptance number): with ideal 12-degree intervals the fixed
+scan would cover about 0.840 of case_a and 0.789 of case_b, measured spans
+[-19.847,+4.189] and [-3.874,+21.329] degrees.
+
+Gates, all fixed in advance. (A) Integrity, both policies every trial: final
+point-to-plane median <=10 mm and p95 <=30 mm; only object ID 81 in the map;
+idempotent duplicate replay; no coverage drop beyond 0.5 pp. **The scan is NOT
+required to achieve high completeness - poor spatial allocation is the quantity
+being measured, not an integrity failure.** (B) Active validity, every trial:
+4-5 fixations; termination `no_frontier`, not budget exhaustion; saccades nonzero
+and <=5 deg, no revisit; >=90% object measurement coverage per patch; >=5,000
+matched per post-seed patch; overlap median <=10 mm and p95 <=25 mm; nonterminal
+>=15% new and >=10 pp gain; terminal >=5% new and >=2 pp gain; final coverage
+>=90%; gain over seed >=35 pp. (C) Comparison across the four pairs: active AUC
+must win **4/4**; mean paired AUC advantage >=0.10; mean final-coverage advantage
+>=0.10; active actual camera samples <= scan samples in every pair; all
+shared-yaw observations exactly paired. AUC is the frozen normalized discrete
+trapezoid over k=1..5 with early-stop coverage carried forward.
+
+Preflight verified: clean main at 4166d0c with cf3601a an ancestor; the
+FSG1/2/3 frozen diff over the twenty-one pinned modules empty; eleven files
+added; environment Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0,
+Blender 5.2.1 LTS on an RTX 4090; `previews/fsg4` absent.
+`[fsg4-scene] PASS case_a=[-19.847,4.189] scan_ideal=0.840 case_b=[-3.874,21.329] scan_ideal=0.789`,
+`[fsg4-policy] PASS mirrored_frontiers=true resolved_frontier_stops=true`,
+`[fsg4-metrics] PASS known_auc_gain=0.220000 early_stop_padding=true`,
+`[fsg4-check] SUMMARY passed=6 failed=0`. All four negatives exit 1 (hard-coded
+frontier, fixture-favouring scan mutation, paired-noise mismatch, no-advantage
+AUC curve). All ten FSG1/2/3 regression suites pass:
+24/29/34/48/37/46/4/5/7/8.
+
+All four predeclared full pairs run once each. **A completed numerical exit 2
+from one pair does NOT authorize tuning and does NOT cancel the remaining
+predeclared pairs; an integrity exception stops execution.** No alternate scan,
+threshold, placement, seed or AUC definition may be selected after seeing
+results, and no second baseline may be added. Outcome unknown at writing: a pass
+closes Increment 4 and records that active frontier feedback improves sampling
+efficiency over this fixed-scan control on this controlled mirrored planar
+family - explicitly NOT optimality and NOT a population-level statistical result
+- and authorizes but does not implement the next experiment. Logs under
+`previews/fsg4/logs/`.
+
+Measured outcome, appended after the run. **STOPPED at the small paired smoke on
+an integrity failure. The four full paired trials and `fsg4_compare.py` were NOT
+run. Increment 4 is NOT closed and no next experiment is authorized.** No
+FSG4_INCREMENT4_PASS/FAIL status exists, because the comparison never executed.
+
+    AssertionError: paired observation differs at shared yaw -10.0
+
+`fsg4_pair.py` exit 1. Section 2 stops before full on an integrity/provenance/
+runtime failure, and the handoff states a paired-observation mismatch is an
+integrity failure, not a numerical policy result.
+
+Diagnosis, measured not assumed. At all three shared yaws the Cycles seeds are
+IDENTICAL and the oracle instance masks are BIT-EXACT; only RGB differs, by one
+to two float32 ulp: yaw 0.0 seeds (40100050,40100051), 177,748/186,798 of 307,200
+elements differing, max 5.96e-07; yaw -5.0 seeds (40100040,40100041), 175,544/
+175,029, max 4.77e-07; yaw -10.0 seeds (40100030,40100031), 173,508/174,289, max
+4.77e-07. A controlled reproducibility test settles the cause: rendering the
+IDENTICAL command twice - same fixture, seed, yaw AND same step - gives the same
+discrepancy (174,461/173,449 differing, max 4.768e-07) as two renders at
+different steps (174,386/173,221, max 4.768e-07), with all three reporting
+seeds_lr = [40100030, 40100031]. So the seed rule is confirmed step-independent
+and the difference is NOT policy or step leakage: Cycles/OptiX floating-point
+accumulation is non-associative under parallel scheduling and identical inputs
+give last-ulp differences on this hardware.
+
+The control's scientific purpose is satisfied in substance. At shared yaw -10.0
+every reconstruction statistic is bit-identical between the two policies:
+point_count and object_valid_count 10,911; object_reference_count 11,754;
+object_measurement_fraction 0.9282797345584481; matched 6,069; new 4,842;
+overlap median 0.003912357932249099 m.
+
+I did NOT fix it. `fsg4_pair.py` uses np.array_equal, faithfully implementing the
+written requirement that the arrays "must be exactly identical"; the
+implementation is not defective, the specification's bit-exactness assumption is
+unachievable for RGB on this renderer. That is a specification question, not the
+"demonstrated implementation/orchestration defect" D-FSG4a delegates. Relaxing
+the comparison would change gate C5 ("all shared-yaw observations must be exactly
+paired") and blunt the --negative pairing control whose purpose is to prove this
+check can fail, and no tolerance value is prescribed. `git diff` against the
+handoff commit shows NO change under tools/; no scan, policy, geometry, texture,
+seed, fusion radius, budget, threshold or gate was touched.
+
+Diagnostic only, not a result: both smoke runs completed before the assertion and
+both reported FSG4_..._RUN_FAIL on their own small-profile gates (plane error
+median/p95 for both; fix_03 object coverage 89.76% for active). The active policy
+chose 0, -5, -10, -15 deg, stopped on no_frontier after 4 fixations using
+52,428,800 samples and reached 94.67% coverage; the fixed scan spent all five
+fixations and 65,536,000 samples for 85.73%, its third look at +5 adding 2.33 pp
+and its fifth at +10 landing essentially off-object (384 reference points, 58
+valid, skipped_too_few_object_points true) adding 0.00 pp. That is the poor
+spatial allocation the experiment exists to measure, and the handoff is explicit
+it is not an integrity failure for the scan - but one small-profile pair is not
+the four-pair full comparison and the AUC aggregation never ran, so it must not
+be reported as the outcome.
+
+Everything else was clean: FSG1/2/3 frozen diff from cf3601a empty; eleven files
+added, none modified; fsg4_run.py and fsg4_policy.py import no fixture geometry
+and open no evaluator-only asset; the loop calls compute_once with
+check_kernel_equivalence, never compute_variants; SCAN_YAWS_DEG =
+(0.0,-5.0,5.0,-10.0,10.0) is the single frozen control. Scene/policy/metrics
+self-tests PASS (case_a=[-19.847,4.189] scan_ideal=0.840, case_b=[-3.874,21.329]
+scan_ideal=0.789; mirrored_frontiers and resolved_frontier_stops true;
+known_auc_gain=0.220000 early_stop_padding true), [fsg4-check] SUMMARY passed=6
+failed=0, all four negatives exit 1, and all ten FSG1/2/3 suites pass
+24/29/34/48/37/46/4/5/7/8.
+
+Open for Luiz/Chat: whether "exactly identical" stays bit-exact - in which case
+this comparison cannot run on this GPU as specified and needs a deterministic
+rendering path - or is restated as bit-exact seeds and oracle masks plus an
+explicit RGB tolerance, with a stated value and gate C5 reworded to match. The
+four full pairs and the AUC aggregation remain unrun and unprejudiced; no
+alternate scan, threshold, placement, seed or AUC definition has been seen or
+selected. Increment 4 stays open. Stopped for Luiz/Chat.
