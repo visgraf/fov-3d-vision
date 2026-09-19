@@ -175,6 +175,147 @@ Return one paste block containing:
 
 If `FSG1_FINAL_VALIDATION_PASS`, update README / `docs/fsg1-final-validation.md` Results / `docs/log.md` / DECISIONS with measured results, mark Increment 1 complete, and state **Increment 2 authorized but not implemented**. If `FSG1_FINAL_VALIDATION_FAIL`, preserve the failure and stop without inventing a new candidate.
 
+## 8. Results
+
+Run 2026-09-19 on the workstation by Code. Every number is read from files under
+`previews/fsg1/final-*`. Chat's handoff record in
+`docs/fsg1-final-validation-checks.md` is untouched.
+
+**The schedule stopped at the smoke stage with an integrity failure. The two full
+acquisitions were NOT run. FSG1 / Increment 1 is NOT closed and Increment 2 is
+NOT authorized.**
+
+    [fsg-final] FAIL ValueError: half-occlusion NOT_EXERCISED: raw
+
+Smoke evaluation exit code **1**. Under section 5.2 an exit 1 for fixture or
+geometry integrity blocks the full run, and section 2 states explicitly that a
+fixture which fails to create a substantial singly-visible population is an
+integrity/test-design failure, not a numerical pass. This is **not** a numerical
+miss by the candidate; the candidate was never tested on half-occlusion at all,
+because the fixtures do not present any inside the accepted measurement.
+
+### The defect, measured
+
+Both occluders place their nearest foreground edge far outside the accepted core,
+so the occluding boundary never enters the measurement:
+
+| quantity | occluder_left | occluder_right |
+| --- | ---: | ---: |
+| foreground Z | -1.85 m | -1.95 m |
+| foreground x interval | [-1.00, +0.35] m | [-0.35, +1.00] m |
+| nearest edge \|x\| | 0.35 m | 0.35 m |
+| that edge, off the gaze axis | **10.713 deg** | **10.176 deg** |
+| accepted core half-angle | 6.000 deg | 6.000 deg |
+| core half-width at that depth | 0.1944 m | 0.2050 m |
+| edge inside the core? | **NO** | **NO** |
+
+The accepted core subtends `CORE_FOV_DEG = 12` degrees, i.e. **+/-6.000 degrees,
+at BOTH profiles** - small and full differ in resolution, not in field:
+`atan(64/608.9193) = atan(128/1217.8387) = 6.0000 deg`. Every occluding edge in
+this suite sits at 10.2-10.7 degrees, roughly 1.7x outside that half-angle.
+
+The rendered masks confirm it rather than inferring it. On the small seed-101
+record the padded 320x320 raster does contain both instances - `occluder_left`
+21:88,320 / 22:14,080 and `occluder_right` 31:86,080 / 32:16,320 - but the
+accepted 128x128 core contains **only the foreground**, 21:16,384 and 31:16,384.
+The background and its edge live entirely in the search/rectification margin,
+which is never part of an accepted measurement. Consequently the truth reference
+on the rectified core carries a single instance, `singly_visible = 0` raw and 0
+core, against the required minimum of 64 raw / 32 core at small (256/128 at full).
+The `occluder_left` point cloud written before the stop shows the same thing:
+16,384 points, all instance 21, median Z = -1.8526 m - the foreground plane alone.
+
+**This is profile-independent and will reproduce identically at full.** Because
+the core half-angle is 6.000 degrees at both profiles, the two full acquisitions
+would spend 2,516,582,400 primary camera samples to re-derive a known fixture
+defect. They were therefore not run.
+
+For contrast, FSG1d's `step_right` exercised this test successfully (4,608 raw /
+3,528 core at full) because its foreground edge sat at x = 0, on the optical
+axis. The FSG1g occluders are finite rectangles whose *both* edges fall outside
+the core, so neither orientation of the mirrored pair is exercised.
+
+Correcting this requires moving a fixture edge inside +/-6 degrees of the gaze -
+a change to scene geometry. Section 5.1 delegates only orchestration or API fixes
+that preserve the frozen semantics and states that any change which can affect
+geometry, RGB, disparity, validity or evaluation requires stopping for Luiz and
+Chat. No scene, gate, seed, spp, encoding, iteration count, matcher setting,
+erosion radius or reference mask was altered, and no alternative candidate was
+introduced.
+
+### What the smoke run did establish
+
+Four of the six fixtures are built exactly as frozen. Measured truth disparities
+on the rectified core, scaled to the full profile, are exact to five decimals:
+
+| case | frozen full-profile target | measured (implied full) | fractional phase |
+| --- | ---: | ---: | ---: |
+| phase_00 | 22.00 px | 22.00000 px | 0.0000 |
+| phase_25 | 22.25 px | 22.25000 px | 0.2500 |
+| phase_50 | 22.50 px | 22.50000 px | 0.5000 |
+| phase_75 | 22.75 px | 22.75000 px | 0.7500 |
+
+Their smoke interior results, diagnostic only and at the small profile:
+
+| case | ref | coverage | median | p95 | small-profile phase |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| phase_00 | 16384 | 100.000% | 0.1663% | 0.5604% | 0.000 |
+| phase_25 | 16384 | 100.000% | 0.3211% | 0.7792% | 0.125 |
+| phase_50 | 16384 | 100.000% | 0.4676% | 0.9948% | 0.250 |
+| phase_75 | 16384 | 100.000% | 0.5912% | 1.1996% | 0.375 |
+
+All four are inside the interior gates with full coverage, and the error rises
+monotonically with distance from an integer disparity - which is the FSG1e phase
+mechanism reappearing in a fresh fixture with the one-update instrument, now at a
+magnitude that stays well within the targets. Note the caveat: **at the small
+profile the disparities are halved, so these cases exercise phases 0, .125, .25
+and .375, not the frozen 0, .25, .50, .75.** The intended phase stress only
+happens at the full profile, which was not run.
+
+Point clouds written before the stop are head-frame with no faces and no fill:
+phase_00 16,384 points at median Z = -3.4830 m, phase_25 -3.4377, phase_50
+-3.3942, phase_75 -3.3526, consistent with the frozen target disparities.
+
+### Integrity of everything else
+
+HEAD `fd0bad9b3a4e2b25f3356da8584831ce4b8dc541` on clean `main`, `837acfe` an
+ancestor. The frozen-instrument diff over the fifteen pinned modules, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY before and after; six files
+were added by the handoff and none was modified. Python 3.12.3, NumPy 2.2.6,
+OpenCV 4.13.0, Pillow 12.3.0; Blender 5.2.1 LTS, OPTIX on an RTX 4090; no pin
+moved. D-FSG1g and a prospective `docs/log.md` entry were recorded BEFORE any
+acquisition.
+
+`[fsg-final-scene] PASS cases=6 phases=4 mirrored_occluders=2` and
+`[fsg-final-check] SUMMARY passed=7 failed=0`; the six regression suites returned
+24/29/34/48/37/46 with zero failures. The three negatives each exit 1: deliberate
+phase mutation detected, deliberate bad boundary detected, and deliberate
+candidate substitution detected - the last confirming the validator uses
+`compute_once` and not FSG1f's named supported candidate. Read before running,
+`tools/fsg_final_eval.py` calls `fsg_stereo_supported.compute_once()` and never
+`compute_variants()`, so the endpoint and footprint vetoes are absent as intended.
+
+The small render itself succeeded: exit 0, all six `[fsg-render]` lines,
+`[fsg-render] COMPLETE`, and `[fsg-final-render] COMPLETE spec=cb9da6a2fc70...`,
+78,643,200 primary camera samples, 3.629 s of Blender wall. The failure is in
+what the fixtures present, not in acquisition or software.
+
+### Status
+
+No `validation.json` exists for the full stage, because the full stage was not
+run. The smoke evaluation is incomplete by design of the stop: four
+`validation.png` sheets exist (the phase planes), and none for the two occluders.
+Inspected `phase_50/validation.png` - textured HDR RGB, fully white validity,
+dark interior-error panel, and correctly empty boundary, singly-visible,
+occlusion-core and missing panels for a single plane - plus a direct comparison of
+`occluder_left`'s full-raster foreground mask against its accepted core, which
+shows the background strip only at the raster margin and a uniform, edgeless core.
+
+FSG1 / Increment 1 remains OPEN. Increment 2 is NOT authorized. No default was
+adopted, no milestone closed, no fusion begun, and no new candidate invented. All
+earlier failures stand unchanged. The fixture correction is Chat's and Luiz's
+call; the measurement above states exactly what has to move and by how much.
+
 ## 7. Scope boundary
 
 No multi-patch fusion, surface map, saccade policy or object exploration is implemented in FSG1g. A pass closes only the **single local RGB-D patch instrument** milestone under controlled calibration conditions.

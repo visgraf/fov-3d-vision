@@ -486,3 +486,35 @@ development/diagnostic data, so this is not validation and cannot be relabelled
 prospective; no default, milestone closure or fusion follows, and neither control
 was selected. The next step - whether to propose a fresh validation geometry and
 seed for this candidate - belongs to Luiz and Chat.
+
+## D-FSG1g - final prospective validation of the simple local stereo instrument (2026-09-19)
+Freeze the FSG1 instrument for one final validation as: FSG1c fixed soft-HDR encoding, unchanged SGBM, exactly one original photometric refinement update, and the original validity predicate. Do not use FSG1f endpoint or footprint-supported reciprocity.
+
+Why: on the seven diagnostic pairs, one update passed every unchanged interior gate and rejected every previously observed half-occlusion leak before the additional FSG1f vetoes acted. The footprint rule cost about 2.5% interior support on the occluded background and about half the accepted boundary population, so it is not justified by the present evidence.
+
+Validate only on the new FSG1g fixtures and fresh seeds 101 and 149. The suite contains four frontoparallel planes whose full-profile disparities have fractional phases 0, .25, .50 and .75, plus two mirrored finite-foreground occluders. Use the unchanged full profile at 256 spp; small seed 101 is only a smoke/integration run. No parameter search, rerender after a numerical miss, threshold change, hole filling, or estimator adaptation is authorized.
+
+Pass rule, evaluated separately for every full seed and every instance: interior coverage >= 0.90, median relative range error <= 0.01, p95 <= 0.03; zero accepted points in each prescribed eroded singly-visible core; and on each occluder, at least 100 accepted jointly-visible boundary points with median <= 0.01 and p95 <= 0.03. A zero/too-small population is NOT_EXERCISED, not a pass.
+
+If every prescribed full gate passes on both seeds, close FSG1 / Increment 1, record this one-update instrument as the FSG1 local RGB-D instrument, and authorize (but do not implement in this run) Increment 2: two overlapping patches in the fixed head-centred map. If any full gate misses, preserve the failure and stop for Luiz/Chat. No control or alternative candidate is selected after seeing results.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1-final-validation.md` Results and
+`docs/log.md`). STOPPED at the smoke stage on an integrity failure; the two full
+acquisitions were NOT run, so this decision's pass rule was never reached.
+`[fsg-final] FAIL ValueError: half-occlusion NOT_EXERCISED: raw`, smoke exit 1.
+Cause, measured: both occluders place their nearest foreground edge at 10.713 and
+10.176 degrees off the gaze axis while the accepted core spans only +/-6.000
+degrees at BOTH profiles, so the occluding edge never enters the measurement. The
+padded raster holds both instances but the accepted core holds only foreground
+(21:16,384 and 31:16,384), giving 0 raw and 0 core singly-visible reference
+against a required 64/32 at small and 256/128 at full. This is profile
+independent and would reproduce identically at full, so 2,516,582,400 primary
+camera samples were not spent re-deriving it. The four phase planes are correct -
+measured full-profile disparities 22.00000/22.25000/22.50000/22.75000 px at phases
+0/.25/.50/.75 - and passed their smoke interior gates at 100% coverage. Repairing
+the occluders requires moving a fixture edge inside +/-6 degrees of the gaze, a
+geometry change this handoff does not delegate, so nothing was altered and no
+alternative candidate was introduced. Under this decision's terms the failure is
+preserved and stopped for Luiz/Chat: **FSG1 / Increment 1 is NOT closed, the
+one-update instrument is NOT recorded as the FSG1 local RGB-D instrument, and
+Increment 2 is NOT authorized.**

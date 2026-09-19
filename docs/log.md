@@ -2088,3 +2088,151 @@ including the small-profile misses, the analytic bright-full stress and FSG1d's
 FROZEN_CANDIDATE_VALIDATION_FAIL on its own records. Nothing tuned, no control
 selected (the named candidate passed, so the question did not arise), no default
 adopted, no milestone closed, no fusion. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG1g final prospective validation: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg1-final-validation.md` and D-FSG1g appended just above. The last
+planned experiment of Increment 1, on FRESH fixtures and FRESH seeds. Commands,
+written before running them:
+
+    blender -b --python-exit-code 1 -P tools/fsg_final_render.py -- --out previews/fsg1/final-small-seed101 --profile small --seed 101 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_final_eval.py previews/fsg1/final-small-seed101 --mode smoke --out previews/fsg1/final-small-evaluation
+    blender -b --python-exit-code 1 -P tools/fsg_final_render.py -- --out previews/fsg1/final-full-seed101 --profile full --seed 101 --device OPTIX --save-blend
+    blender -b --python-exit-code 1 -P tools/fsg_final_render.py -- --out previews/fsg1/final-full-seed149 --profile full --seed 149 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_final_eval.py previews/fsg1/final-full-seed101 previews/fsg1/final-full-seed149 --mode full --out previews/fsg1/final-full-evaluation
+
+**The frozen candidate is the SIMPLE one: FSG1c soft-HDR encoding, unchanged
+SGBM, exactly ONE original photometric update, original validity predicate.
+FSG1f's endpoint and footprint vetoes are deliberately NOT used.** Verified by
+reading `tools/fsg_final_eval.py` before running: it calls
+`fsg_stereo_supported.compute_once()`, never `compute_variants()`, and the
+`--negative candidate` control fails if the FSG1f named supported candidate is
+substituted. Rationale recorded in D-FSG1g: on the seven diagnostic pairs the
+one-step validity already rejected every observed half-occlusion leak before the
+extra vetoes acted, while the footprint rule cost ~2.5% interior support on the
+occluded background and about half the accepted boundary population.
+
+Six NEW fixtures, none reusing seed-17/31/73 textures: four frontoparallel planes
+at target full-profile disparities 22.00, 22.25, 22.50 and 22.75 px - fractional
+phases 0, .25, .50, .75, a direct stress of the pixel-locking/refinement phase
+effect FSG1e identified - plus two MIRRORED finite-foreground occluders
+(occluder_left: fg Z=-1.85 m over bg Z=-3.05 m, fg x in [-1.00,+0.35];
+occluder_right: fg Z=-1.95 m over bg Z=-3.15 m, fg x in [-0.35,+1.00]), instances
+21/22 and 23/24. The mirrored pair exercises left-reference half-occlusion from
+both edge orientations rather than inferring safety from one.
+
+Pass rule, applied separately to EVERY full seed and EVERY instance: interior
+coverage >=0.90, median <=1%, p95 <=3%; zero accepted points in each prescribed
+eroded singly-visible core; and on each occluder at least 100 accepted
+jointly-visible boundary points with median <=1% and p95 <=3%. A zero or
+too-small population is NOT_EXERCISED, never an invented pass. The boundary
+accuracy gate is new; boundary COMPLETENESS is still not a target.
+
+Calculated primary camera samples, not measured: smoke 6x2x320^2x64 =
+78,643,200; each full seed 6x2x640^2x256 = 1,258,291,200; both fulls
+2,516,582,400; total 2,595,225,600. Small seed 101 is a smoke/integration run
+only - its numerical result is diagnostic and an exit 2 there does not block the
+full run, while an exit 1 (provenance/geometry/fixture/software integrity) does.
+
+**No rerender after a numerical miss, no alternative seed or spp, no parameter
+search, threshold change, hole filling or estimator adaptation is authorized,
+and no control or alternative candidate may be selected after seeing results.**
+The two full seeds are two Monte-Carlo realisations of the same six geometries,
+not twelve independent scenes.
+
+Preflight verified before writing this: clean main at fd0bad9 with 837acfe an
+ancestor; the frozen-instrument diff over the fifteen pinned modules, rig,
+bl_common and requirements-fsg.txt empty; six files added by the handoff;
+environment Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0 matching
+the saved FSG1 records; Blender 5.2.1 LTS on an RTX 4090; all five output paths
+absent. `[fsg-final-scene] PASS cases=6 phases=4 mirrored_occluders=2`,
+`[fsg-final-check] SUMMARY passed=7 failed=0`, and the six regression suites at
+24/29/34/48/37/46 with zero failures. The three negatives each exit 1: deliberate
+phase mutation detected, deliberate bad boundary detected, deliberate candidate
+substitution detected.
+
+Outcome unknown at writing. If every prescribed full gate passes on both seeds,
+Increment 1 / FSG1 closes, this one-update instrument is recorded as the FSG1
+local RGB-D instrument, and Increment 2 (two overlapping patches in the fixed
+head-centred map) is AUTHORIZED BUT NOT IMPLEMENTED in this run. If any full gate
+misses, the failure is preserved and I stop for Luiz/Chat without inventing a new
+candidate. A pass closes only the single local RGB-D patch instrument milestone
+under controlled calibration conditions - it claims nothing about fusion,
+exploration, complete boundaries, thin structure, arbitrary scenes or calibrated
+uncertainty. Logs under `previews/fsg1/final-validation-logs/`.
+
+Measured outcome, appended after the run. **STOPPED at the smoke stage with an
+integrity failure; the two full acquisitions were NOT run. FSG1 / Increment 1 is
+NOT closed and Increment 2 is NOT authorized.**
+
+    [fsg-final] FAIL ValueError: half-occlusion NOT_EXERCISED: raw
+
+Smoke evaluation exit 1. Per section 5.2 an exit 1 for fixture/geometry integrity
+blocks the full run, and section 2 states that a fixture failing to create a
+substantial singly-visible population is an integrity/test-design failure, not a
+numerical pass. This is NOT a numerical miss by the candidate - the candidate was
+never tested on half-occlusion, because the fixtures present none inside the
+accepted measurement.
+
+The defect, measured not assumed. Both occluders put their nearest foreground
+edge outside the accepted core: occluder_left fg Z=-1.85 m with x in
+[-1.00,+0.35], nearest edge |x|=0.35 m at **10.713 deg** off axis;
+occluder_right fg Z=-1.95 m with x in [-0.35,+1.00], nearest edge **10.176 deg**.
+The accepted core spans CORE_FOV_DEG=12, i.e. **+/-6.000 deg at BOTH profiles** -
+atan(64/608.9193) = atan(128/1217.8387) = 6.0000 deg, since small and full differ
+in resolution, not field. Core half-width at those depths is 0.1944 m and
+0.2050 m against a 0.35 m edge. The rendered masks confirm it: the padded 320x320
+raster does contain both instances (21:88,320 / 22:14,080 and 31:86,080 /
+32:16,320) but the accepted 128x128 core contains ONLY foreground (21:16,384 and
+31:16,384), so the edge lives entirely in the search/rectification margin. Truth
+on the rectified core therefore has a single instance and singly_visible = 0 raw
+/ 0 core, against a required 64/32 at small and 256/128 at full. The
+occluder_left cloud written before the stop is 16,384 points, all instance 21,
+median Z = -1.8526 m - the foreground alone.
+
+Profile-independent, so the full run would reproduce it exactly: the two full
+acquisitions would have spent 2,516,582,400 primary camera samples to re-derive a
+known fixture defect. For contrast FSG1d's step_right worked (4,608 raw / 3,528
+core at full) because its edge sat at x=0, on the optical axis; the FSG1g
+occluders are finite rectangles with BOTH edges outside the core, so neither
+orientation of the mirrored pair is exercised. Correcting this means moving a
+fixture edge inside +/-6 deg of the gaze - a geometry change, which section 5.1
+explicitly does not delegate. Nothing was altered: no scene, gate, seed, spp,
+encoding, iteration count, matcher setting, erosion radius, reference mask or
+candidate.
+
+What the smoke did establish. Four of six fixtures are exactly as frozen -
+measured truth disparities scaled to full are 22.00000 / 22.25000 / 22.50000 /
+22.75000 px, phases 0.0000 / 0.2500 / 0.5000 / 0.7500. Their smoke interior
+results (diagnostic, small profile): phase_00 100.000%/0.1663%/0.5604%, phase_25
+100.000%/0.3211%/0.7792%, phase_50 100.000%/0.4676%/0.9948%, phase_75
+100.000%/0.5912%/1.1996% - all inside the gates at full coverage, with error
+rising monotonically with distance from an integer disparity, i.e. the FSG1e
+phase mechanism reappearing in a fresh fixture under the one-update instrument at
+a magnitude that stays well within targets. Caveat: at small the disparities are
+halved, so these exercise phases 0/.125/.25/.375, NOT the frozen 0/.25/.50/.75 -
+the intended phase stress only happens at full, which was not run. Point clouds
+head-frame, no faces, no fill: median Z -3.4830 / -3.4377 / -3.3942 / -3.3526 m.
+
+Everything else was clean. Frozen-instrument diff from 837acfe empty before and
+after; six files added by the handoff, none modified; environment Python 3.12.3 /
+NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0; Blender 5.2.1 LTS on OPTIX.
+`[fsg-final-scene] PASS cases=6 phases=4 mirrored_occluders=2`,
+`[fsg-final-check] SUMMARY passed=7 failed=0`, regression suites
+24/29/34/48/37/46 with zero failures, and the three negatives each exit 1
+(deliberate phase mutation / bad boundary / candidate substitution detected - the
+last confirming the validator uses compute_once, not the FSG1f named candidate,
+which I also verified by reading fsg_final_eval.py before running). The small
+render itself succeeded: exit 0, six [fsg-render] lines, COMPLETE markers,
+spec=cb9da6a2fc70..., 78,643,200 primary samples, 3.629 s Blender wall. Inspected
+phase_50/validation.png (textured RGB, fully white validity, dark interior error,
+correctly empty boundary/occlusion panels) and a direct occluder_left full-raster
+mask vs accepted core comparison showing the background strip only at the raster
+margin and an edgeless core. Only four validation.png exist; the two occluder
+sheets were never written because of the stop.
+
+No full-stage validation.json exists. FSG1 / Increment 1 remains OPEN, Increment
+2 NOT authorized, no default adopted, no milestone closed, no fusion, no new
+candidate invented. All earlier failures stand. The fixture correction is Chat's
+and Luiz's call; the numbers above say exactly what must move and by how much.
