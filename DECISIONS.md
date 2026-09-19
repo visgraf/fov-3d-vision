@@ -518,3 +518,36 @@ alternative candidate was introduced. Under this decision's terms the failure is
 preserved and stopped for Luiz/Chat: **FSG1 / Increment 1 is NOT closed, the
 one-update instrument is NOT recorded as the FSG1 local RGB-D instrument, and
 Increment 2 is NOT authorized.**
+
+## D-FSG1h - correct the invalid FSG1g occluder fixture, instrument unchanged (2026-09-19)
+FSG1g stopped at small smoke for an integrity failure: both prescribed finite-foreground edges were outside the accepted +/-6 deg core, so the intended half-occlusion reference was empty. This was a Chat fixture-design error, not a numerical result about the stereo instrument.
+
+Preserve the frozen FSG1g instrument, gates, profile, spp, texture construction, depths and seed schedule. Correct only the foreground x extents so finite occluding edges lie inside the accepted core: occluder_left [-0.16,+0.10] m at z=-1.85 m; occluder_right [-0.10,+0.16] m at z=-1.95 m. Backgrounds remain -3.05 m and -3.15 m.
+
+Before Blender, require the evaluator's own analytic ground-reference construction to prove nonempty substantial half-occlusion cores, boundary populations, and >=100 interior reference pixels for both instances at both profiles. Recreate the FSG1g geometry as a negative control and require it to fail.
+
+Run only corrected small seed 101 and corrected full seeds 101 and 149. Do not tune, change the candidate, change thresholds, change spp, add support vetoes, fill holes, or rerender after a numerical miss. If every prescribed full gate passes, close FSG1 / Increment 1 and authorize but do not implement Increment 2. Otherwise preserve the failure and stop for Luiz/Chat.
+
+Outcome 2026-09-19 (evidence: `docs/fsg1h-final-validation.md` Results and
+`docs/log.md`). **FSG1H_FINAL_VALIDATION_PASS.** The corrected fixture exercised
+the intended geometry - raw/boundary/interior populations matched the handoff
+exactly, and the eroded-core difference was diagnosed before rendering as a
+documentation arithmetic slip ((w-2r)*h instead of (w-2r)*(h-2r)), with the real
+cores exceeding their minima by 21.7-23.6x. All four negatives failed as
+designed, including the FSG1g off-core regression. Every prescribed full gate
+passed on both fresh seeds with no numerical FAIL line: phase planes 99.765-99.965%
+coverage at 0.0849-0.2255% median and 0.2844-0.9587% p95 across all four frozen
+phases; occluder foregrounds at 100.000% coverage; occluded backgrounds at
+93.167-95.190%, the tightest margin in the suite; boundary accuracy gates passed
+with 3,973-4,044 accepted points at 0.2222-0.3302% median and 1.4432-2.0518% p95;
+and **0 accepted points in all 11,592 singly-visible core pixels** across four
+occluder-seed combinations, with 0 wrong-instance acceptances. Per this decision:
+**FSG1 / Increment 1 is CLOSED, the one-update instrument
+(FSG1-HDR-SGBM-one-original-update-original-validity-v1) is recorded as the FSG1
+local RGB-D instrument, and Increment 2 - two overlapping patches in the fixed
+head-centred map - is AUTHORIZED BUT NOT IMPLEMENTED.** Nothing was tuned, no
+support veto added, no threshold changed, and no rerender followed the
+diagnostic small-profile miss. The pass covers one local patch under controlled
+opaque, diffuse, planar, calibrated conditions with oracle segmentation; it makes
+no claim about arbitrary scenes, complete boundaries, thin structure, calibrated
+uncertainty or multi-patch reconstruction.

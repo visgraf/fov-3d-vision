@@ -2236,3 +2236,138 @@ No full-stage validation.json exists. FSG1 / Increment 1 remains OPEN, Increment
 2 NOT authorized, no default adopted, no milestone closed, no fusion, no new
 candidate invented. All earlier failures stand. The fixture correction is Chat's
 and Luiz's call; the numbers above say exactly what must move and by how much.
+
+
+### 2026-09-19 - FSG1h corrected final validation: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg1h-final-validation.md` and D-FSG1h appended just above. FSG1g's
+stereo instrument is UNCHANGED; only the two occluder foreground x extents are
+corrected. Commands, written before running them:
+
+    blender -b --python-exit-code 1 -P tools/fsg_finalh_render.py -- --out previews/fsg1/finalh-small-seed101 --profile small --seed 101 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_finalh_eval.py previews/fsg1/finalh-small-seed101 --mode smoke --out previews/fsg1/finalh-small-evaluation
+    blender -b --python-exit-code 1 -P tools/fsg_finalh_render.py -- --out previews/fsg1/finalh-full-seed101 --profile full --seed 101 --device OPTIX --save-blend
+    blender -b --python-exit-code 1 -P tools/fsg_finalh_render.py -- --out previews/fsg1/finalh-full-seed149 --profile full --seed 149 --device OPTIX --save-blend
+    .venv/bin/python tools/fsg_finalh_eval.py previews/fsg1/finalh-full-seed101 previews/fsg1/finalh-full-seed149 --mode full --out previews/fsg1/finalh-full-evaluation
+
+**Candidate unchanged and verified by reading `tools/fsg_finalh_eval.py` before
+running: it calls `fsg_stereo_supported.compute_once()`, never
+`compute_variants()`.** FSG1c soft-HDR encoding, unchanged SGBM, exactly ONE
+original photometric update, original validity predicate. No endpoint or
+footprint support vetoes.
+
+The correction, verified against FSG1g's module: occluder_left foreground x
+[-1.00,+0.35] -> [-0.16,+0.10] m, occluder_right [-0.35,+1.00] -> [-0.10,+0.16] m.
+All four corrected edges now lie 2.936-4.943 deg off the gaze axis, inside the
++/-6.000 deg accepted core (core half-width 0.1944 m at 1.85 m and 0.2050 m at
+1.95 m). Foreground/background depths (-1.85/-3.05 and -1.95/-3.15 m), instance
+IDs, phase targets (22.00/22.25/22.50/22.75 px), textures, seeds (101/149),
+profile, spp and every gate are unchanged.
+
+Pre-render fixture proof, computed with the evaluator's own `ground_reference`
+and `eroded_core`: raw singly-visible 1024/1024/4096/3840 and boundary
+1920/1792/6912/6656 and interiors 9600/3840, 9088/4480, 39424/15104, 37120/17920
+for small-left/small-right/full-left/full-right - all matching the handoff table
+EXACTLY. The eroded cores measure 756/756/3024/2772 against a handoff table
+saying 768/768/3072/2816. **Diagnosed before rendering: the handoff's expected
+core column was computed as (w-2r)*h, eroding only horizontally, while cv2.erode
+erodes both axes giving (w-2r)*(h-2r); both formulas reproduce their respective
+numbers exactly in all four rows.** The strips are 8x128 (small) and 16x256 /
+15x256 (full). So the geometry is exactly as intended and only the document's
+arithmetic for that one column is wrong; the actual cores exceed the required
+minima (32 small, 128 full) by 21.7-23.6x, and the shipped check gates on those
+minima and passes. Not a fixture-integrity failure; nothing was altered.
+
+`[fsg-finalh-scene] PASS cases=6 phases=4 corrected_finite_occluders=2` and
+`[fsg-finalh-check] SUMMARY passed=8 failed=0 occluder_reference_checks=4`. All
+four negatives exit 1, including the FSG1g regression: "deliberate off-core
+occluder detected: singly-visible reference is empty" - proving the new check
+would have caught the original defect. Existing suites 24/29/34/48/37/46/7 with
+zero failures. Environment Python 3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow
+12.3.0, Blender 5.2.1 LTS on an RTX 4090; frozen-instrument diff from 7408e03
+empty; six files added; FSG1g records preserved and not overwritten.
+
+Calculated primary camera samples, not measured: smoke 78,643,200; each full seed
+1,258,291,200; total 2,595,225,600 if all stages run. No rerender after a
+numerical miss, no alternative seed or spp, no tuning, no support veto, no
+threshold change, no hole filling. Outcome unknown at writing. If every
+prescribed full gate passes on both seeds, FSG1 / Increment 1 closes, the
+one-update instrument is recorded as the FSG1 local RGB-D instrument, and
+Increment 2 is AUTHORIZED BUT NOT IMPLEMENTED. Otherwise the failure is preserved
+and I stop for Luiz/Chat. Logs under `previews/fsg1/finalh-logs/`.
+
+Measured outcome, appended after the run. **FSG1H_FINAL_VALIDATION_PASS.** Every
+prescribed full gate passes on both fresh seeds, no numerical FAIL line anywhere,
+zero accepted half-occlusion core points, zero wrong-instance acceptances.
+all_gates_pass / prospective_blender_validation_pass / full_profile_milestone_pass
+/ increment1_complete / increment2_authorized / adopted_as_fsg1_instrument all
+true. 2,516,582,400 acquisition primary samples, 0 added by inference, evaluation
+8.197 s.
+
+**FSG1 / Increment 1 is CLOSED. The candidate
+FSG1-HDR-SGBM-one-original-update-original-validity-v1 is recorded as the FSG1
+local RGB-D instrument. Increment 2 is AUTHORIZED BUT NOT IMPLEMENTED** - no
+fusion, surface map, saccade policy or multi-patch code was written.
+
+Fixture proof before rendering: raw 1024/1024/4096/3840, boundary
+1920/1792/6912/6656 and interiors 9600/3840, 9088/4480, 39424/15104, 37120/17920
+match the handoff table EXACTLY. Cores measured 756/756/3024/2772 against a table
+saying 768/768/3072/2816 - diagnosed before rendering as the table computing
+(w-2r)*h, eroding only horizontally, where cv2.erode does (w-2r)*(h-2r); both
+formulas reproduce their numbers exactly on strips of 8x128 (small) and 16x256 /
+15x256 (full). Geometry exactly as intended, only that documentation column
+wrong, and the real cores exceed the required minima by 21.7-23.6x. Nothing
+altered. All four negatives exit 1, including the FSG1g regression "deliberate
+off-core occluder detected: singly-visible reference is empty", proving the new
+check would have caught the original defect. Existing suites 24/29/34/48/37/46/7.
+
+Phase planes, both seeds, with the fixture verified (measured truth disparities
+22.00000/22.25000/22.50000/22.75000 px at phases 0/.25/.50/.75): seed 101
+99.965%/0.0849%/0.2844%, 99.886%/0.0973%/0.3655%, 99.940%/0.2209%/0.9252%,
+99.774%/0.1293%/0.4091%; seed 149 99.963%/0.0852%/0.2863%, 99.890%/0.0967%/
+0.3607%, 99.936%/0.2255%/0.9587%, 99.765%/0.1297%/0.4128%. The half-integer phase
+is hardest, as FSG1e predicted, but at about a fifth of the median budget.
+
+Occluder interiors: foreground instances 100.000% coverage on every seed and both
+orientations (0.1360-0.2411% median, 0.3819-0.5460% p95); occluded backgrounds
+93.287% / 95.128% (seed 101) and 93.167% / 95.190% (seed 149) with medians
+0.3549-0.4046% and p95 1.3736-1.6378%. Those backgrounds are the tightest margin
+in the suite - 3-5 points of coverage headroom above the 90% floor.
+
+Half-occlusion, the test FSG1d first exercised and FSG1g could not: raw reference
+4096/3840 and core 3024/2772 per occluder per seed, and **0 accepted raw and 0
+accepted core in all four occluder-seed combinations** - not one of 11,592 core
+points. Boundary accuracy gate: 4,041 / 3,973 / 4,044 / 3,980 accepted points
+(58.5-59.8% descriptive coverage) with medians 0.2222-0.3302% and p95
+1.4432-2.0518%, all PASS against 100 points / 1% / 3%. About 40% of boundary
+reference stays unaccepted and remains missing; no interpolation or fill.
+
+Point clouds head-frame, no faces, no fill, on the frozen geometry:
+occluder_left 57,555/57,540 points at Z -1.8460 (spec -1.85) and -3.0494/-3.0506
+(spec -3.05); occluder_right 58,140/58,158 at -1.9476 (spec -1.95) and
+-3.1490/-3.1488 (spec -3.15); phase planes 65,382-65,513 at -3.4888/-3.4468/
+-3.4080/-3.3759 m. Inspected all six small sheets before the full stage and the
+full occluder sheets after: both crops now show a finite foreground rectangle
+with BOTH depth edges inside the core, mirrored between cases; occlusion-core
+panels non-empty; unsafe-accepted-core panels entirely black; missing panels show
+excluded strips rather than filling them.
+
+Small smoke missed two gates diagnostically (occluder_left instance 22 coverage
+87.031%, boundary p95 3.306%) - exit 2, which section 5.2 says does not block
+full - and both cleared at full (93.287%, 2.045%), consistent with the resolution
+dependence seen throughout FSG1. No rerender, seed change, spp change, tuning,
+support veto, threshold change or hole filling at any point. Timings: small
+render 3.637 s, full seed 101 10.101 s, full seed 149 10.056 s, full evaluation
+8.313 s wall.
+
+Scope of the close: one local RGB-D patch instrument validated prospectively on
+fixtures and seeds it had never seen, against gates frozen before the data
+existed - four disparity phases spanning the pixel-locking mode that broke FSG1d,
+and two mirrored finite occluders exercising left-reference half-occlusion from
+both orientations with zero unsafe acceptances. It remains a controlled opaque,
+diffuse, planar suite with oracle instance segmentation, known fixed cameras and
+two MC seeds of the same six geometries. It does NOT establish arbitrary-scene
+stereo, complete boundary coverage, thin-structure performance, calibrated
+uncertainty or multi-patch reconstruction. Earlier limitations stand: the
+small-profile misses, the analytic bright-full stress, and the FSG1c/FSG1f
+development-set caveats. Stopped for Luiz/Chat.
