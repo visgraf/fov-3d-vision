@@ -3297,3 +3297,185 @@ scenes, head motion, vergence control or calibrated uncertainty. The policy
 remains a 2D image-edge/map-yaw controller; a true 3D surface-frontier controller
 is now a clean next question and was deliberately not built. Stopped for
 Luiz/Chat.
+
+### 2026-09-20 - FSG6 Increment 6, the reconstructed surface becomes the frontier: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg6-increment6.md` and D-FSG6a appended just above. **The frontier
+representation changes; the measurement instrument and the fusion do not.**
+Commands, written before running them:
+
+    .venv/bin/python tools/dev/check_fsg6.py
+    for n in policy mapstate horizontal flat shift bias purity; do .venv/bin/python tools/dev/check_fsg6.py --negative "$n"; done
+    (all existing FSG1-FSG5 regression checks, unchanged)
+    .venv/bin/python tools/fsg6_run.py  --out previews/fsg6/smoke-diag_up_right-seed701 --profile small --fixture diag_up_right --seed 701 --device OPTIX
+    .venv/bin/python tools/fsg6_eval.py previews/fsg6/smoke-diag_up_right-seed701 --out previews/fsg6/smoke-diag_up_right-seed701-evaluation --mode smoke
+    (then the four full trials diag_up_right/701, diag_up_right/743, diag_down_left/701, diag_down_left/743,
+     each run once and evaluated, then fsg6_compare.py over exactly those four metrics.json)
+
+**What is frozen, verified by reading the code rather than assuming**:
+`git diff 3d5125c` over the FSG1 stereo modules (`fsg_stereo_supported`,
+`fsg_stereo_hdr`, `fsg_stereo`, `fsg_evaluate`, `fsg_geometry`),
+`fsg3_surface_map.py`, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is
+EMPTY. `fsg6_run.py` imports the EXISTING `fsg3_surface_map` and calls
+`compute_once` behind `check_kernel_equivalence` (never `compute_variants`);
+neither `fsg6_run.py` nor `fsg6_frontier.py` imports `fsg6_scene` or opens any
+`evaluation_only` asset - `fsg6_frontier` imports only numpy and `fsg6_public`.
+`fsg6_run` additionally asserts at start-up that `fsg6_public.FUSION` equals the
+frozen `fsg4_public.FUSION`, so the 12 mm association/hash cannot drift.
+`fsg6_public` fixes VERGENCE_DISTANCE_M = 2.10, FIXTURES =
+(diag_up_right, diag_down_left), SEEDS = (701, 743), spp 64/256, OBJECT_ID 91,
+and the frontier constants: 25 mm voxel, 65 mm neighbourhood, >=6 neighbours,
+tangent asymmetry >=0.18, 120 mm lookahead, alignment cos >=0.50, >=8 agreeing
+frontier surfels per candidate, 5 deg component step, yaw [-25,+25], pitch
+[-20,+20], 1% robust map extent quantile.
+
+Fixtures: two finite cylindrical ribbons, radius 0.75 m, local centre
+z = -2.80 m, 110 deg arc, 0.20 m width, 48 quad strips, rigidly rolled in the
+head image plane by +35 deg (`diag_up_right`) and +215 deg (`diag_down_left`,
+the exact 180 deg image-plane mirror), with distinct textures. Seed gazes are
+(-8,-8) and (+8,+8) deg. The fixture family is deliberately asymmetric with
+respect to controller class: a plausible four-look diagonal trace covers >97% of
+the truth surface while even a five-look horizontal-only scan along the correct
+yaw direction covers <65%. Those are fixture-construction estimates checked in
+software, **not** experimental results and **not** trajectory acceptance
+criteria; **the policy chooses the actual trajectories from its own 3D map plus
+current segmentation evidence.**
+
+Gates, all four trials judged independently and all four required: 4-6
+fixations; termination `no_frontier`; no repeated fixation; every move exactly
+one 5-degree lattice component in yaw and/or pitch with neither component
+exceeding 5 deg; **total visited pitch span >=10 deg**, which a horizontal-only
+controller cannot reach; >=100 oracle object reference pixels and >=90% valid
+object measurement coverage per patch; at least eight agreeing 3D frontier
+surfels behind every nonterminal selected gaze, as recorded in
+`policy_trace.json`; per post-seed patch >=5,000 matched, overlap median <=10 mm
+and p95 <=25 mm, idempotent duplicate replay, no truth-coverage drop beyond
+0.5 pp. Final map: analytic finite-cylinder point-to-surface median <=10 mm and
+p95 <=30 mm; final curved-surface coverage >=90% (a truth sample on the fixed
+256x64 (theta,y) grid counts as covered when a surfel lies within 15 mm, so this
+is CURVED-SURFACE completeness, not image coverage); coverage gain over the seed
+>=35 pp; only instance 91; >=5,000 surfels with support from >=2 fixations; and
+for those, absolute median signed radial error <=7.5 mm.
+
+Cost class: the smoke is Interactive; each full trial is Batch (FSG5's
+comparable full trials ran ~1m17s each), so the four fulls plus evaluations sit
+inside Batch. Expected ~1,048,576,000 primary camera samples per full trial at
+5 fixations, ~4.2e9 across the four if every trial takes five looks.
+
+Likely failure modes, in the order I expect them: (a) the 3D frontier is
+extracted from too sparse or too thin a ribbon - the 0.20 m width is only about
+8 voxels of 25 mm across, so the 65 mm neighbourhood may see the ribbon's long
+edges as the dominant asymmetry and push the gaze across the width rather than
+along the arc; (b) the largest-new-area ranking prefers a diagonal purely for
+its bounding-box geometry and the <=8-surfel support rule then terminates early,
+giving fewer than 4 fixations or a pitch span below 10 deg; (c) the oracle
+continuation veto blocks one diagonal component too soon on the rolled ribbon;
+(d) only then suspect the renderer or the rolled-mesh integration. Diagnose
+before editing. **I will not change the frontier algorithm or any constant, the
+lattice, the instrument, the fusion radius, the geometry, textures, seeds, SPP,
+vergence, coverage radius or any gate to obtain a pass, and I will not rerender
+after a numerical miss.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`FSG6_INCREMENT6_FAIL`, trial_passes 2/4.** The miss is preserved; Increment 6
+is NOT closed and no next experiment is authorized.
+
+`[fsg6-check] SUMMARY passed=7 failed=0`, plus
+`[fsg6-scene] PASS up_right=[-13.309,13.309]x[-10.210,10.210] horizontal_ideal_max=0.412 chord_max_mm=0.150`
+and `[fsg6-frontier] PASS map_state_changes_2d_direction=true resolved_boundary_stops=true`.
+All seven negatives exited 1 with their intended FAIL lines. All thirteen
+FSG1-FSG5 regression suites stayed green (24, 29, 34, 48, 37, 46, 7, 8, 4, 5, 7,
+7, 6 passed / 0 failed). `git diff 3d5125c` over the FSG1 stereo modules,
+`fsg3_surface_map.py`, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is
+empty; every manifest records `truth_opened: false`.
+
+**One code fix, the only one in this increment.** `tools/fsg6_run.py` line 64
+referenced an undefined name `z` in the loop's defensive revisit guard. `z` is
+never assigned, never a parameter, never imported - confirmed by AST walk and by
+the actual `NameError`. At step 0 `gazes` is empty so the generator
+short-circuits; every step >=1 crashed, making the written 4-6 fixation algorithm
+impossible to execute. The guard compares the gaze about to be acquired against
+the history, and the variable holding it is `gaze`; changed `z` -> `gaze`, one
+token. No constant, threshold, gate or scientific specification touched, and the
+guard is strictly stricter afterwards than a crash. The crashed partial is kept
+at `previews/fsg6/smoke-diag_up_right-seed701-crashed-nameerror-preserved`.
+
+Smoke (`diag_up_right`/701/small) completed and exited 2 numerically: 6
+fixations, `max_fixations`, coverage 87.57%, median 13.836 mm, p95 33.814 mm.
+All its misses are resolution-scaled - overlap quality passed throughout (median
+3.83-4.79 mm, p95 8.01-10.67 mm, every replay idempotent) and only the absolute
+counts and the known FSG1 small-profile measurement fraction (0.796-0.863) fell
+short. No exception, so full was not blocked.
+
+Four full trials, each run once, 1,258,291,200 samples each (5,033,164,800
+total). `diag_down_left` **passed on both seeds** with empty fail lists:
+`(8,8) (3,3) (-2,-2) (-7,-7) (-2,-7) (-7,-2)`, `no_frontier`, final coverage
+99.091/99.121%, median 4.643/4.639 mm, p95 14.436/14.446 mm, signed radial
++1.419/+1.431 mm. `diag_up_right` **failed on both seeds** with exactly two fails
+each: `3D frontier policy did not terminate by resolving the frontier` and
+`fix_04 object measurement coverage`. Its trajectory
+`(-8,-8) (-3,-3) (2,2) (7,2) (12,7) (7,7)` still reached 99.139/99.207% coverage
+at 4.041/4.055 mm median and 12.784/12.844 mm p95, signed radial +1.687/+1.645 mm.
+Pitch span 15.0 deg on **all four** against the >=10 gate; every move one 5-degree
+lattice component; no repeats; nonterminal frontier support 21-93 against >=8;
+post-seed matched 13,322-25,927, overlap medians 1.76-2.59 mm, p95 5.35-8.20 mm,
+all idempotent; largest coverage decrease 0.01 pp; every map pure instance 91
+with 31,689-34,780 multi-look surfels.
+
+**Root cause, measured not assumed: the mirror pair is not a monocular mirror.**
+The fixtures are an exact 180-degree image-plane rotation as geometry - `up_right L`
+and rotated `down_left R` disagree on **0 of 409,600 pixels, IoU 1.000000**, and
+likewise `up_right R` vs rotated `down_left L`. But a 180-degree roll maps
+(x,y,z) -> (-x,-y,z), which swaps the two eye centres at +/-0.0315 m along X, so
+the mirror of the left eye's view is the RIGHT eye's view. The controller reads
+only the left-eye oracle mask, so the "mirrored" fixtures differ by the full
+binocular parallax - **37.4 px (1.76 deg) on a ribbon only 119 px (5.59 deg)
+wide**, 31% of its width. `up_right L` vs rotated `down_left L` disagree on
+16.43% of core pixels, IoU 0.732.
+
+The continuation veto then amplifies that into a trajectory difference. Across
+the three comparable mirrored fixations the mirrored edge fraction runs
+systematically 0.136-0.143 lower on `up_right`, and at the third it crosses the
+0.15 threshold: top=0.3914 vs bottom=0.5340, then 0.2391 vs 0.3820, then
+**0.0703 vs 0.2066**. `raw_support_L` is 100% true in both bands, so the stereo
+mask plays no part - the asymmetry is entirely in the oracle mask the veto
+consults. Consequence: on `up_right` the (+5,+5) diagonal is removed at fixation
+3, the controller is deflected onto the pure-yaw (+7,+2), then needs (+12,+7) and
+(+7,+7); it reaches 99.1% but still has two eligible candidates at fixation 6, so
+the budget ends it as `max_fixations`. The same deflection puts fixation 4 at
+(+12,+7) where the fovea hangs off the ribbon end, giving measurement coverage
+0.8940 - a 0.60 pp miss. Both FAIL lines are downstream of that one vetoed
+diagonal. `down_left` keeps all four edges live at its third fixation, runs the
+clean diagonal to (-7,-7), hits 99.07% by fixation 4 and stops `no_frontier`.
+
+This is a fixture/rig design property, not an implementation defect and not a
+numerical accident: it reproduced identically on both seeds with byte-identical
+oracle reference counts, because the oracle mask is ray-traced and
+seed-independent. Repairing it needs a change to the fixture design, the
+reference eye, or `edge_object_fraction_min` - none of which this handoff
+delegates to Code. So the miss stands.
+
+Visuals: `growth.png` shows `up_right` growing lower-left to upper-right and
+`down_left` upper-right to lower-left, the mirror direction found unaided.
+`growth_truth.png` gives 37.4->55.7->74.9->93.3->99.1->99.1% and
+39.8->59.0->80.7->99.1->99.1->99.1%, `down_left` saturating a fixation earlier;
+`up_right` panels 4 and 5 are visually indistinguishable (last look +0.04 pp).
+`coverage_3d_frontier.png` shows all four rising monotonically to ~99.1%. Each
+`surface_map.ply` carries "comment fixed head frame H", has **no `element face`**,
+and an independent read gives median cylinder radius **0.75110-0.75120 m against
+a true 0.750 m** - ~1.1-1.2 mm outward, matching the signed radial medians and
+reproducing FSG5's finding that 12 mm Euclidean fusion does not contract inward.
+
+Cost: smoke run 17.4 s / eval 6.9 s; full runs 1m14.2s, 1m15.5s, 1m16.7s,
+1m16.1s; full evaluations ~37 s each; aggregation under a second. Nothing was
+tuned - no frontier constant, lattice, instrument, fusion radius, geometry,
+texture, seed, SPP, vergence, coverage radius or gate changed, and no rerender
+after the numerical miss.
+
+What did hold, and is worth keeping: on all four trials the 3D surfel frontier
+drove a genuinely two-dimensional trajectory (pitch span 15.0 deg) that grew a
+rolled cylindrical ribbon to ~99.1% curved-surface completeness at 4.04-4.64 mm
+median, which the software check confirms a five-look horizontal-only scan cannot
+do on this fixture (ideal coverage 0.412). **The frontier representation works.**
+What failed is the interaction between the oracle continuation veto and a mirror
+pair that is not a mirror monocularly. Stopped for Luiz/Chat.

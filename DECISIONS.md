@@ -737,3 +737,68 @@ radius, concave or saddle geometry, self-occlusion, folds, multi-object scenes,
 head motion, vergence control or calibrated uncertainty. The policy remains a 2D
 image-edge/map-yaw controller; a true 3D surface-frontier controller is now a
 clean next question and was deliberately not built here.
+
+## D-FSG6a - Replace the image-edge controller with a truth-free 3D surfel frontier (2026-09-20)
+Increment 5 established that the closed FSG1 local RGB-D instrument and the existing 12 mm head-frame surfel fusion can grow a substantially curved convex surface without ICP, meshing or a surface model. Increment 6 changes **the frontier representation, not the measurement instrument or fusion**.
+
+Keep the frozen FSG1 instrument `FSG1-HDR-SGBM-one-original-update-original-validity-v1` and the existing `tools/fsg3_surface_map.py` with its 12 mm Euclidean association and 12 mm spatial hash exactly unchanged. Replace the horizontal FSG4 image-edge/map-yaw controller by a truth-free controller whose candidate directions must be supported by boundary asymmetry in the persistent **3D surfel map**. Oracle segmentation remains available, but only as a current-view object-continuation veto: it may say that a surface frontier is actually a resolved object boundary; it may not create the frontier score or reveal fixture geometry. `fsg6_run.py` and `fsg6_frontier.py` must import no fixture geometry and open no `evaluation_only` asset.
+
+The question: can a frontier extracted from the reconstructed 3D surface itself drive a two-dimensional gaze trajectory that grows a curved surface which a horizontal-only controller cannot cover? The frontier is extracted by downsampling the persistent surfels to 25 mm voxels, fitting a local covariance over 65 mm neighbourhoods, taking the smallest PCA eigenvector as the local normal, projecting the mean neighbour offset into the tangent plane, and calling the negative projected mean the missing surface direction. Candidate gazes are the eight neighbours of a 5-degree yaw/pitch lattice; each must stay inside the frozen limits, not revisit a fixation, be permitted by oracle segmentation on every nonzero movement component edge (a diagonal requires both), and be supported by at least eight 3D frontier surfels whose missing tangent directions agree with it. Selection maximizes the 12x12 degree foveal footprint area outside the robust yaw/pitch bounding box of the persistent map, with the 3D frontier score as tie-breaker.
+
+Two fresh diagonal fixtures - finite cylindrical ribbons, radius 0.75 m, local centre z=-2.80 m, 110 deg arc, 0.20 m width, rigidly rolled in the head image plane by +35 deg (`diag_up_right`, seed gaze (-8,-8)) and +215 deg (`diag_down_left`, the exact image-plane mirror, seed gaze (+8,+8)) - and fresh Monte-Carlo seeds 701 and 743 give four full trials, each judged independently and all four required to pass. Gates as written in `docs/fsg6-increment6.md`, including the explicit 3D-gaze requirement that the visited pitch span be >=10 degrees, which a horizontal-only controller cannot satisfy, and the retained curvature-specific rule that multi-look surfels (>=5,000 with support from >=2 fixations) have absolute median signed radial error <=7.5 mm. Per-fixation novelty and coverage gain remain descriptive, not validity gates, following the closed FSG4c contract.
+
+A full pass closes Increment 6 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that violates the written algorithm; it may never change the stereo instrument, FSG3 fusion, frontier algorithm or constants, geometry, texture, seeds, SPP, vergence, coverage radius or numerical gates to obtain a pass. No ICP, meshing, hole filling, learned policy, self-occlusion extension or next-increment implementation.
+
+Outcome 2026-09-20 (evidence: `docs/fsg6-increment6.md` Results and
+`docs/log.md`). **FSG6_INCREMENT6_FAIL**, trial_passes 2/4. **The miss is
+preserved; Increment 6 is NOT closed and the next experiment is NOT authorized.**
+
+The frontier representation itself worked. On all four full trials the truth-free
+3D surfel frontier drove a genuinely two-dimensional trajectory - **pitch span
+15.0 degrees on every trial** against the >=10 degree gate - and grew a rolled
+cylindrical ribbon to **~99.1% curved-surface completeness at 4.04-4.64 mm
+median** and 12.78-14.45 mm p95, on both orientations and both seeds, with
+nonterminal frontier support 21-93 surfels against a >=8 requirement, every map
+pure instance 91, every replay idempotent, and signed radial median +1.42 to
++1.69 mm (outward, so no inward contraction, reproducing FSG5). The software
+check confirms a five-look horizontal-only scan reaches only 0.412 ideal coverage
+on this fixture, so the two-dimensional trajectory is doing real work.
+
+`diag_down_left` passed on both seeds with empty fail lists, terminating
+`no_frontier`. `diag_up_right` failed on both seeds with exactly two fails each:
+`3D frontier policy did not terminate by resolving the frontier` and `fix_04
+object measurement coverage` (0.8940 against >=0.90).
+
+**Root cause, measured: the mirror pair is not a monocular mirror.** The two
+fixtures are an exact 180-degree image-plane rotation as geometry - `up_right L`
+and the rotated `down_left R` disagree on **0 of 409,600 pixels, IoU 1.000000**.
+But a 180-degree roll maps (x,y,z) -> (-x,-y,z) and therefore **swaps the two eye
+centres** at +/-0.0315 m along X, so the mirror of the left eye's view is the
+*right* eye's view. The controller consults only the left-eye oracle mask, so the
+"mirrored" fixtures differ by the full binocular parallax: **37.4 px (1.76 deg)
+on a ribbon only 119 px (5.59 deg) wide**, 31% of its width; `up_right L` vs
+rotated `down_left L` disagree on 16.43% of core pixels, IoU 0.732. The oracle
+continuation veto, which thresholds the object fraction in a 10-row edge band at
+0.15, converts that into a trajectory difference: the mirrored edge fraction runs
+systematically 0.136-0.143 lower on `up_right` and at the third fixation crosses
+the threshold (**0.0703 vs 0.2066**). The (+5,+5) diagonal is vetoed, the
+controller is deflected onto a pure-yaw move, and both FAIL lines follow
+mechanically - it still has eligible candidates when the 6-fixation budget ends,
+and its fourth fixation lands half off the ribbon. `raw_support_L` is 100% true
+in both bands, so the stereo instrument plays no part.
+
+This is a fixture/rig design property, not an implementation defect: it
+reproduced identically on both seeds with byte-identical oracle reference counts,
+the oracle mask being ray-traced and seed-independent. Repairing it requires
+changing the fixture design, the reference eye, or `edge_object_fraction_min` -
+**a specification question this decision does not delegate to Code**, so nothing
+was tuned and the miss stands for Luiz/Chat.
+
+One code fix was required and made, the only one: `tools/fsg6_run.py` line 64
+referenced an undefined name `z` in the loop's defensive revisit guard, so every
+step after the seed raised `NameError` and the written 4-6 fixation algorithm
+could not execute at all. Changed to `gaze`, the variable holding the gaze about
+to be acquired - one token, no constant, threshold, gate or specification
+touched. Nothing else was tuned: no frontier constant, lattice, instrument,
+fusion radius, geometry, texture, seed, SPP, vergence, coverage radius or gate
+changed, and no rerender after the numerical miss.

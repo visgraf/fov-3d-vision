@@ -61,7 +61,7 @@ def execute(args)->dict:
     gazes=[]; patch_stats=[]; assoc_stats=[]; policy_trace=[]; samples=0; render_seconds=0.0; snapshots=[]; supports=[]; sm=None
     gaze=tuple(float(x) for x in public.SEED_GAZE_DEG[args.fixture]); termination=None; t0=time.perf_counter()
     for step in range(public.MAX_BUDGET_FIXATIONS):
-        if any(np.allclose(g,z,atol=1e-9) for g in gazes): raise AssertionError("policy revisited an existing fixation")
+        if any(np.allclose(g,gaze,atol=1e-9) for g in gazes): raise AssertionError("policy revisited an existing fixation")
         case,rr=run_blender(args,step,gaze,args.out/"acquisitions"); samples+=int(rr["primary_camera_samples"]); render_seconds+=float(rr["total_wall_seconds"])
         c,obs=hdr.read_observation(case); rec,meta,_=compute_once(c,obs); pid=f"fix_{step:02d}"; p=patch_from_record(pid,rec); nref,nvalid,cov=object_measurement_stats(rec)
         np.savez_compressed(args.out/"patches"/f"{pid}.npz",xyz_h=p.xyz_h.astype(np.float32),rgb=p.rgb.astype(np.float32),instance_id=p.instance_id,valid=rec["valid"],oracle_instance_id=rec["instance_id"],raw_support_L=rec["raw_support_L"]); write_patch_visual(args.out/"patches"/f"{pid}_mask.png",rec)
