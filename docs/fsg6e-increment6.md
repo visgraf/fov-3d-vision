@@ -187,4 +187,217 @@ It does not establish self-occlusion reasoning, hidden-surface discovery, multip
 
 ## Results
 
-Prospective section intentionally left blank for workstation execution.
+Run 2026-09-20 on the workstation. HEAD before `27170a4`, working tree clean,
+`ab13eae` confirmed an ancestor (`git merge-base --is-ancestor` exit 0).
+
+**Final status: `FSG6E_INCREMENT6_FAIL` — 2 of 4 full trials passed.** The miss is
+preserved. Increment 6 is NOT closed and no next experiment is authorized.
+
+**The central FSG6e claim is nevertheless demonstrated on real acquisitions.**
+Both `closure_down_left` trials terminated `no_frontier` with the raw
+tangent-asymmetry frontier still at **169–170** surfels while OPEN had collapsed
+to **6–9** and every candidate direction fell below the frozen minimum of eight.
+Raw frontier count can remain high while OPEN resolves and `no_frontier` occurs —
+which is exactly what FSG6d could not do.
+
+### FSG6a–FSG6d preserved
+
+All four remain formal FAILS with Results, log entries, decision outcomes, README
+rows and all `previews/fsg6/`, `previews/fsg6b/`, `previews/fsg6c/` and
+`previews/fsg6d/` artifacts untouched. The accepted `z -> gaze` repair is present
+in all five runners (`fsg6_run.py:64`, `fsg6b/c/d/e_run.py:65`). `git diff
+ab13eae` over the FSG1 stereo modules, `fsg3_surface_map.py`, **all FSG6a, FSG6b,
+FSG6c and FSG6d modules**, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is
+empty.
+
+### Constants and normalized policy comparison
+
+`SURFACE_FRONTIER` and `TARGETS` are **exactly equal** to `fsg6d_public` with no
+differing keys; `FUSION == fsg4_public.FUSION = {0.012, 0.012}` and is precisely
+what MAP_RESOLVED reuses; `edge_object_fraction_min` 0.15; `edge_band_fraction`
+0.04; `lookahead_m` 0.12; step 5.0; budget 6; minimum support 8;
+`alignment_cos_min` 0.50; vergence 2.10; object 131. The BOUNDARY_RESOLVED patch
+radius is derived, not new: core 128 -> band 5 px, radius 2 px; core 256 -> 10 px,
+5 px.
+
+The functional change is confined to the OPEN-state filter plus completed
+binocular history plumbing: new `_target_mapped_mask`,
+`_target_patch_eye_evidence` and `classify_frontier_state`; `choose_next` taking
+`observation_history` and computing `support = raw_support & open`. **Verified
+frozen by `inspect.getsource` text-identity (modulo module naming)**:
+`extract_frontier`, `_project_rectified_core`, `_ray_exit`,
+`_exit_corridor_mask`, `_corridor_eye_evidence`, `_project_frontier_pairs`,
+`_candidate_continuation_from_projected`, `_new_box_area`, `_voxel_centroids`,
+`edge_evidence`, `binocular_edge_evidence` — all identical. The candidate sort
+key is verbatim identical; `alignment_cos_min` used once in each; the 0.12 m
+look-ahead line identical. `angular_coordinates` differs only in an error string.
+`fsg6e_compare.py`/`fsg6e_render_fix.py` identical to FSG6d modulo naming;
+`fsg6e_run.py` differs only by accumulating and passing `observation_history` and
+the policy label strings; `fsg6e_eval.py` differs only by adding the descriptive
+`frontier_state_by_fixation` block — **the `fails` gate logic is unchanged, so
+FSG6e adds no acceptance gate.**
+
+Python 3.12.3, NumPy 2.2.6, OpenCV 4.13.0, Pillow 12.3.0, Blender 5.2.1 LTS,
+Cycles OPTIX on an NVIDIA GeForce RTX 4090.
+
+### Checks
+
+```text
+[fsg6e-scene] PASS up_right=[-14.097,14.097]x[-9.942,9.942] down_left=[-13.569,12.671]x[-10.365,9.861] horizontal_ideal_max=0.452 chord_max_mm=0.165 corridor_preflight=true persistent_state_preflight=true raw_frontier_termination_rejected=true traces={closure_up_right:6fix/0.9996, closure_down_left:6fix/1.0000}
+[fsg6e-frontier] PASS map_state_changes_2d_direction=true persistent_state_three_way=true historical_boundary_state=true stereo_hole_not_boundary=true eye_swap_invariant=true projected_frontier_corridor=true resolved_boundary_stops=true
+[fsg6e-check] SUMMARY passed=13 failed=0
+```
+
+All fourteen negatives exited 1, including the three termination-specific guards
+`rawtermination`, `forget_history` and `stereo_hole`. All eighteen FSG1–FSG6d
+regression suites stayed green, and FSG6a's seven, FSG6b's eight, FSG6c's nine
+and FSG6d's eleven negatives all still exit 1.
+
+### Closed-loop preflight — DESIGN/PLUMBING ONLY, NOT A SCIENTIFIC RESULT
+
+Analytic cylinder truth builds an idealized map and history on the evaluator
+side; every next gaze comes from the actual runtime `choose_next`.
+
+```text
+closure_up_right   raw 152,120,109,136,124,133 | OPEN 84,68,76,62,39,2  | cands 5,5,5,3,1,0 -> no_frontier, ideal cov 0.9996, pitch span 15.0
+closure_down_left  raw 128,117,105,148,131,135 | OPEN 68,70,75,65,34,6  | cands 3,3,5,3,1,0 -> no_frontier, ideal cov 1.0000, pitch span 15.0
+LOAD-BEARING CONTROL: same final state WITHOUT completed history -> stops=False, candidates=1 (both fixtures)
+```
+
+### Smoke — COMPLETED, exit 2 (numerical only)
+
+`closure_up_right` / 1123 / small: 6 fixations
+`(-8,-7)(-3,-2)(2,3)(7,8)(12,8)(12,3)`, `max_fixations`, coverage 90.73%, median
+8.072 mm, p95 29.214 mm. State raw 233–265 with OPEN 141,121,120,124,127,86 —
+OPEN does **not** collapse at small profile, because measurement coverage is only
+0.842–0.897 and the hole-ridden map generates far more raw frontier. FAIL lines:
+termination; `fix_00`–`fix_05` object measurement coverage; `fix_01`–`fix_05` too
+few overlap matches. All resolution-scaled. No exception, so full was not blocked.
+
+### The four full trials
+
+Each run exactly once, 1,258,291,200 samples each (5,033,164,800 total).
+
+| Trial | Trajectory | Fix | Term | Final cov. | Median | P95 | Radial | Status |
+|---|---|---:|---|---:|---:|---:|---:|---|
+| up_right/1123 | (-8,-7)(-3,-2)(2,3)(7,8)(12,8)(12,3) | 6 | `max_fixations` | 98.718% | 3.808 mm | 13.295 mm | +1.266 mm | **FAIL** |
+| up_right/1181 | (-8,-7)(-3,-2)(2,3)(7,8)(12,13)(17,13) | 6 | `max_fixations` | 95.923% | 3.782 mm | 13.134 mm | +1.662 mm | **FAIL** |
+| down_left/1123 | (8,7)(3,2)(-2,-3)(-7,-8)(-12,-8)(-12,-3) | 6 | `no_frontier` | 98.639% | 4.506 mm | 14.714 mm | -2.811 mm | PASS |
+| down_left/1181 | (8,7)(3,2)(-2,-3)(-7,-8)(-12,-8)(-12,-3) | 6 | `no_frontier` | 98.840% | 4.507 mm | 14.835 mm | -2.842 mm | PASS |
+
+Frontier state (raw / map-resolved / boundary-resolved / OPEN / candidates):
+
+```text
+up_right/1123  (215,0,91,124,5) (205,2,111,92,7) (181,7,73,101,5) (208,9,105,94,3) (173,4,103,66,2) (187,4,167,16,1)
+up_right/1181  (220,0,92,128,5) (208,8,102,98,7) (188,10,68,110,6) (210,11,107,92,4) (86,0,72,14,3) (43,0,27,16,1)
+down_left/1123 (185,0,81,104,3) (228,9,79,140,5) (215,14,54,147,6) (192,3,102,87,3) (162,0,111,51,2) (170,0,161,9,0)
+down_left/1181 (187,0,78,109,3) (227,15,73,139,5) (214,11,56,147,6) (191,2,105,84,3) (157,0,108,49,1) (169,0,163,6,0)
+```
+
+Selected OPEN support / raw support per fixation:
+
+```text
+up_right/1123  OPEN 45,41,31,61,60,11 | raw 46,59,50,63,83,96
+up_right/1181  OPEN 42,38,31, 8,14,13 | raw 44,56,49,25,21,13
+down_left/1123 OPEN 45,56,45,63,48    | raw 45,65,60,74,76
+down_left/1181 OPEN 48,55,43,65,45    | raw 48,64,57,77,74
+```
+
+### All FAIL lines, verbatim
+
+```text
+closure_up_right/1123:  3D frontier policy did not terminate by resolving the frontier
+closure_up_right/1181:  3D frontier policy did not terminate by resolving the frontier
+closure_up_right/1181:  fix_04 object measurement coverage
+closure_up_right/1181:  fix_05 object measurement coverage
+closure_up_right/1181:  fix_04 too few overlap matches
+closure_up_right/1181:  fix_05 too few overlap matches
+closure_down_left/1123: (none)
+closure_down_left/1181: (none)
+[fsg6e-compare] FSG6E_INCREMENT6_FAIL   trial_passes 2/4
+```
+
+### Diagnosis
+
+**The persistent state works.** On `closure_down_left`, enumerating every
+neighbour at the final fixation with the runtime functions:
+
+```text
+down_left/1123 at (-12,-3) raw=170 map_res=0 bnd_res=161 OPEN=9
+   (-17,-8) raw=27  OPEN=2 | (-17,-3) raw=85 OPEN=5 | (-17,+2) raw=100 OPEN=7
+   (-12,+2) raw=87  OPEN=6 | (-7,-3)  raw=32 OPEN=0 | (-7,+2)  raw=8   OPEN=3
+   (-12,-8) and (-7,-8) already visited  ->  every direction below the frozen 8  ->  no_frontier
+```
+
+Raw support per direction is 8–100, OPEN is 0–7 everywhere. **This is the FSG6e
+mechanism doing exactly what it was designed to do**, and it is what FSG6d could
+not achieve.
+
+**Why `closure_up_right` failed, seed 1123.** OPEN collapsed 124 -> 16 and
+candidates 5 -> 1, but one survived: `(12,-2)` with 96 raw aligned surfels of
+which 82 were BOUNDARY_RESOLVED and 3 MAP_RESOLVED, leaving **11 OPEN against the
+frozen minimum of 8**. The filter removed 85 of 96; three more resolutions would
+have terminated the run. Its corridor was only 0.2252.
+
+**Why `closure_up_right` failed, seed 1181 — and differently.** At fixation 3,
+gaze `(7,8)`, the candidate `(12,13)` was admitted and selected despite having the
+weakest support of the four (**8 OPEN, exactly the minimum**, from 25 raw) and the
+weakest corridor (0.3230), because `predicted_new_angular_area` is the primary
+sort key and `(12,13)` scores 134.26 against 103.65, 73.04 and 15.09. `(12,13)` is
+above the fixture's `+9.942` degree pitch bound, so fixations 4 and 5 fell largely
+off the ribbon: object measurement coverage 0.8268 and 0.6650, matched 3,879 and
+404, and coverage flat at 95.9%.
+
+The two seeds diverge on a knife edge. Recomputed at the identical state, the
+`(12,13)` corridor fraction is:
+
+```text
+seed 1123: combined 0.1490  L f=0.1490 obj=138 sup=926 rays=6 | R f=0.0000 obj=0 sup=1031 rays=6  -> VETOED (< 0.15)
+seed 1181: combined 0.3230  L f=0.3230 obj=208 sup=644 rays=6 | R f=0.0000 obj=0 sup=734  rays=6  -> PERMITTED
+```
+
+Both have OPEN support >= 8 (10 and 8). The decisive quantity is a corridor
+fraction computed from only **six** projected frontier rays, landing at 0.1490
+versus 0.3230 across a Monte-Carlo seed change and straddling the frozen 0.15
+threshold. The right eye contributes exactly 0.0000 in both.
+
+**This is a specification result, not an implementation defect, and no code fix
+was made.** The code faithfully implements the written persistent-state rule; the
+OPEN filter demonstrably works, reducing `(12,13)` support 25 -> 8 and 29 -> 10
+and delivering clean `no_frontier` on both `closure_down_left` trials. What fails
+is the interaction of that correctly-implemented rule with three **frozen**
+pieces FSG6e was not permitted to vary: the FSG6d corridor evaluated on a
+six-ray sample, the `predicted_new_angular_area` primary sort key that rewards
+the most extreme move, and the minimum support of exactly 8. Per §Runtime
+schedule the miss is preserved and returned to Luiz/Chat.
+
+### Visuals and PLY
+
+`growth_truth.png` shows `closure_down_left` sweeping cleanly
+(35.7 -> 55.1 -> 77.3 -> 98.6 -> 98.7 -> 98.6%) and `closure_up_right`/1181
+visibly stalling after fixation 3 (95.9% flat for three panels) as the gaze
+leaves the ribbon. `coverage_3d_frontier.png` shows three curves saturating near
+98.6–98.8% and the 1181 curve flat at 95.9%. Every `surface_map.ply` carries
+`comment fixed head frame H`, has **no `element face`**, and independent reads
+give median cylinder radius **0.77106 m against a true 0.770** and **0.68780–
+0.68782 m against a true 0.690** — about +1.1 mm and −1.2 mm.
+
+### Cost
+
+Smoke run 17.5 s (loop 17.34 s, Blender 11.81 s) / eval 8.5 s. Full runs 1m10.5s,
+1m0.6s, 1m11.4s, 1m10.9s (loop 70.36/60.43/71.28/70.75 s, Blender 34.4–34.7 s
+each). Aggregation under a second. Batch class throughout.
+
+### What holds
+
+FSG6e answered its own scientific question in the affirmative on half the
+prospectively fixed set, and the answer is visible in the diagnostics rather than
+inferred: **the observer terminated from its own persistent 3D memory and
+completed binocular observations while the raw geometric frontier remained at
+169–170 surfels.** The distinction between a geometric one-sided surface boundary
+and an unresolved exploration frontier is therefore representable with the frozen
+12 mm association and the frozen 0.15 threshold, with no new numerical constant
+and no completeness-percentage or low-gain shortcut. What is not yet established
+is robustness: on `closure_up_right` the decision rides on a six-ray corridor
+sample and a support count of exactly 8, and a Monte-Carlo seed change flips the
+trajectory off the surface.

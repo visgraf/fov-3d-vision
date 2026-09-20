@@ -4064,3 +4064,230 @@ to 98.7-99.0% at 3.46-3.94 mm median with sub-millimetre radial agreement. **The
 open question is no longer the veto but termination**: how a frontier defined by
 local tangent asymmetry should ever declare a thin ribbon finished. Stopped for
 Luiz/Chat.
+
+### 2026-09-20 - FSG6e Increment 6, persistent OPEN frontier state: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg6e-increment6.md` and D-FSG6e appended just above. **FSG6e changes
+the state of a raw frontier, not the FSG6d corridor and not any numerical gate.**
+Commands, written before running them:
+
+    .venv/bin/python tools/dev/check_fsg6e.py
+    for n in policy mapstate horizontal monocular conjunction componentmax full_edge rawtermination forget_history stereo_hole flat shift bias purity; do .venv/bin/python tools/dev/check_fsg6e.py --negative "$n"; done
+    (all existing FSG1-FSG6d regression checks and their negatives, unchanged)
+    .venv/bin/python tools/fsg6e_run.py  --out previews/fsg6e/smoke-closure_up_right-seed1123 --profile small --fixture closure_up_right --seed 1123 --device OPTIX
+    .venv/bin/python tools/fsg6e_eval.py previews/fsg6e/smoke-closure_up_right-seed1123 --out previews/fsg6e/smoke-closure_up_right-seed1123-evaluation --mode smoke
+    (then the four full trials closure_up_right/1123, closure_up_right/1181, closure_down_left/1123, closure_down_left/1181,
+     each run once and evaluated, then fsg6e_compare.py over exactly those four metrics.json)
+
+**FSG6a-FSG6d are preserved.** All four remain formal FAILS; their Results, log
+entries, decision outcomes, README rows and all `previews/fsg6/`,
+`previews/fsg6b/`, `previews/fsg6c/` and `previews/fsg6d/` artifacts are
+untouched. The accepted `z -> gaze` repair is present in all five runners
+(`fsg6_run.py:64`, `fsg6b/c/d/e_run.py:65`). `git diff ab13eae` over the FSG1
+stereo modules, `fsg3_surface_map.py`, **all FSG6a, FSG6b, FSG6c and FSG6d
+modules**, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY.
+
+**Normalized FSG6d -> FSG6e policy comparison, read from the code.** The
+functional change is confined to the OPEN-state filter plus completed binocular
+observation-history plumbing: new `_target_mapped_mask` (frozen 12 mm radius and
+12 mm hash cell, strict `<`), `_target_patch_eye_evidence` (patch radius derived
+from the already-frozen `edge_band_fraction`, exactly as the FSG6d corridor
+derives its width) and `classify_frontier_state` (three-way); `choose_next` now
+takes `observation_history` and computes `support = raw_support & open`, plus
+descriptive raw/map-resolved/boundary-resolved counts. **Verified frozen by
+`inspect.getsource` text-identity (modulo module naming)**: `extract_frontier`,
+`_project_rectified_core`, `_ray_exit`, `_exit_corridor_mask`,
+`_corridor_eye_evidence`, `_project_frontier_pairs`,
+`_candidate_continuation_from_projected`, `_new_box_area`, `_voxel_centroids`,
+`edge_evidence`, `binocular_edge_evidence` - all identical. The candidate sort
+key is verbatim identical; `alignment_cos_min` is used exactly once in both; the
+0.12 m look-ahead line is identical. `angular_coordinates` differs only in an
+error-message string ("FSG6d policy" -> "FSG6e policy"). `fsg6e_compare.py` and
+`fsg6e_render_fix.py` are identical to FSG6d modulo naming; `fsg6e_run.py`
+differs only by accumulating `observation_history` (deep copies of both eyes'
+rectified masks plus calibration), passing it to `choose_next`, and the policy
+label/`policy_inputs` strings; `fsg6e_eval.py` differs only by adding the
+descriptive `frontier_state_by_fixation` block - **the `fails` gate logic is
+unchanged, so FSG6e adds no acceptance gate.**
+
+**Constants audit, measured not assumed**: `SURFACE_FRONTIER` and `TARGETS` are
+exactly equal to `fsg6d_public` with NO differing keys; `FUSION` equals
+`fsg4_public.FUSION` = {0.012, 0.012} and is precisely what MAP_RESOLVED reuses;
+`edge_object_fraction_min` 0.15; `edge_band_fraction` 0.04; `lookahead_m` 0.12;
+step 5.0; budget 6; minimum support 8; `alignment_cos_min` 0.50; vergence 2.10;
+object 131. BOUNDARY_RESOLVED patch radius is derived, not new: core 128 ->
+band 5 px, radius 2 px; core 256 -> 10 px, 5 px.
+
+**The evaluator-only closed-loop preflight makes the new state load-bearing.**
+`fsg6e_scene.persistent_policy_preflight` builds an idealized map and history
+from analytic cylinder truth on the evaluator side, then calls the **actual
+runtime `choose_next`** for every next gaze. It must terminate in 4-6 fixations
+with `no_frontier`, reach >=90% ideal coverage and >=10 degrees pitch span, and -
+the load-bearing part - **removing completed binocular history from the same
+final state must recreate at least one eligible raw-frontier candidate**, which
+reproduces the FSG6d termination gap. The positive check asserts both `pf["stop"]`
+and `not pf["without_history_stops"]`. Design-only numbers, not scientific
+results: six-look traces with ideal coverage 0.9996 and 1.0000.
+
+Fixtures: two rolled cylindrical ribbons, 48 strips, deliberately NOT mirrors -
+`closure_up_right` (radius 0.77 m, centre z -2.88 m, arc -57 to +57 deg, height
+0.250 m, roll +31 deg, seed gaze (-8,-7)) and `closure_down_left` (radius 0.69 m,
+centre z -2.72 m, arc -51 to +64 deg, height 0.248 m, roll +214 deg, seed gaze
+(+8,+7)). Object 131, background 132. Fresh seeds 1123 and 1181.
+
+Gates, all four trials judged independently and all four required, all inherited
+unchanged from FSG6d: 4-6 fixations; termination `no_frontier`; no repeated
+fixation; each move one nonzero 5-degree lattice step; pitch span >=10 deg; >=100
+oracle object reference pixels and >=90% object measurement coverage per patch;
+**>=8 OPEN** 3D frontier surfels behind every nonterminal selected gaze; per
+post-seed patch >=5,000 matched, overlap median <=10 mm, p95 <=25 mm, idempotent
+replay, no coverage drop beyond 0.5 pp; final analytic median <=10 mm, p95
+<=30 mm, coverage >=90%, gain >=35 pp, only instance 131, >=5,000 multi-look
+surfels, |signed radial median| <=7.5 mm.
+
+Cost class: smoke Interactive/Batch; each full trial Batch (FSG6d's fulls ran
+~1m9-1m13s). Expected ~1,258,291,200 samples per full trial at six fixations,
+fewer if the new rule terminates earlier - which is the point of the experiment.
+
+Likely failure modes, in the order I expect them: (a) BOUNDARY_RESOLVED is too
+eager on real Cycles data - a supported binocular patch just past the true ribbon
+edge reads as background and resolves a frontier that is actually still open,
+terminating below 4 fixations with coverage under 90%; (b) MAP_RESOLVED is too
+eager because the 0.12 m look-ahead lands back inside the already-fused ribbon on
+a strongly curved surface, collapsing OPEN support below 8 prematurely; (c) the
+opposite - real stereo holes keep targets OPEN (correctly, per the stereo-hole
+guard) and the run again exhausts the budget as FSG6d did; (d) history
+accumulation over six fixations is slow or memory-heavy enough to perturb the
+loop; (e) only then suspect projection or the renderer. Diagnose before editing.
+**I will not change the 12 mm association radius or hash, the 0.15 threshold, the
+0.04 scale, any frontier constant, the FSG6d corridor, the ranking, the
+instrument, FSG3 fusion, the lattice, the six-fixation budget, the geometry,
+textures, seeds, SPP, vergence, coverage radius or any gate to obtain a pass; I
+will add no completeness-percentage stop, low-gain stop or budget extension; and
+I will not rerender after a numerical miss. If the code faithfully implements the
+written persistent-state rule and that rule fails, I will preserve the
+specification result and stop.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`FSG6E_INCREMENT6_FAIL`, trial_passes 2/4.** The miss is preserved; Increment 6
+is NOT closed and no next experiment is authorized.
+
+**But the central FSG6e claim is demonstrated on real acquisitions.** Both
+`closure_down_left` trials terminated `no_frontier` with the raw
+tangent-asymmetry frontier still at **169-170** surfels while OPEN had collapsed
+to **6-9** and every candidate direction fell below the frozen minimum of eight.
+So yes: **raw frontier count can remain nonzero and high while OPEN resolves and
+`no_frontier` occurs** - precisely what FSG6d could not do.
+
+FSG6a-FSG6d are intact: all four still formal FAILS, records untouched,
+`z -> gaze` present in all five runners. `git diff ab13eae` over the FSG1 stereo
+modules, `fsg3_surface_map.py`, all FSG6a/6b/6c/6d modules, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY.
+
+`[fsg6e-check] SUMMARY passed=13 failed=0` with
+`[fsg6e-scene] PASS ... horizontal_ideal_max=0.452 chord_max_mm=0.165
+corridor_preflight=true persistent_state_preflight=true
+raw_frontier_termination_rejected=true traces={closure_up_right:6fix/0.9996,
+closure_down_left:6fix/1.0000}` and `[fsg6e-frontier] PASS
+map_state_changes_2d_direction=true persistent_state_three_way=true
+historical_boundary_state=true stereo_hole_not_boundary=true
+eye_swap_invariant=true projected_frontier_corridor=true
+resolved_boundary_stops=true`. All fourteen negatives exited 1, including
+`rawtermination`, `forget_history` and `stereo_hole`. All eighteen FSG1-FSG6d
+suites green; FSG6a's 7, FSG6b's 8, FSG6c's 9 and FSG6d's 11 negatives all still
+exit 1. `SURFACE_FRONTIER` and `TARGETS` exactly equal FSG6d with NO differing
+keys, and `inspect.getsource` confirms all eleven settled FSG6d
+corridor/extraction/ranking helpers are text-identical modulo module naming.
+
+Closed-loop preflight (**design/plumbing only, not a scientific result**): raw
+152,120,109,136,124,133 with OPEN 84,68,76,62,39,**2** on `closure_up_right` and
+raw 128,117,105,148,131,135 with OPEN 68,70,75,65,34,**6** on
+`closure_down_left`, both terminating `no_frontier` in six fixations at ideal
+coverage 0.9996/1.0000; and the load-bearing control - removing completed history
+from the same final state leaves 1 candidate and does not stop - reproducing the
+FSG6d gap.
+
+Smoke (`closure_up_right`/1123/small) completed, exit 2, numerical only: same
+trajectory, `max_fixations`, coverage 90.73%, median 8.072 mm, p95 29.214 mm.
+State raw 233-265 with OPEN 141,121,120,124,127,86 - **OPEN does not collapse at
+small profile**, because measurement coverage is only 0.842-0.897 and the
+hole-ridden map generates far more raw frontier. This is failure mode (c) from
+the prospective entry, and it is resolution, not rule.
+
+Four full trials, each once, 1,258,291,200 samples each (5,033,164,800 total).
+`closure_down_left` **passed on both seeds** with empty fail lists:
+`(8,7)(3,2)(-2,-3)(-7,-8)(-12,-8)(-12,-3)`, `no_frontier`, coverage
+98.639/98.840%, median 4.506/4.507 mm, p95 14.714/14.835 mm, radial
+-2.811/-2.842 mm. `closure_up_right` failed on both:
+seed 1123 `(-8,-7)(-3,-2)(2,3)(7,8)(12,8)(12,3)` with ONE fail line (termination),
+coverage 98.718%, median 3.808 mm; seed 1181
+`(-8,-7)(-3,-2)(2,3)(7,8)(12,13)(17,13)` with five, coverage 95.923%.
+
+Frontier state raw/map_res/bnd_res/OPEN/cands:
+up_right/1123 (215,0,91,124,5)(205,2,111,92,7)(181,7,73,101,5)(208,9,105,94,3)(173,4,103,66,2)(187,4,167,16,1)
+up_right/1181 (220,0,92,128,5)(208,8,102,98,7)(188,10,68,110,6)(210,11,107,92,4)(86,0,72,14,3)(43,0,27,16,1)
+down_left/1123 (185,0,81,104,3)(228,9,79,140,5)(215,14,54,147,6)(192,3,102,87,3)(162,0,111,51,2)(170,0,161,9,0)
+down_left/1181 (187,0,78,109,3)(227,15,73,139,5)(214,11,56,147,6)(191,2,105,84,3)(157,0,108,49,1)(169,0,163,6,0)
+
+**How down_left terminates**, enumerated at the final fixation with the runtime
+functions: at (-12,-3), raw=170, bnd_res=161, OPEN=9; per-direction raw support
+is 8-100 but OPEN is 0-7 on every unvisited neighbour, all below the frozen 8, so
+`no_frontier` fires. The mechanism is exactly as designed.
+
+**Why up_right/1123 failed.** OPEN collapsed 124 -> 16 and candidates 5 -> 1, but
+one survived: (12,-2) with 96 raw aligned surfels of which **82 BOUNDARY_RESOLVED
+and 3 MAP_RESOLVED**, leaving **11 OPEN against the frozen minimum of 8**. The
+filter removed 85 of 96; three more resolutions would have ended the run. Its
+corridor was only 0.2252.
+
+**Why up_right/1181 failed differently.** At fixation 3, gaze (7,8), the candidate
+(12,13) was admitted and selected despite the weakest support of the four
+(**8 OPEN, exactly the minimum**, from 25 raw) and the weakest corridor (0.3230),
+because `predicted_new_angular_area` is the primary sort key and (12,13) scores
+134.26 against 103.65, 73.04 and 15.09. (12,13) is above the fixture's +9.942 deg
+pitch bound, so fixations 4 and 5 fell off the ribbon: measurement coverage
+0.8268 and 0.6650, matched 3,879 and 404, coverage flat at 95.9%.
+
+**The two seeds diverge on a knife edge.** Recomputed at the identical state, the
+(12,13) corridor fraction is 0.1490 (seed 1123, L f=0.1490 obj=138 sup=926
+rays=6, R f=0.0000) versus 0.3230 (seed 1181, L f=0.3230 obj=208 sup=644 rays=6,
+R f=0.0000). Both have OPEN support >= 8 (10 and 8). The decisive quantity is a
+corridor fraction computed from only **six** projected frontier rays, straddling
+the frozen 0.15 threshold under a Monte-Carlo seed change, with the right eye
+contributing exactly 0.0000 in both.
+
+**This is a specification result, not an implementation defect, and no code fix
+was made.** The code faithfully implements the written persistent-state rule; the
+OPEN filter demonstrably works (25 -> 8 and 29 -> 10 on that very candidate, 170
+-> 9 overall) and delivers clean truth-free `no_frontier` on both down_left
+trials. What fails is the interaction of that correctly-implemented rule with
+three FROZEN pieces FSG6e could not vary: the FSG6d corridor evaluated on a
+six-ray sample, the `predicted_new_angular_area` primary sort key that rewards
+the most extreme move, and the minimum support of exactly 8. Nothing was tuned -
+no 12 mm radius or hash, 0.15 threshold, 0.04 scale, frontier constant, corridor,
+ranking, instrument, FSG3 fusion, lattice, budget, geometry, texture, seed, SPP,
+vergence, coverage radius or gate changed; no completeness-percentage stop,
+low-gain stop or budget extension added; no rerender after a numerical miss.
+
+Visuals: growth_truth.png shows down_left sweeping cleanly
+(35.7->55.1->77.3->98.6->98.7->98.6%) and up_right/1181 visibly stalling after
+fixation 3 (95.9% flat for three panels) as the gaze leaves the ribbon.
+coverage_3d_frontier.png shows three curves saturating near 98.6-98.8% and the
+1181 curve flat at 95.9%. Every surface_map.ply carries "comment fixed head frame
+H" with NO `element face`; independent reads give median radius 0.77106 m vs true
+0.770 and 0.68780-0.68782 m vs true 0.690 (+1.1 mm and -1.2 mm).
+
+Cost: smoke run 17.5 s (loop 17.34 s, Blender 11.81 s) / eval 8.5 s; full runs
+1m10.5s, 1m0.6s, 1m11.4s, 1m10.9s (loop 70.36/60.43/71.28/70.75 s, Blender
+34.4-34.7 s each); aggregation under a second.
+
+Scope of what holds: FSG6e answered its own question affirmatively on half the
+prospectively fixed set, visibly in the diagnostics rather than by inference -
+the observer terminated from its own persistent 3D memory and completed
+binocular observations while the raw geometric frontier stood at 169-170. The
+distinction between a geometric one-sided surface boundary and an unresolved
+exploration frontier is representable with the frozen 12 mm association and the
+frozen 0.15 threshold, with no new numerical constant. What is NOT established is
+robustness: on `closure_up_right` the decision rides on a six-ray corridor sample
+and a support count of exactly 8, and a seed change flips the trajectory off the
+surface. Stopped for Luiz/Chat.

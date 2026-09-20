@@ -1015,3 +1015,79 @@ decision permitted FSG6d to vary. Nothing was tuned and nothing rerun.
 Recorded for the next handoff: **the open question is no longer the continuation
 veto but termination** - how a frontier defined by local tangent asymmetry should
 declare a thin ribbon finished. The veto itself should now be treated as settled.
+
+## D-FSG6e - Give a raw frontier a persistent state; terminate on OPEN exhaustion rather than on raw-frontier disappearance (2026-09-20)
+FSG6a, FSG6b, FSG6c and FSG6d remain **formal FAILS** and their records, results and artifacts stay untouched. The accepted one-token `z -> gaze` implementation repair remains in place in all five runners. **FSG6d's projected candidate-local binocular continuation corridor is now accepted and frozen**; FSG6e is additive and does not rewrite any earlier increment.
+
+FSG6d settled the continuation-veto question. Its projected, candidate-local binocular corridor rescued the FSG6b corner-exit failure, avoided the FSG6c one-component walk-off, and all four full trials passed every measurement, geometry, purity, overlap, curvature and 2D-gaze gate, reaching 98.7-99.0% coverage at 3.46-3.94 mm median with sub-millimetre radial agreement. Its sole failure was **termination**: raw tangent-asymmetry frontier counts stayed at ~150-215 even after 99% reconstruction, because a ~6-7 degree ribbon inside a 12-degree fovea always presents long lateral boundaries. `no_frontier` was therefore unreachable and every trial exhausted the six-fixation budget with interior already-swept lattice cells still eligible.
+
+FSG6e changes **the state of a raw frontier**, not the corridor and not any numerical gate. For every raw frontier surfel the unchanged extractor already produces the look-ahead target `t_i = x_i + 0.12 m * missing_i`. FSG6e classifies that hypothesis into exactly one of three states. **MAP_RESOLVED**: `t_i` lies within the frozen FSG3/FSG4 association radius of a surfel already in persistent memory, `min_s ||t_i - s|| < 0.012 m`, using the strict `<` test and the 0.012 m spatial-hash cell - exactly the frozen fusion semantics, introducing no new distance threshold. **BOUNDARY_RESOLVED**: `t_i` is not map-resolved, and in at least one completed fixation of the observer's binocular history the target projected into calibration-supported local patches in **both** rectified eyes with `max(f_L, f_R) < 0.15`, the unchanged continuation threshold; the patch radius derives from the already-frozen `edge_band_fraction = 0.04` exactly as the FSG6d corridor width does. **OPEN**: neither. Only OPEN frontiers contribute to the unchanged candidate support count and frontier score, with the frozen minimum of eight; the unchanged FSG6d corridor then performs the current-view veto and ranking is unchanged.
+
+Two properties are deliberate. An eye swap cannot change the state, because the historical test is `max(f_L, f_R)` over both eyes. And a target that was *looked at* but whose stereo reconstruction is merely missing is **not** declared empty while oracle object segmentation still supports it - the stereo-hole guard. The intended meaning of termination becomes `no_frontier` = no candidate direction has enough OPEN frontier support after the settled FSG6d veto; it explicitly does **not** mean that raw tangent-asymmetry frontiers vanish.
+
+Scope is deliberately narrow: a single convex visible object surface with oracle instance segmentation, where a supported binocular observation of the 3D target with no target-object evidence is a valid physical-boundary resolution. This is **not** a hidden-surface or occlusion state machine. A future self-occlusion case that projects the target onto target-object pixels stays OPEN rather than being prematurely completed; explicit OCCLUDED/UNSEEN reasoning is deferred.
+
+Everything else is frozen and checked mechanically: the FSG1 instrument; `tools/fsg3_surface_map.py` with 12 mm association/hash and idempotent replay; fixed head frame H and exact poses; no ICP; vergence 2.10 m; 256 spp full / 64 spp smoke; the PCA/tangent-asymmetry raw extraction including the 0.12 m look-ahead; the alignment threshold and minimum support of 8; the candidate ranking and sort key; the FSG6d projected corridor; threshold 0.15 and band fraction 0.04; the eight-neighbour 5-degree lattice; the six-fixation budget; and every measurement, overlap, map-accuracy, purity, idempotence, curvature-bias, coverage and pitch-span gate. `check_fsg6e.py` requires exact equality of `SURFACE_FRONTIER` and `TARGETS` with `fsg6d_public.py` **and** text-identity of the settled FSG6d corridor/ranking helpers via `inspect.getsource`. Raw/map-resolved/boundary-resolved/open counts are descriptive diagnostics only; **FSG6e introduces no new numerical acceptance gate.**
+
+The scientific question: can the observer decide that exploration is complete from its own persistent 3D memory and completed binocular observations, rather than requiring the raw geometric frontier population itself to disappear? Equivalently, can FSG6 distinguish a geometric one-sided surface boundary from an unresolved exploration frontier?
+
+Earlier full records are development evidence and are NOT reused as validation. Validation uses two fresh, deliberately non-mirror rolled cylindrical ribbons - `closure_up_right` (radius 0.77 m, centre z -2.88 m, arc -57 to +57 deg, height 0.250 m, roll +31 deg, seed gaze (-8,-7)) and `closure_down_left` (radius 0.69 m, centre z -2.72 m, arc -51 to +64 deg, height 0.248 m, roll +214 deg, seed gaze (+8,+7)) - with fresh Monte-Carlo seeds **1123** and **1181**, giving four full trials judged independently and all four required to pass. Object instance is 131.
+
+A full pass closes Increment 6 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that prevents the written experiment from executing and does not alter the scientific specification; **if the code faithfully implements the written persistent-state rule and that rule fails, the specification result is preserved and I stop.** Never change the 12 mm association radius or hash, the 0.15 object threshold, the 0.04 patch/corridor scale, any frontier constant, the FSG6d corridor, the candidate ranking, the FSG1 instrument, FSG3 fusion, the 5-degree lattice, the six-fixation budget, the fresh geometry after acquisition starts, textures, seeds, SPP, vergence, truth coverage radius or any numerical gate to obtain a pass. Add no completeness-percentage stop, low-gain stop or budget extension. No alternate fixture, extra seed, rerender after a numerical miss, ICP, meshing, hole filling, learned policy, self-occlusion extension or next-increment implementation.
+
+Outcome 2026-09-20 (evidence: `docs/fsg6e-increment6.md` Results and
+`docs/log.md`). **FSG6E_INCREMENT6_FAIL**, trial_passes 2/4. The miss is
+preserved; Increment 6 is NOT closed and the next experiment is NOT authorized.
+FSG6a-FSG6d remain formal FAILS with records untouched and the `z -> gaze` repair
+in place in all five runners.
+
+**The central claim of this decision is nevertheless demonstrated on real
+acquisitions.** Both `closure_down_left` trials terminated **`no_frontier` with
+the raw tangent-asymmetry frontier still at 169-170 surfels** while OPEN had
+collapsed to 6-9 and every unvisited direction fell below the frozen minimum of
+eight (per-direction raw support 8-100, OPEN 0-7). The observer decided
+exploration was complete from its own persistent 3D memory and completed
+binocular observations, without the raw geometric frontier disappearing - exactly
+what FSG6d could not do, and with no new numerical constant, no
+completeness-percentage stop and no low-gain stop.
+
+`[fsg6e-check] SUMMARY passed=13 failed=0`; all fourteen negatives exit 1
+including `rawtermination`, `forget_history` and `stereo_hole`; all eighteen
+prior suites green; `SURFACE_FRONTIER`/`TARGETS` exactly equal FSG6d, and
+`inspect.getsource` confirms all eleven settled FSG6d corridor/extraction/ranking
+helpers text-identical. The evaluator-only closed-loop preflight terminated both
+fixtures in six fixations at ideal coverage 0.9996/1.0000, and its load-bearing
+control - removing completed history from the same final state leaves a candidate
+and does not stop - confirms the new state is not cosmetic.
+
+`closure_down_left` passed on both seeds with empty fail lists (coverage
+98.639/98.840%, median 4.506/4.507 mm, radial -2.811/-2.842 mm).
+`closure_up_right` failed on both, for two different proximate reasons.
+Seed 1123 produced **one** fail line, termination: OPEN collapsed 124 -> 16 and
+candidates 5 -> 1, but `(12,-2)` survived with 96 raw aligned surfels of which 82
+were BOUNDARY_RESOLVED and 3 MAP_RESOLVED, leaving **11 OPEN against a frozen
+minimum of 8** - three more resolutions would have ended the run. Seed 1181
+diverged at fixation 3: `(12,13)` was selected despite the weakest support of the
+four (**8 OPEN, exactly the minimum**, from 25 raw) and the weakest corridor
+(0.3230), because `predicted_new_angular_area` is the primary sort key and it
+scored 134.26 against 103.65/73.04/15.09; `(12,13)` lies above the fixture's
++9.942 degree pitch bound, so fixations 4-5 fell off the ribbon (measurement
+coverage 0.8268/0.6650, matched 3,879/404).
+
+**The two seeds diverge on a knife edge**: recomputed at the identical state the
+`(12,13)` corridor fraction is 0.1490 versus 0.3230, straddling the frozen 0.15
+threshold, computed from only **six** projected frontier rays with the right eye
+contributing exactly 0.0000 in both.
+
+**This is a specification result, not an implementation defect, and no code fix
+was made.** The code faithfully implements the written persistent-state rule and
+the OPEN filter demonstrably works (170 -> 9 overall; 25 -> 8 and 29 -> 10 on the
+decisive candidate). What fails is its interaction with three pieces this
+decision froze: the FSG6d corridor evaluated on a six-ray sample, the
+`predicted_new_angular_area` primary sort key that rewards the most extreme move,
+and the minimum support of exactly 8. Nothing was tuned and nothing rerun.
+
+Recorded for the next handoff: **the termination mechanism is sound; what is
+unestablished is robustness.** The remaining fragility is not in the OPEN state
+but in how thin the evidence behind a marginal candidate is allowed to be - a
+six-ray corridor sample and a support count sitting exactly on the threshold.
