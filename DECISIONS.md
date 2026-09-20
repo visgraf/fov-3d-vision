@@ -1091,3 +1091,81 @@ Recorded for the next handoff: **the termination mechanism is sound; what is
 unestablished is robustness.** The remaining fragility is not in the OPEN state
 but in how thin the evidence behind a marginal candidate is allowed to be - a
 six-ray corridor sample and a support count sitting exactly on the threshold.
+
+## D-FSG6f - Aggregate the frozen persistent surfel states into candidate-level consensus: OPEN must strictly outnumber resolved (2026-09-20)
+FSG6a, FSG6b, FSG6c, FSG6d and FSG6e remain **formal FAILS** and their records, results and artifacts stay untouched. The accepted one-token `z -> gaze` implementation repair remains in place in all six runners. FSG6f is additive and does not rewrite any earlier increment.
+
+FSG6e established the three-way persistent surfel state we wanted, and proved it on real acquisitions: on both `closure_down_left` trials the raw tangent-asymmetry frontier stayed at 169-170 surfels while OPEN collapsed to 6-9 and `no_frontier` fired truth-free. Its two `closure_up_right` failures exposed the remaining abstraction gap. Candidate eligibility still meant only "at least eight OPEN surfels exist in this direction", even when the overwhelming majority of the aligned persistent evidence was already resolved. The two pathological survivors were **11 OPEN against 3 MAP + 82 BOUNDARY (11 of 96 raw)** and **8 OPEN against 1 MAP + 16 BOUNDARY (8 of 25 raw)**; the second, sitting exactly on the frozen minimum of 8, carried the trajectory off the ribbon.
+
+FSG6f changes **exactly one scientific abstraction**: candidate-level aggregation of the already-frozen FSG6e states. For an aligned candidate let `N_OPEN`, `N_MAP` and `N_BOUNDARY` be the support counts and `N_RESOLVED = N_MAP + N_BOUNDARY`. The candidate is exploration-open only when
+
+    N_OPEN > N_RESOLVED
+
+and it must **independently** still satisfy the already-frozen `N_OPEN >= 8` support gate. **A tie is resolved, not open.** This is a state-consensus rule, not a fitted numerical threshold: no `0.5` or other majority constant is introduced, and the check suite asserts on the source that none appears. The hierarchy becomes raw 3D frontier -> persistent surfel state -> candidate state consensus -> projected-frontier binocular continuation corridor -> unchanged predicted-new-area / frontier-score ranking -> gaze.
+
+Everything else is frozen and checked mechanically: the FSG6e MAP/BOUNDARY/OPEN classifier; the FSG6d projected-frontier corridor; the candidate ranking and sort key; the FSG1 instrument; FSG3/FSG4 12 mm association and hash; the raw frontier constants and 0.12 m look-ahead; the 0.15 continuation threshold; the 0.04 corridor/patch scale; the minimum OPEN support of 8; the 5-degree lattice; the six-fixation budget; SPP, vergence, truth coverage radius and every numerical acceptance gate. `check_fsg6f.py` requires exact equality of `SURFACE_FRONTIER` and `TARGETS` with `fsg6e_public.py`, `inspect.getsource` text-identity of the FSG6e state classifier and all settled FSG6d corridor/extraction helpers, and a literal match of the candidate sort key.
+
+The rule is validated against the preserved FSG6e development record before any acquisition: all five productive `closure_up_right/1123` selected moves (45/46, 41/59, 31/50, 61/63, 60/83 OPEN-of-raw) are strict OPEN majorities and remain eligible, while both pathological survivors are rejected, and the `anyopen` negative detects any return to the retired any-OPEN rule. **Those FSG6e numbers are development controls only and are not counted as FSG6f validation.**
+
+The scientific question: can persistent three-state 3D frontier memory be aggregated into candidate-level consensus strongly enough to reject mostly-resolved actions while preserving useful active exploration and truth-free `no_frontier` termination?
+
+All FSG6a-e observations are development/regression evidence and are NOT reused as validation. Validation uses two fresh, deliberately non-mirror rolled cylindrical ribbons - `consensus_up_right` (radius 0.75 m, centre z -2.91 m, arc -59 to +58 deg, height 0.252 m, roll +28 deg, seed gaze (-8,-7)) and `consensus_down_left` (radius 0.71 m, centre z -2.69 m, arc -52 to +65 deg, height 0.250 m, roll +216 deg, seed gaze (+8,+7)) - with fresh Monte-Carlo seeds **1237** and **1291**, giving four full trials judged independently and all four required to pass. Object instance is 141. One acceptance gate is added, exactly as the handoff prescribes: every nonterminal selected candidate must have strict OPEN-majority state consensus.
+
+A full pass closes Increment 6 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that prevents the written experiment from executing and does not alter the scientific specification; **if the code faithfully implements strict OPEN-majority candidate consensus and that rule fails, the specification result is preserved and I stop.** Never change the 12 mm association or hash, the 0.15 threshold, the 0.04 scale, the 0.12 m look-ahead, any frontier constant, the FSG6e state classifier, the FSG6d corridor, the candidate ranking, the minimum OPEN support of 8, the FSG1 instrument, FSG3 fusion, the 5-degree lattice, the six-fixation budget, the geometry after acquisition starts, textures, seeds, SPP, vergence, coverage radius or any numerical gate to obtain a pass. Add no completeness-percentage stop, low-gain stop, confidence threshold or budget extension. No alternate fixture, extra seed, rerender after a numerical miss, ICP, meshing, hole filling, learned policy, self-occlusion extension or next-increment implementation.
+
+Outcome 2026-09-20 (evidence: `docs/fsg6f-increment6.md` Results and
+`docs/log.md`). **FSG6F_INCREMENT6_PASS**, trial_passes 4/4, every fail list
+empty, aggregate exit 0. Per this decision, **Increment 6 is CLOSED and the next
+experiment is AUTHORIZED BUT NOT IMPLEMENTED.** FSG6a-FSG6e remain formal FAILS
+with records untouched and the `z -> gaze` repair in place in all six runners.
+
+`[fsg6f-check] SUMMARY passed=14 failed=0`; all fifteen negatives exit 1
+including `anyopen`; all nineteen prior suites green and every prior negative set
+still fires. `SURFACE_FRONTIER`/`TARGETS` exactly equal FSG6e with no differing
+keys; `inspect.getsource` confirms fourteen settled helpers text-identical,
+including the whole FSG6e state classifier and every FSG6d corridor helper; the
+candidate sort key is asserted by literal string match; the consensus source
+contains no `0.5`.
+
+All four trials passed. `consensus_up_right` on both seeds: six fixations,
+`no_frontier`, coverage 99.402/99.439%, median 4.324/4.309 mm, radial
++0.314/+0.309 mm. `consensus_down_left` on both seeds: **five** fixations,
+`no_frontier`, coverage 98.517/98.535%, median 4.382/4.386 mm, radial
+-2.855/-2.885 mm. Pitch span 15.0 deg and yaw span 20.0 everywhere; per-patch
+measurement coverage 0.9053-0.9547; post-seed matched 11,034-20,223 at 1.81-3.51
+mm median and 5.74-10.54 mm p95, all idempotent; gain 60.91-62.21 pp; every map
+pure instance 141 with 28,276-33,969 multi-look surfels; every nonterminal
+selected candidate carrying both >=8 OPEN support and strict OPEN-majority
+consensus.
+
+**Candidate consensus is load-bearing on real acquisitions.** Twenty rejections
+across the four trials, and **every one had corridor allowed=True and OPEN >= 8 -
+every one would have been accepted by the retired FSG6e rule.** Three of four
+trials terminate because of consensus (up_right/1291 rejected both remaining
+candidates; down_left/1237 and /1291 each rejected their last one); only
+up_right/1237 stopped on the FSG6e state alone. The FSG6e pathology is caught on
+fresh data: `(-3,-7)` at OPEN 11 vs resolved 85 of 96 reproduces the
+`closure_up_right/1123` survivor (11,3,82), and `(-7,-13)` at OPEN 8 - exactly the
+frozen minimum - vs resolved 100 of 108 with the second-largest new-area on offer
+reproduces the `closure_up_right/1181` off-ribbon move (8,1,16). Both rejected
+before ranking; neither fixture ever left the ribbon. One termination was decided
+by an **exact 40/40 tie** resolved rather than open, exercising the prospectively
+specified tie rule on real data. Selected candidates were always large OPEN
+majorities (38:0 to 76:7), so the rule never blocked a productive move.
+
+**No code fix was required or made and no source file was modified**; the
+increment changed documentation only. Nothing was tuned and nothing rerun. Cost
+4,613,734,400 primary camera samples, below the 5,033,164,800 a six-fixation set
+would have needed, because consensus ended two trials a fixation early.
+
+Scope, narrowly: on fresh single convex visible curved surfaces with oracle
+instance segmentation, persistent three-state 3D frontier memory can be
+aggregated into candidate-level consensus strongly enough to reject
+mostly-resolved actions while preserving useful active exploration and truth-free
+`no_frontier` termination. This does NOT establish self-occlusion reasoning,
+hidden-surface discovery, multiple objects, free head motion, learned gaze,
+optimality or calibrated uncertainty. The route here is preserved in full as five
+formal FAIL records - FSG6a's eye-asymmetric veto, FSG6b's conjunctive corner,
+FSG6c's one-component licensing, FSG6d's non-terminating raw frontier and FSG6e's
+minority-OPEN survivors - and each fixed exactly one abstraction without tuning a
+constant.
