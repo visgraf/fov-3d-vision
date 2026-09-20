@@ -3667,3 +3667,194 @@ both fresh, deliberately non-mirror ribbons to 99.2-99.7% completeness at
 0.471 ideal coverage. The eye-symmetry repair is proven by check and exercised on
 real data. The remaining obstacle to closing Increment 6 is the conjunctive
 corner rule in the auxiliary veto. Stopped for Luiz/Chat.
+
+### 2026-09-20 - FSG6c Increment 6, candidate-aligned continuation for the 3D surface frontier: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg6c-increment6.md` and D-FSG6c appended just above. **Exactly one
+policy semantics changes: the diagonal component-conjunction veto becomes
+candidate-aligned forward-perimeter continuation.** Commands, written before
+running them:
+
+    .venv/bin/python tools/dev/check_fsg6c.py
+    for n in policy mapstate horizontal monocular conjunction flat shift bias purity; do .venv/bin/python tools/dev/check_fsg6c.py --negative "$n"; done
+    (all existing FSG1-FSG6b regression checks, unchanged, including check_fsg6.py and check_fsg6b.py)
+    .venv/bin/python tools/fsg6c_run.py  --out previews/fsg6c/smoke-corner_up_right-seed907 --profile small --fixture corner_up_right --seed 907 --device OPTIX
+    .venv/bin/python tools/fsg6c_eval.py previews/fsg6c/smoke-corner_up_right-seed907 --out previews/fsg6c/smoke-corner_up_right-seed907-evaluation --mode smoke
+    (then the four full trials corner_up_right/907, corner_up_right/953, corner_down_left/907, corner_down_left/953,
+     each run once and evaluated, then fsg6c_compare.py over exactly those four metrics.json)
+
+**FSG6a and FSG6b are preserved.** Both remain formal FAILS (2/4 each); their
+Results, log entries, D-FSG6a/D-FSG6b outcomes, README rows and all
+`previews/fsg6/...` and `previews/fsg6b/...` artifact directories are untouched.
+The accepted `z -> gaze` repair is in place in all three runners
+(`fsg6_run.py:64`, `fsg6b_run.py:65`, `fsg6c_run.py:65`) and an AST sweep
+confirms no bare `z` load remains in any of them. `git diff 44794a3` over the
+FSG1 stereo modules, `fsg3_surface_map.py`, **all five FSG6a modules and all five
+FSG6b modules**, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY.
+
+**Normalized FSG6b -> FSG6c policy comparison, read from the code.** A
+naming-normalized diff of `fsg6c_frontier.py` against `fsg6b_frontier.py` shows
+the ONLY functional change is: the new `directional_continuation_evidence()`
+(max over direction-compatible edges, returning `compatible_edges`,
+`edge_fractions`, `combined_fraction`, `threshold`, `allowed`, `rule`);
+`_candidate_edge_allowed` delegating to it; `_retired_component_conjunction_allowed`
+retained solely for fail-capable diagnostics; and `choose_next` recording the
+`continuation` record on each candidate. **Unchanged and byte-identical**:
+`edge_evidence`, `binocular_edge_evidence` (the accepted FSG6b eye-symmetric
+per-edge evidence), `_voxel_centroids`, `extract_frontier`, `_new_box_area`, and
+the candidate sort key. `fsg6c_run.py`, `fsg6c_eval.py`, `fsg6c_compare.py` and
+`fsg6c_render_fix.py` are identical to their FSG6b counterparts modulo naming, so
+orchestration, the FSG1 instrument call path and FSG3 fusion are untouched.
+`check_fsg6c.run_positive` asserts `SURFACE_FRONTIER` and `TARGETS` exactly equal
+`fsg6b_public`, and `source_isolation_control` asserts neither
+`fsg6c_frontier.py` nor `fsg6c_run.py` mentions `fsg6c_scene` or
+`evaluation_only`.
+
+**The preflight is a real runtime-semantic check, not an angular box.**
+`fsg6c_scene.analytic_rectified_oracles` intersects the **continuous analytic
+cylinder** (quadratic solve with theta/height clipping) against the two frozen
+eye models via `fsg_geometry.rays_h`, remaps through the repository's own
+`fsg_stereo.rectification`/`remap` with `crop_xywh`, builds the same
+`fsg_stereo.support_mask` the runtime uses, and then calls the exact
+`fsg6c_frontier.binocular_edge_evidence` + `directional_continuation_evidence`
+the host policy calls. `preflight_transition` reports both the new decision and
+the retired conjunction's decision. The `ideal_angular_coverage` figure is kept
+only as a geometry-only coverage number; **reachability is now decided by the
+runtime semantics**, which is exactly the FSG6b design/runtime inconsistency I
+reported and this fixes.
+
+Fixtures: two rolled cylindrical ribbons, 48 strips, deliberately NOT exact
+mirror copies - `corner_up_right` (centre z -2.90 m, radius 0.76 m, theta -60 to
++54 deg, height 0.245 m, roll +33 deg, seed gaze (-8,-7), texture tag 61) and
+`corner_down_left` (centre z -2.75 m, radius 0.72 m, theta -52 to +62 deg, height
+0.235 m, roll +216 deg, seed gaze (+8,+7), texture tag 67). Object instance 111,
+background 112. Fresh seeds 907 and 953. The frozen load-bearing control: on
+`corner_up_right` at gaze `(2,+3)` the `(+5,+5)` transition must have right-edge
+continuation >=0.15 and top-edge continuation <0.15, so FSG6c permits it and the
+retired conjunction rejects it. The construction traces are sanity notes, NOT
+acceptance criteria; the policy chooses its own trajectories.
+
+Gates, all four trials judged independently and all four required: 4-6
+fixations; termination `no_frontier`; no repeated fixation; each move one
+5-degree lattice move; visited pitch span >=10 deg; >=100 oracle object reference
+pixels and >=90% valid object measurement coverage per patch; >=8 agreeing 3D
+frontier surfels behind every nonterminal selected gaze, with the trace recording
+per-eye fractions, the binocular per-edge combination AND the selected
+candidate's `compatible_edges`/`combined_fraction`/`threshold`/`allowed`; per
+post-seed patch >=5,000 matched, overlap median <=10 mm, p95 <=25 mm, exact
+idempotent replay, no truth-coverage drop beyond 0.5 pp. Final map: analytic
+point-to-surface median <=10 mm, p95 <=30 mm, final coverage >=90%, gain over
+seed >=35 pp, only instance 111, >=5,000 surfels with support >=2, and for those
+absolute median signed radial error <=7.5 mm.
+
+Cost class: smoke Interactive/Batch; each full trial Batch (FSG6b's comparable
+full trials ran ~1m18-1m25s each). Expected ~1,258,291,200 primary camera samples
+per full trial at six fixations.
+
+Likely failure modes, in the order I expect them: (a) the candidate-aligned rule
+is strictly MORE permissive than the conjunction on diagonals, so a candidate at
+a genuinely resolved corner may now survive and a run could again overrun to
+`max_fixations` - the `resolved forward perimeter must veto a diagonal candidate`
+case in `fsg6c_frontier.self_test` is the guard, and I will watch termination
+first; (b) the extra permissiveness could let the controller step off the ribbon
+end, costing per-patch measurement coverage as FSG6a's `fix_04` did; (c) the two
+non-mirror fixtures may need different trajectory lengths, pushing one outside
+4-6 fixations; (d) only then suspect the renderer or rolled-mesh integration.
+Diagnose before editing. **I will not change the 0.15 threshold, any FSG6b
+frontier constant or gate, the instrument, the fusion radius or hash, the
+lattice, the six-fixation budget, the geometry, textures, seeds, SPP, vergence or
+coverage radius to obtain a pass, and I will not rerender after a numerical
+miss.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`FSG6C_INCREMENT6_FAIL`.** The diagnostic smoke raised a RUNTIME EXCEPTION,
+which per the handoff blocks the full schedule. **No full trial was run.** The
+miss is preserved; Increment 6 is NOT closed and no next experiment is authorized.
+
+FSG6a and FSG6b are intact: both still formal FAILS (2/4 each), records
+untouched, `z -> gaze` present in all three runners (`fsg6_run.py:64`,
+`fsg6b_run.py:65`, `fsg6c_run.py:65`) with no bare `z` load anywhere by AST
+sweep. `git diff 44794a3` over the FSG1 stereo modules, `fsg3_surface_map.py`,
+all five FSG6a and all five FSG6b modules, `rig.py`, `bl_common.py` and
+`requirements-fsg.txt` is EMPTY.
+
+Everything upstream of acquisition passed. `[fsg6c-check] SUMMARY passed=10
+failed=0` with `[fsg6c-scene] PASS ... horizontal_ideal_max=0.480
+chord_max_mm=0.163 runtime_preflight=true retired_conjunction_rejected_critical=true`
+and `[fsg6c-frontier] PASS map_state_changes_2d_direction=true
+eye_swap_invariant=true diagonal_corner_continuation=true
+resolved_boundary_stops=true`. All nine negatives exited 1, including
+`conjunction` and `monocular`. All sixteen FSG1-FSG6b suites green; FSG6a's seven
+and FSG6b's eight negatives still all exit 1. `SURFACE_FRONTIER` and `TARGETS`
+exactly equal FSG6b with NO differing keys.
+
+The runtime-semantic preflight did its job on what it covered: the critical
+`corner_up_right` (2.0,+3.0)->(7.0,+8.0) transition measures right=0.6219,
+top=0.0797, combined 0.6219 >= 0.15, FSG6c allowed=True, retired conjunction
+allowed=False. Every construction-trace transition is reachable under runtime
+semantics (geometry-only ideal coverage 0.9962 / 0.9909). The FSG6b design/runtime
+inconsistency I reported last increment is genuinely fixed.
+
+**But the smoke walked off the fixture.** `corner_up_right`/907/small:
+step 0 gaze (-8,-7) 7,005 object px; step 1 gaze (-3,**-12**) 1,486 px; step 2
+gaze (-8,**-17**) **0 px** -> `ValueError: active FSG6c fixation has too few
+object points`. The ribbon spans pitch [-10.188,+9.952].
+
+**Root cause, measured: max() lets one component license the other.** Recomputed
+with the runtime functions on the saved rectified masks at the seed gaze (-8,-7):
+left=0.0766 veto, right=0.4203 PERMIT, top=0.5156 PERMIT, **bottom=0.0000 in BOTH
+eyes**. The down-right direction (+1,-1) has compatible edges {right,bottom}, so
+f_cont = max(0.4203, 0.0000) = 0.4203 >= 0.15 and FSG6c PERMITS it, while the
+retired component conjunction REJECTS it. The bottom edge is exactly zero - a
+provably resolved boundary - yet the move is allowed because max() substitutes
+the other component's evidence. Step 1 repeats it with {left,bottom}:
+max(0.3109, 0.0000) = 0.3109.
+
+Not small-profile or seed specific. Through the analytic preflight at both
+profiles and on both fixtures: corner_up_right small bottom=0.0000/right=0.4203
+and full bottom=0.0000/right=0.4258; corner_down_left small top=0.0000/left=0.4609
+and full top=0.0000/left=0.4641 - all ALLOWED by FSG6c, all rejected by the
+retired rule. The oracle mask is ray-traced and seed-independent, so all four full
+trials would have begun from exactly this state. The failure is geometric and
+deterministic.
+
+FSG6c is too permissive in precisely the dual way FSG6a/FSG6b were too strict.
+The conjunction demanded continuation on EVERY component; max() demands it on
+NONE in particular. Neither expresses "the surface leaves through the corner
+region between these two edges".
+
+**No code fix was made, and none was permitted.**
+`directional_continuation_evidence()` implements the handoff's written rule
+exactly - compatible edges from the nonzero components, f_cont = max over them,
+permitted iff >= 0.15 - and (+1,-1) legitimately yields max(0.4203, 0.0000). Code
+and specification agree, so this is NOT an implementation or orchestration
+defect; any repair would change the continuation rule itself, which the handoff
+forbids. Nothing was tuned: no threshold, frontier constant, gate, instrument,
+fusion radius or hash, lattice, budget, geometry, texture, seed, SPP, vergence or
+coverage radius changed, and nothing was rerun after the failure.
+
+**A gap in the check suite, worth fixing in the next handoff.** The shipped
+over-permissiveness guard in `fsg6c_frontier.self_test` resolves BOTH compatible
+edges (top=0.0000 right=0.0000 -> combined 0.0000, correctly vetoed). The failing
+case resolves only ONE: a synthetic mask with bottom=0.0000 and right=0.9062
+gives combined 0.9062 and is ALLOWED (the retired rule rejects it). A control in
+which one compatible edge is exactly zero while the other is strong would have
+failed before any acquisition. The preflight likewise only validated the two
+intended traces and the critical up-right transition - it never checked that
+off-object directions are correctly REFUSED.
+
+Not reached: no full trajectories, per-patch coverage, overlap statistics,
+coverage curves, final map geometry, PLY, aggregate or coverage_3d_frontier.png.
+`previews/fsg6c/full-*` does not exist. The only artifacts are the aborted
+smoke's three acquisitions, two maps and three patches, preserved at
+`previews/fsg6c/smoke-corner_up_right-seed907`.
+
+Cost: smoke 7.9 s, 3 fixations x 13,107,200 = 39,321,600 samples before the
+abort; checks and regressions under a minute total. Interactive class only; no
+Batch work reached.
+
+What still holds: the FSG6b eye-symmetry repair and the candidate-aligned
+DIAGONAL permission both behave as designed where tested - the critical
+transition that defeated FSG6b is now correctly permitted (0.6219 against a
+0.0797 top edge) and the retired conjunction correctly detected. What fails is
+the direction-compatible COMBINATION rule. Stopped for Luiz/Chat.

@@ -870,3 +870,74 @@ conjunctive requirement is written into the handoff, inherited from FSG6a and
 explicitly frozen for FSG6b. Changing it, the 0.15 threshold, or the 6-fixation
 budget would alter the scientific specification, so nothing was tuned. **No code
 fix was required or made in FSG6b.** Returned to Luiz/Chat.
+
+## D-FSG6c - Preserve the FSG6 3D surfel frontier and the FSG6b binocular repair; replace only the diagonal component-conjunction veto with candidate-aligned forward-perimeter continuation (2026-09-20)
+FSG6a and FSG6b remain **formal FAILS** and their records, results and artifacts stay untouched. The accepted one-token `z -> gaze` implementation repair remains in `tools/fsg6_run.py` (and is carried into the FSG6b/FSG6c runners). The FSG6b eye-symmetric binocular evidence `f(edge) = max(f_L(edge), f_R(edge))` is accepted and remains frozen. FSG6c is additive; it does not rewrite FSG6a or FSG6b.
+
+FSG6a established that the persistent 3D surfel frontier can drive genuinely two-dimensional gaze, but exposed a left-eye-only continuation asymmetry: a 180-degree image-plane roll swaps the physical eye centres, so a nominal mirror pair was not a monocular mirror. FSG6b repaired that eye asymmetry and proved the repair by check and on real data, but fresh validation exposed a second, independent defect: a diagonal candidate required BOTH component edges to show continuation. A rolled ribbon can leave the current foveal core through the forward perimeter - for example high on the right edge - without ever touching the top edge. The retired `top AND right` rule therefore vetoed a geometrically valid up-right move and spent the six-fixation budget on a detour.
+
+FSG6c changes **exactly one policy semantics**. Per-eye directional edge fractions are computed exactly as in FSG6b and remain combined symmetrically. For a candidate lattice direction `d=(dx,dy)`, the forward-compatible perimeter edges are named by its nonzero components (right -> {right}; up -> {top}; up-right -> {right,top}; down-left -> {left,bottom}). The candidate continuation evidence is `f_cont(d) = max(f(edge) for edge in compatible_edges(d))`, permitted iff `f_cont(d) >= 0.15` using the **unchanged** FSG6b threshold. Axis-aligned behaviour is therefore identical to FSG6b; only diagonal semantics change, from `all(...)` over the two component edges to `max(...)` over the direction-compatible edges. The persistent 3D surfel map still creates and ranks frontier candidates; segmentation cannot create or score a frontier and remains only a physical-boundary veto. The rule stays exactly invariant to `L <-> R`.
+
+FSG6c also removes a design/runtime inconsistency this project found the hard way: FSG6b's fixture construction check used a bare angular box and therefore certified a four-look diagonal path that its own runtime veto could forbid. `fsg6c_scene.py` now carries an evaluator-only preflight that intersects the **continuous analytic cylinder** with the two frozen eye models, sends the raw oracle masks through the repository's actual rectification maps and core crop, computes the same calibration-derived support masks the runtime uses, and calls the exact `fsg6c_frontier.directional_continuation_evidence()` the host policy calls. It prescribes no trajectory; it only proves the fresh construction is reachable under the actual continuation semantics before any Blender acquisition. A load-bearing fresh control is frozen: on `corner_up_right` at gaze `(2,+3)` the intended `(+5,+5)` transition must have right-edge continuation above 0.15 while top-edge continuation stays below 0.15, so the candidate-aligned rule permits it and the retired conjunction rejects it; if that property drifts, checks fail before acquisition.
+
+Everything else is frozen and checked mechanically: the FSG1 instrument; existing `tools/fsg3_surface_map.py` with 12 mm association/hash and idempotent replay; fixed head frame H and exact eye/head geometry; no ICP; fixed 2.10 m vergence; 256 spp full / 64 spp smoke; 25 mm frontier voxels, 65 mm neighbourhood, PCA tangent frontier, 0.18 asymmetry minimum, 0.12 m lookahead, 0.50 alignment cosine, minimum 8 agreeing frontier surfels; the eight-neighbour 5-degree lattice; the six-fixation budget; and every FSG6b measurement, overlap, map-quality, coverage, pitch-span and radial-bias gate. `check_fsg6c.py` requires exact equality of `SURFACE_FRONTIER` and `TARGETS` with `fsg6b_public.py`, so any hidden threshold or gate drift fails before acquisition.
+
+The scientific question: does the unchanged truth-free 3D surfel frontier close Increment 6 when the segmentation-only physical-boundary veto is aligned with the proposed 2D candidate direction rather than decomposed into conjunctive axis tests?
+
+FSG6a/FSG6b full records are development evidence and are NOT reused as validation. Validation uses two fresh diagonal cylindrical ribbons, deliberately not exact mirror copies - `corner_up_right` (centre z -2.90 m, radius 0.76 m, theta -60 to +54 deg, height 0.245 m, roll +33 deg, seed gaze (-8,-7), texture tag 61) and `corner_down_left` (centre z -2.75 m, radius 0.72 m, theta -52 to +62 deg, height 0.235 m, roll +216 deg, seed gaze (+8,+7), texture tag 67) - with fresh Monte-Carlo seeds **907** and **953**, giving four full trials judged independently and all four required to pass. Object instance is 111.
+
+A full pass closes Increment 6 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that prevents the written experiment from executing and does not alter the scientific specification; it may never change the 0.15 threshold, any FSG6b frontier constant or numerical gate, the stereo instrument, FSG3 fusion radius or hash, the 5-degree lattice, the six-fixation budget, the fresh geometry after acquisition starts, textures, seeds, SPP, vergence or truth coverage radius to obtain a pass. No alternate fixture, extra seed, rerender after a numerical miss, ICP, meshing, hole filling, learned policy or next-increment implementation.
+
+Outcome 2026-09-20 (evidence: `docs/fsg6c-increment6.md` Results and
+`docs/log.md`). **FSG6C_INCREMENT6_FAIL.** The diagnostic smoke raised a RUNTIME
+EXCEPTION, which blocks the full schedule; **no full trial was run**. The miss is
+preserved; Increment 6 is NOT closed and the next experiment is NOT authorized.
+FSG6a and FSG6b remain formal FAILS with records untouched and the `z -> gaze`
+repair in place in all three runners.
+
+**Everything upstream of acquisition passed.** `[fsg6c-check] SUMMARY passed=10
+failed=0`; all nine negatives exit 1, including `conjunction` and `monocular`;
+all sixteen FSG1-FSG6b suites green; `SURFACE_FRONTIER` and `TARGETS` exactly
+equal FSG6b with no differing keys. The runtime-semantic preflight verified the
+load-bearing control against real rectified masks: on `corner_up_right` at gaze
+(2,+3) the (+5,+5) transition measures right=0.6219 and top=0.0797, combined
+0.6219 >= 0.15, permitted by FSG6c and rejected by the retired conjunction. The
+FSG6b design/runtime inconsistency is genuinely fixed.
+
+**But the policy walked off the fixture.** `corner_up_right`/907/small went
+(-8,-7) -> (-3,-12) -> (-8,-17) with 7,005 then 1,486 then **0** object pixels in
+core, against a ribbon spanning pitch [-10.188,+9.952], raising `ValueError:
+active FSG6c fixation has too few object points`.
+
+**Root cause, measured: `max()` lets one component license the other.** At the
+seed gaze (-8,-7) the binocular edges are left=0.0766 (veto), right=0.4203
+(permit), top=0.5156 (permit) and **bottom=0.0000 in BOTH eyes**. The down-right
+direction (+1,-1) has compatible edges {right,bottom}, so
+`f_cont = max(0.4203, 0.0000) = 0.4203 >= 0.15` and FSG6c permits it while the
+retired conjunction rejects it. The bottom edge is exactly zero - a provably
+resolved boundary - yet the move is allowed because `max()` substitutes the other
+component's evidence. Through the analytic preflight this reproduces at BOTH
+profiles and on BOTH fixtures (corner_down_left: top=0.0000, left=0.4609/0.4641,
+allowed). The oracle mask is ray-traced and seed-independent, so all four full
+trials would have begun from exactly this state; the failure is geometric and
+deterministic, not a Monte-Carlo accident.
+
+FSG6c is too permissive in precisely the dual way FSG6a/FSG6b were too strict.
+The conjunction demanded continuation on EVERY component; `max()` demands it on
+NONE in particular. Neither rule expresses "the surface leaves through the corner
+region between these two edges".
+
+**No code fix was made, and none was permitted.**
+`directional_continuation_evidence()` implements this decision's written rule
+exactly, and (+1,-1) legitimately yields `max(0.4203, 0.0000)`. Code and
+specification agree, so this is not an implementation or orchestration defect;
+any repair would change the continuation rule itself, which this decision
+forbids. Nothing was tuned and nothing was rerun after the failure.
+
+Recorded for the next handoff: the shipped over-permissiveness guard in
+`fsg6c_frontier.self_test` resolves BOTH compatible edges and is correctly
+vetoed; the failing case resolves only ONE (synthetic bottom=0.0000,
+right=0.9062 -> combined 0.9062, allowed). A control with one compatible edge
+exactly zero and the other strong would have failed before acquisition, and the
+preflight never checked that off-object directions are correctly REFUSED - it
+only validated the two intended traces and the critical up-right transition.
