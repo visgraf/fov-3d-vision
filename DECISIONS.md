@@ -941,3 +941,77 @@ right=0.9062 -> combined 0.9062, allowed). A control with one compatible edge
 exactly zero and the other strong would have failed before acquisition, and the
 preflight never checked that off-object directions are correctly REFUSED - it
 only validated the two intended traces and the critical up-right transition.
+
+## D-FSG6d - Make the continuation veto local to the projected 3D frontier and the candidate's own forward image sector (2026-09-20)
+FSG6a, FSG6b and FSG6c remain **formal FAILS** and their records, results and artifacts stay untouched. The accepted one-token `z -> gaze` implementation repair remains in place in all four runners. FSG6d is additive; it does not rewrite any earlier increment.
+
+The three earlier attempts bracket the problem. FSG6a showed the 3D surfel frontier can drive genuinely two-dimensional gaze but used a left-eye-only veto that a 180-degree roll made asymmetric. FSG6b repaired eye symmetry with `max(f_L,f_R)` and exposed the diagonal component-conjunction defect: requiring BOTH component edges vetoed a valid up-right move on a ribbon that exits through a corner. FSG6c replaced `all()` with `max()` over the compatible edges and hit the exact dual defect: at the seed gaze the bottom edge was **0.0000 in both eyes** yet `max(right 0.4203, bottom 0.0000)` licensed a down-right step across a provably resolved boundary, and the controller walked off the fixture. Neither Boolean combination of two whole-edge-band statistics can express "the surface leaves through the corner region between these two edges".
+
+FSG6d therefore changes **the spatial support of the continuation measurement, not its numerical threshold**. For each candidate direction the existing 3D frontier supplies the supporting surfels and their existing 3D look-ahead targets. For each rectified eye independently, FSG6d projects each supporting surfel and its look-ahead target into the current rectified/cropped foveal core using the repository calibration and rectification, extends that projected frontier ray to the core boundary, keeps only exits lying in the candidate's own forward image sector (+yaw right, +pitch up, with image v growing downward), rasterizes only the terminal corridor around those exits, and measures object fraction over calibration-valid support inside that corridor. Corridor longitudinal length and transverse half-width are both derived from the already-frozen `edge_band_fraction = 0.04`, so **FSG6d introduces no new numerical policy constant**. The two eyes are combined with the accepted FSG6b symmetry `f_cont = max(f_L, f_R)` and the candidate is permitted iff `f_cont >= 0.15`, the **unchanged** threshold.
+
+A strong full right edge therefore cannot by itself justify a down-right move when the supporting 3D frontier exits elsewhere in the image, and a legitimate up-right frontier leaving through the high-right boundary does not need to touch the whole top edge. The persistent 3D map still creates and ranks the candidates; segmentation can only veto them. Exposing `target_xyz_h` from the already-computed look-ahead point is data plumbing for this veto, not a changed frontier calculation.
+
+Everything else is frozen and checked mechanically: the FSG1 instrument; existing `tools/fsg3_surface_map.py` with 12 mm association/hash and idempotent replay; fixed head frame H and exact acquisition poses; no ICP; fixed 2.10 m vergence; 256 spp full / 64 spp smoke; the PCA/tangent-asymmetry frontier extraction constants; the frontier/candidate alignment threshold and minimum support of 8; the candidate ranking and sort key; the eight-neighbour 5-degree lattice; the six-fixation budget; and every measurement, overlap, map-accuracy, purity, idempotence, curvature-bias, coverage and pitch-span gate. `check_fsg6d.py` requires exact equality of `SURFACE_FRONTIER` and `TARGETS` with `fsg6c_public.py`.
+
+The check suite also closes the gap I reported after FSG6c. `fsg6d_scene.self_test` now enumerates **every** neighbour at **every** construction state and requires that any direction the corridor permits lands on a next view carrying at least the already-frozen 100 oracle reference pixels **in each eye** - a control that would have caught FSG6c's walk-off before acquisition. `check_fsg6d.projection_control` independently verifies the rectified-core projection against OpenCV `undistortPoints`, and `historical_bracket_control` requires both historical defects to stay fixed simultaneously: the valid FSG6b-style corner continuation survives while FSG6c-style one-component licensing is rejected. Eleven deliberate negatives must exit 1, including `conjunction` (against reverting to FSG6b), `componentmax` (against reverting to FSG6c) and `full_edge` (against replacing the local corridor by a whole-edge statistic).
+
+The scientific question: can a truth-free persistent 3D surfel frontier drive the next foveal fixation when the oracle segmentation veto is made local to the same projected frontier and the same candidate direction, rather than a Boolean combination of whole image-edge bands?
+
+Earlier full records are development evidence and are NOT reused as validation. Validation uses two fresh, deliberately non-mirror rolled cylindrical ribbons - `corridor_up_right` (radius 0.74 m, centre z -2.86 m, arc -58 to +55 deg, height 0.252 m, roll +29 deg, seed gaze (-8,-7)) and `corridor_down_left` (radius 0.70 m, centre z -2.70 m, arc -50 to +63 deg, height 0.246 m, roll +211 deg, seed gaze (+8,+7)) - with fresh Monte-Carlo seeds **1009** and **1061**, giving four full trials judged independently and all four required to pass. Object instance is 121.
+
+A full pass closes Increment 6 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that prevents the written experiment from executing and does not alter the scientific specification; **if the code implements the written rule and the rule fails, that is a specification result to be preserved, not repaired.** Never change the 0.15 threshold, the 0.04 band fraction, any frontier constant, the candidate ranking, the FSG1 instrument, the FSG3 fusion radius or hash, the 5-degree lattice, the six-fixation budget, the fresh geometry after acquisition starts, textures, seeds, SPP, vergence, truth coverage radius or any numerical gate to obtain a pass. No alternate fixture, extra seed, rerender after a numerical miss, ICP, meshing, hole filling, learned policy, self-occlusion extension or next-increment implementation.
+
+Outcome 2026-09-20 (evidence: `docs/fsg6d-increment6.md` Results and
+`docs/log.md`). **FSG6D_INCREMENT6_FAIL**, trial_passes 0/4. Every trial fails on
+**exactly one gate, the same one**: termination `max_fixations` instead of
+`no_frontier`. The miss is preserved; Increment 6 is NOT closed and the next
+experiment is NOT authorized. FSG6a, FSG6b and FSG6c remain formal FAILS with
+records untouched and the `z -> gaze` repair in place in all four runners.
+
+**The corridor rule works and is not what failed.** `[fsg6d-check] SUMMARY
+passed=11 failed=0`; all eleven negatives exit 1 including `conjunction`,
+`componentmax` and `full_edge`; all seventeen prior suites green;
+`SURFACE_FRONTIER`/`TARGETS` exactly equal FSG6c. On real acquisitions the veto
+did precisely what it was designed to do: at the third fixation of **every**
+trial it permitted the diagonal the retired FSG6b conjunction would have vetoed
+(up_right corridor 0.7031 with full-edge **top=0.0000**; down_left corridor
+0.7787 with **bottom=0.0535**), and coverage jumped 74.47->96.97% and
+75.52->98.44% at that step. The FSG6c defect did not recur: no trial ever stepped
+off the ribbon, and the veto stayed active, rejecting 4 of 8 neighbours at the
+final fixation of every trial. It is the first FSG6 continuation rule that is
+simultaneously eye-symmetric, permissive to a genuine corner exit and
+restrictive against one-component licensing.
+
+Every other gate passed on every trial: pitch span 15.0 deg, yaw span 20.0, one
+5-degree step per move, no repeats, frontier support 23-69, per-patch measurement
+coverage 0.9114-0.9503, post-seed matched 11,387-20,222 with medians 1.97-3.20 mm
+and p95 4.77-9.90 mm, all idempotent, gain 60.40-63.53 pp, maps pure instance 121
+with 32,441-33,215 multi-look surfels, final coverage 98.676-99.042% at
+3.463-3.938 mm median and 12.657-13.371 mm p95, radial bias +0.445 to +0.728 mm,
+and exported-cloud median radius 0.74001-0.74005 m against a true 0.740 and
+0.70095-0.70096 m against 0.700 - sub-millimetre, the best radial agreement of
+any FSG6 increment.
+
+**Root cause, measured: the 3D frontier never resolves on a thin ribbon.**
+Frontier counts by step are [207,214,206,189,157,164] and [195,215,189,177,151,163]
+while coverage goes 38.6% -> 99.0%; the population never decays. `extract_frontier`
+marks a voxel as frontier from tangent asymmetry of its in-view neighbourhood,
+and these ribbons are only ~6-7 degrees wide across a 12-degree fovea, so every
+fixation sees long lateral ribbon boundaries that read as frontier however
+complete the reconstruction is. Termination can therefore only arise from the
+candidate set emptying. At the final fixation the surviving candidates are
+**interior** lattice cells inside the already-swept region - (+7,+3) is the
+centre of the square bounded by the visited (2,3),(7,8),(12,8),(12,3) - with small
+predicted new area but genuine frontier support and a permitted corridor. Four
+fixations already suffice numerically (96.97-98.57% coverage, 58.4-63.4 pp gain),
+but the policy has no signal telling it to stop.
+
+**This is a specification result, not an implementation defect, and no code fix
+was made.** The code implements the written FSG6d rule exactly. What fails is the
+interaction of the FROZEN frontier-extraction termination behaviour with the
+FROZEN `no_frontier` gate and the FROZEN six-fixation budget, none of which this
+decision permitted FSG6d to vary. Nothing was tuned and nothing rerun.
+
+Recorded for the next handoff: **the open question is no longer the continuation
+veto but termination** - how a frontier defined by local tangent asymmetry should
+declare a thin ribbon finished. The veto itself should now be treated as settled.
