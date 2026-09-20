@@ -3479,3 +3479,191 @@ median, which the software check confirms a five-look horizontal-only scan canno
 do on this fixture (ideal coverage 0.412). **The frontier representation works.**
 What failed is the interaction between the oracle continuation veto and a mirror
 pair that is not a mirror monocularly. Stopped for Luiz/Chat.
+
+### 2026-09-20 - FSG6b Increment 6, binocular continuation for the 3D surface frontier: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg6b-increment6.md` and D-FSG6b appended just above. **Exactly one
+architectural element changes: the segmentation-only physical-boundary veto
+becomes binocular and eye-swap invariant.** Commands, written before running
+them:
+
+    .venv/bin/python tools/dev/check_fsg6b.py
+    for n in policy mapstate horizontal monocular flat shift bias purity; do .venv/bin/python tools/dev/check_fsg6b.py --negative "$n"; done
+    (all existing FSG1-FSG6a regression checks, unchanged, including check_fsg6.py)
+    .venv/bin/python tools/fsg6b_run.py  --out previews/fsg6b/smoke-fresh_up_right-seed809 --profile small --fixture fresh_up_right --seed 809 --device OPTIX
+    .venv/bin/python tools/fsg6b_eval.py previews/fsg6b/smoke-fresh_up_right-seed809 --out previews/fsg6b/smoke-fresh_up_right-seed809-evaluation --mode smoke
+    (then the four full trials fresh_up_right/809, fresh_up_right/853, fresh_down_left/809, fresh_down_left/853,
+     each run once and evaluated, then fsg6b_compare.py over exactly those four metrics.json)
+
+**FSG6a is preserved.** It remains a formal `FSG6_INCREMENT6_FAIL` (2/4); its
+Results, log entry, D-FSG6a outcome, README row and all twelve
+`previews/fsg6/...` artifact directories are untouched, and the accepted
+one-token `z -> gaze` repair is still in place at `tools/fsg6_run.py:64`.
+`git diff ea8e962` over the FSG1 stereo modules (`fsg_stereo_supported`,
+`fsg_stereo_hdr`, `fsg_stereo`, `fsg_evaluate`, `fsg_geometry`),
+`fsg3_surface_map.py`, ALL FSG6a modules (`fsg6_public`, `fsg6_frontier`,
+`fsg6_run`, `fsg6_eval`, `fsg6_scene`), `rig.py`, `bl_common.py` and
+`requirements-fsg.txt` is EMPTY.
+
+**What I verified by reading the code rather than assuming.** A normalised diff
+of `fsg6b_frontier.py` against `fsg6_frontier.py` shows the ONLY functional
+change is the new `binocular_edge_evidence` and `choose_next` consuming both
+eyes; `edge_evidence`, `_voxel_centroids`, `extract_frontier`,
+`_candidate_edge_allowed`, `_new_box_area` and the candidate sort key are
+byte-identical. `fsg6b_compare.py` and `fsg6b_render_fix.py` are identical to
+their FSG6a counterparts modulo naming; `fsg6b_scene.py` differs only in the
+fixture dictionary and its design assertions. `fsg6b_public.SURFACE_FRONTIER`
+and `TARGETS` are compared for exact equality against `fsg6_public` by
+`check_fsg6b.run_positive` check 1, so the 0.15 threshold and every gate cannot
+drift silently. `fsg6b_run.py` imports the EXISTING `fsg3_surface_map`, calls
+`compute_once` behind `check_kernel_equivalence` (never `compute_variants`),
+imports no fixture geometry and opens no `evaluation_only` asset.
+
+The right eye reaches the policy through outputs the FROZEN instrument already
+produces and FSG6a simply discarded: `compute_once` returns a third `state`
+value carrying `ids_left`/`ids_right`, and `fsg_stereo.support_mask(c, rec, "R")`
+already exists. `fsg6b_run` slices both with the same `rec["crop_xywh"]`
+convention the frozen code uses at `fsg_stereo.py:174`, and asserts
+`rec["instance_id"] == state["ids_left"][sl]` as a replay check. **No change to
+the stereo instrument was needed or made to obtain the second eye.**
+
+Fixtures: two rolled cylindrical ribbons, 48 strips, deliberately NOT exact
+mirror copies - `fresh_up_right` (centre z -2.85 m, radius 0.78 m, theta -58 to
++52 deg, height 0.24 m, roll +30 deg, seed gaze (-8,-7), texture tag 47) and
+`fresh_down_left` (centre z -2.70 m, radius 0.70 m, theta -50 to +60 deg, height
+0.23 m, roll +220 deg, seed gaze (+8,+7), texture tag 53). Object instance 101,
+background 102. `fsg6b_scene.self_test` asserts they do NOT collapse to a mirror
+pair, which is the whole point: FSG6a's miss was an artifact of a nominal mirror
+that was not a monocular mirror, so the validation family must not rely on
+mirror symmetry at all. Fresh seeds 809 and 853. The design traces
+`(-8,-7)(-3,-2)(2,3)(7,8)` and `(8,7)(3,2)(-2,-3)(-7,-8)` are construction
+sanity notes, NOT acceptance criteria; the policy chooses its own trajectories.
+
+Gates, all four trials judged independently and all four required: 4-6
+fixations; termination `no_frontier`; no repeated fixation; each move one
+5-degree yaw/pitch lattice move; visited pitch span >=10 deg; >=100 oracle object
+reference pixels and >=90% valid object measurement coverage per patch; >=8
+agreeing 3D frontier surfels behind every nonterminal selected gaze, with the
+trace recording both per-eye fractions AND the symmetric combined fraction; per
+post-seed patch >=5,000 matched, overlap median <=10 mm, p95 <=25 mm, exact
+idempotent replay, no truth-coverage drop beyond 0.5 pp. Final map: analytic
+point-to-surface median <=10 mm, p95 <=30 mm, final coverage >=90%, gain over
+seed >=35 pp, only instance 101, >=5,000 surfels with support >=2, and for those
+absolute median signed radial error <=7.5 mm.
+
+Cost class: smoke Interactive/Batch; each full trial Batch (FSG6a's comparable
+full trials ran ~1m15s each), so the four fulls plus evaluations sit inside
+Batch. Expected ~1,258,291,200 primary camera samples per full trial at six
+fixations.
+
+Likely failure modes, in the order I expect them: (a) the binocular veto is
+strictly MORE permissive than the left-eye-only rule, so a candidate that should
+have been vetoed at a genuinely resolved boundary may now survive and the run
+overruns to `max_fixations` again - the `resolved_boundary_stops` case in
+`fsg6b_frontier.self_test` is the existing guard and I will watch termination
+closely; (b) the fresh ribbons are wider (0.23-0.24 m vs 0.20 m) and at different
+depths/radii, so per-patch measurement coverage and the >=8 frontier support may
+behave differently from FSG6a; (c) the non-mirror fixture pair may simply need
+different trajectory lengths on the two fixtures, pushing one outside 4-6
+fixations; (d) only then suspect the renderer or rolled-mesh integration.
+Diagnose before editing. **I will not change the 0.15 threshold, any FSG6a
+frontier constant, the instrument, the fusion radius or hash, the lattice, the
+geometry, textures, seeds, SPP, vergence, coverage radius or any gate to obtain a
+pass, and I will not rerender after a numerical miss.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`FSG6B_INCREMENT6_FAIL`, trial_passes 2/4.** The miss is preserved; Increment 6
+is NOT closed and no next experiment is authorized.
+
+FSG6a is intact: still a formal `FSG6_INCREMENT6_FAIL` (2/4), records untouched,
+`z -> gaze` still at `tools/fsg6_run.py:64`, and `git diff ea8e962` over the FSG1
+stereo modules, `fsg3_surface_map.py`, all five FSG6a modules, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY.
+
+`[fsg6b-check] SUMMARY passed=8 failed=0`, with
+`[fsg6b-scene] PASS up_right=[-14.559,14.033]x[-9.902,9.659] down_left=[-12.902,12.157]x[-11.340,10.770] horizontal_ideal_max=0.471 chord_max_mm=0.156`
+and `[fsg6b-frontier] PASS map_state_changes_2d_direction=true eye_swap_invariant=true resolved_boundary_stops=true`.
+All eight negatives exited 1, including
+`deliberate retired left-eye-only continuation rule detected as eye-swap asymmetric`.
+All fifteen FSG1-FSG6a suites green; FSG6a's seven negatives still all exit 1.
+Contract equality confirmed directly: `fsg6b_public.SURFACE_FRONTIER ==
+fsg6_public.SURFACE_FRONTIER` and `TARGETS == TARGETS` are both exactly True with
+NO differing keys, `edge_object_fraction_min` 0.15 in both.
+
+**The binocular repair works and is not what failed.** At fixation 0 of both
+`fresh_up_right` trials the left edge measured f_L=0.0000, f_R=0.2414, so
+max(f_L,f_R)=0.2414 >= 0.15 permitted a direction the retired left-eye-only rule
+would have vetoed. Honest qualification: that rescue fired twice across the four
+trials and in neither case did the SELECTED move depend on a rescued edge - the
+rule broadened the candidate set but changed no trajectory here. FSG6a's
+eye-asymmetry mode did not recur, and FSG6a's `fix_04 object measurement
+coverage` miss is gone (every patch 0.9215-0.9485 vs >=0.90).
+
+Four full trials, each run once, 1,258,291,200 samples each (5,033,164,800
+total). `fresh_down_left` **passed on both seeds**, empty fail lists:
+`(8,7)(3,2)(-2,-3)(-7,-8)(-2,-8)(-7,-3)`, `no_frontier`, coverage 99.225/99.225%,
+median 4.260/4.269 mm, p95 14.395/14.411 mm, radial +0.988/+0.965 mm.
+`fresh_up_right` **failed on both seeds with ONE fail line each** -
+`3D frontier policy did not terminate by resolving the frontier` - while still
+reaching 99.683/99.664% coverage at 3.369/3.352 mm median, 13.124/13.117 mm p95,
+radial -0.300/-0.282 mm. Pitch span 15.0 deg on all four; nonterminal frontier
+support 29-90 vs >=8; post-seed matched 17,172-27,465, overlap medians
+1.95-2.57 mm, p95 5.14-8.39 mm, all idempotent; largest coverage decrease 0.00 pp;
+maps 71,727-78,340 surfels, all pure instance 101, 36,490-37,288 multi-look.
+
+**Root cause, measured: the conjunctive corner rule blocks a diagonal surface.**
+A diagonal move needs BOTH corresponding edge bands to continue, but a narrow
+ribbon rolled +30 deg leaves the fovea through a CORNER. At the deflecting
+fixation, gaze (+2,+3) on `fresh_up_right`, read from the saved rectified masks:
+top band L=0.0000 R=0.0035 (veto); right band L=0.6176 R=0.6004 (permit);
+top-right corner L=0.0000 R=0.0900 (veto); **right band top half L=0.7883
+R=0.9258**. The object occupies rows 25..255 of 256 and never reaches the top
+row, so the `top` veto is CORRECT and both eyes agree - this is not an eye-swap
+artifact. Yet 93% of the top half of the right band is object: the surface
+plainly continues up-and-right, out of the corner. The (+5,+5) move is blocked,
+the controller takes the pure-yaw (+7,+3), and spends an extra fixation
+recovering the diagonal at (+12,+8). The cost is exactly the budget:
+`fresh_up_right` still has TWO eligible candidates at fixation 6 - (+12,+3) with
+90 frontier surfels and (+2,+8) with 63 - because the ribbon truly extends to yaw
++14.03 while the map reaches +12.44. The frontier is not exhausted when
+MAX_BUDGET_FIXATIONS=6 ends the run. `fresh_down_left` stops properly: its final
+`left` (0.0988) and `top` (0.1039) edges are genuinely resolved in both eyes and
+every remaining permitted neighbour is already visited. The two fixtures
+diverging is the non-mirror design working as intended.
+
+Worth recording for the next handoff: the FSG6b construction estimate assumed a
+four-look diagonal `(-8,-7)(-3,-2)(2,3)(7,8)`, whose fourth step is exactly the
+(+5,+5) move the conjunctive rule forbids. `ideal_angular_coverage` models the
+fovea as a plain 12x12 box with no veto, so the fixture design check and the veto
+semantics disagree about whether that trajectory is even reachable.
+
+This is a **specification question, not an implementation defect**: the
+conjunctive requirement is written into the handoff, inherited unchanged from
+FSG6a and explicitly frozen for FSG6b. Changing it, the 0.15 threshold, or the
+6-fixation budget would alter the scientific specification. **No code fix was
+required or made in FSG6b.** Nothing tuned - no threshold, frontier constant,
+instrument, fusion radius or hash, lattice, geometry, texture, seed, SPP,
+vergence, coverage radius or gate changed, and no rerender after the numerical
+miss.
+
+Visuals: growth.png / growth_truth.png show `fresh_up_right` growing lower-left
+to upper-right (41.4->58.7->75.3->97.4->99.6->99.7%) and `fresh_down_left`
+upper-right to lower-left (37.2->56.5->80.3->99.1->99.1->99.2%), the last two
+panels of each visually indistinguishable since the surface is finished by
+fixation 4. coverage_3d_frontier.png shows all four rising monotonically. Every
+surface_map.ply carries "comment fixed head frame H" with NO `element face`;
+independent reads give median radius 0.77914 m vs true 0.780 (`fresh_up_right`)
+and 0.70120-0.70122 m vs true 0.700 (`fresh_down_left`) - within 0.9 mm inward
+and 1.2 mm outward, no systematic contraction.
+
+Cost: smoke run 17.6 s (loop 17.47 s, Blender 11.86 s) / eval 8.2 s; full runs
+1m17.9s, 1m18.4s, 1m24.2s, 1m24.6s (loop 77.71/78.25/84.10/84.51 s, Blender
+34.6-35.1 s each); aggregation under a second.
+
+Scope of what holds: the truth-free 3D surfel frontier drove genuinely
+two-dimensional gaze on all four trials (pitch span 15.0 deg) and reconstructed
+both fresh, deliberately non-mirror ribbons to 99.2-99.7% completeness at
+3.35-4.27 mm median, where a five-look horizontal-only controller reaches at most
+0.471 ideal coverage. The eye-symmetry repair is proven by check and exercised on
+real data. The remaining obstacle to closing Increment 6 is the conjunctive
+corner rule in the auxiliary veto. Stopped for Luiz/Chat.
