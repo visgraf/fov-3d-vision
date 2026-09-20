@@ -1169,3 +1169,72 @@ formal FAIL records - FSG6a's eye-asymmetric veto, FSG6b's conjunctive corner,
 FSG6c's one-component licensing, FSG6d's non-terminating raw frontier and FSG6e's
 minority-OPEN survivors - and each fixed exactly one abstraction without tuning a
 constant.
+
+## D-FSG7a - Prescribed lateral head translation to reveal genuinely self-occluded surface (2026-09-20)
+Increment 6 is **closed** at FSG6f. FSG7a opens Increment 7 as a **new prospective experiment, not a repair of FSG6f**. All FSG6a-FSG6e FAIL records and the FSG6f PASS stand unchanged, as does the accepted `z -> gaze` implementation repair; no prior decision block is edited.
+
+**The physics, stated first because it is the whole reason this increment exists. True self-occlusion cannot be revealed by eye rotation at fixed centres.** With the eye centres held in one place, changing fixation changes which rays are sampled at high resolution but does not change the line-of-sight visibility of any world point: a point hidden behind a fold stays hidden no matter where the eyes look. Every increment through FSG6f rotated the eyes about fixed centres, so none of them could have discovered hidden surface even in principle. Repository decision D3 anticipated this and set head motion aside as a separate question. FSG7a therefore changes **exactly one physical assumption**: the binocular rig may **translate laterally** while its orientation stays fixed.
+
+Two consequences are deliberate and are checked. First, **H0 - the initial head frame - remains the persistent map frame.** Stereo is reconstructed by the unchanged FSG1 instrument in the local acquisition frame Ht and transported exactly into H0 by `x_H0 = x_Ht + t_H0` before fusion; the runner performs that transport and the check suite asserts the call is present. Second, **the rendered world does not move with the head** - moving the scene with the observer would cancel the parallax and reveal nothing, so it is an explicit negative control.
+
+**FSG7a does not implement an active motion policy.** The two head positions and two gazes are prescribed constants in the public schedule. The observer does not choose where to move. Selecting head motion is the next question, and a PASS here does not touch it.
+
+The research question: can the frozen FSG1 local stereo instrument, followed by exact-pose transport into H0 and the frozen 12 mm FSG3/FSG4 fusion rule, reconstruct a surface continuation that is binocularly self-occluded at H0 and becomes visible only after a prescribed lateral head translation?
+
+Frozen: the FSG1 instrument `FSG1-HDR-SGBM-one-original-update-original-validity-v1`; FSG3/FSG4 fusion at 12 mm association radius and 12 mm hash cell; IPD, profile, SPP and the 2.10 m prescribed vergence; oracle instance segmentation as object identity only; no ICP, mesh reconstruction, hole filling or registration optimization. The head-origin keyword FSG7a uses already exists in the frozen `fsg_geometry.make_calibration` and is already consumed by the frozen render path, so no instrument change was needed to move the head.
+
+Fixtures are two fresh connected folded ribbons sharing one rendered instance ID 151 - `fold_right` (front panel at z = -2.50 m, 0.36 m wide by 0.30 m high, with a 0.65 m deep return wing folding backward from its right edge) and `fold_left` (the mirrored fold) - with evaluator-only part labels distinguishing front from return. Each trial has exactly two binocular acquisitions: step 0 at H0 with gaze (0,0) seeding the front, and step 1 after +0.45 m (`fold_right`) or -0.45 m (`fold_left`) lateral translation with gaze -5.5/+5.5 degrees yaw, revealing the return wing. Fresh seeds 1409 and 1453 give four full trials.
+
+A full trial passes only if every gate in `docs/fsg7a-increment7.md` passes: per-patch object measurement coverage >=90%; reveal patch >=5,000 fixed-H0 overlap matches with overlap median <=10 mm and P95 <=25 mm; idempotent reveal replay; final map containing only instance 151; >=5,000 final surfels with support >=2; final folded-surface median <=10 mm and P95 <=30 mm; seed front-wing coverage >=80% and seed return-wing coverage <=5%; final return-wing coverage >=80% with gain >=75 percentage points; final whole-object coverage >=90%; and evaluator direct visibility confirming fixed-head return visibility <=2% with moved-head binocular visibility >=95%. **FSG7a passes only if all 4/4 fresh full trials pass.**
+
+A PASS establishes the measurement and mapping substrate for active hidden-surface discovery and nothing more: exact known head translation can reveal a genuinely self-occluded continuation, and the existing local stereo/fusion stack can place the newly visible measurements coherently into persistent H0 memory without ICP. It does **not** establish active head-motion selection, occlusion classification by the controller, learned gaze, multiple objects or free six-degree-of-freedom motion. A miss is preserved and returned to Luiz/Chat.
+
+Code may fix only a demonstrable implementation/orchestration defect, after diagnosis, outside the checks, reported precisely. Never change the 0.45 m translation, the prescribed gazes, geometry, texture, seeds, SPP, the 2.10 m vergence, the stereo instrument, the 12 mm fusion rule, the coverage radius or any gate to obtain a pass. Do not rerender a numerical miss. Add no ICP, registration optimization, motion policy or extra views.
+
+Outcome 2026-09-20 (evidence: `docs/fsg7a-increment7.md` Results and
+`docs/log.md`). **FSG7A_HEAD_MOTION_FEASIBILITY_FAIL**, trial_passes 0/4. Every
+trial failed on **exactly one gate, the same one in all four**: `final map median
+folded-surface error`, 12.62-12.98 mm against a <=10 mm limit. The miss is
+preserved; **FSG7a feasibility is NOT closed** and active head-motion selection
+remains not implemented.
+
+**The head-motion mechanism worked on every trial.** Direct evaluator visibility
+gave return **0.0000/0.0000** in both eyes at H0 and **1.0000/1.0000** after the
+prescribed translation on both fixtures; reconstructed return-wing coverage went
+**4.73-4.97% -> 87.49-96.20%** (gain 82.75-91.36 pp); and the newly visible
+measurements landed in persistent H0 memory at **2.545-2.830 mm median overlap**
+with the seed map (P95 7.037-7.741 mm), every replay idempotent, with no ICP or
+registration optimization. Frame transport measured exact to 1.49e-08. All other
+gates passed on all four trials: patch coverage 0.9208-0.9358, reveal matches
+14,923-19,058, overlap medians and P95s inside limits, instance purity 151,
+6,789-9,672 surfels at support >=2, surface P95 21.1-21.8 mm, whole-object
+coverage 0.9193-0.9755. `[fsg7a-check] passed=7 failed=0`, all six negatives exit
+1, all twenty prior suites green including FSG6f.
+
+**Root cause, measured: a front-panel depth bias inherited from the frozen
+instrument, not a head-motion or transport failure.** Split by nearest panel, the
+**return wing is accurate at 1.600-2.334 mm median** while the **front panel
+carries a uniform -13.7 mm z offset** and holds 87-89% of the surfels, so it sets
+the median. At Z = 2.50 m with baseline 0.0630 m and f = 1217.8 px, +13.74 mm
+implies a disparity bias of **-0.1687 px**, within 7% of the **-0.1579 px SGBM
+bias FSG1 measured and recorded** in its step diagnostic. The fixture sits
+**0.40 m beyond the prescribed 2.10 m vergence** - further than any previous FSG
+target - so the same fixed sub-pixel bias yields a larger metric offset. The
+return wing escapes it geometrically: its normal is +/-x, so a depth offset slides
+points along it rather than off it. A single global +13.74 mm z correction,
+computed as a diagnostic only and applied to no tool, gives 3.663-3.776 mm median
+and 10.808-11.333 mm P95, far inside the gates.
+
+**This is a measurement/specification result, not an implementation defect. No
+code fix was made and no source file was modified.** The code faithfully
+implements the written experiment; correcting the bias would require changing the
+frozen FSG1 instrument or the 2.10 m vergence, both of which this decision
+forbids. Nothing was tuned and nothing rerendered.
+
+Recorded for the next handoff: the substrate claim this increment set out to test
+is supported everywhere except the inherited depth bias - exact known head
+translation does reveal genuinely self-occluded surface and the existing
+stereo/fusion stack does place it coherently in H0 without ICP. What stands
+between that and a PASS is the FSG1 sub-pixel bias at a working distance beyond
+its prescribed vergence, which is a question about the instrument or the fixture
+distance, not about head motion.

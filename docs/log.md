@@ -4492,3 +4492,166 @@ optimality or calibrated uncertainty. The six-increment route - FSG6a's
 eye-asymmetric veto, FSG6b's conjunctive corner, FSG6c's one-component licensing,
 FSG6d's non-terminating raw frontier, FSG6e's minority-OPEN survivors - is
 preserved in full as five formal FAIL records.
+
+### 2026-09-20 - FSG7a Increment 7, prescribed head motion reveals self-occluded surface: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg7a-increment7.md` and D-FSG7a appended just above. Increment 6 is
+CLOSED at FSG6f; **FSG7a is a new prospective experiment, not a repair of
+FSG6f.** Commands, written before running them:
+
+    python -m py_compile tools/fsg7a_{public,motion,scene,render_fix,run,eval,compare}.py tools/dev/check_fsg7a.py
+    python tools/dev/check_fsg7a.py
+    for n in no_motion moving_scene frame truth purity visibility; do python tools/dev/check_fsg7a.py --negative "$n"; done
+    (the current FSG6f check and the standard prior suites from the FSG6f report)
+    python tools/fsg7a_run.py  --out previews/fsg7a/smoke-fold_right-seed1409 --profile small --fixture fold_right --seed 1409 --device OPTIX
+    python tools/fsg7a_eval.py previews/fsg7a/smoke-fold_right-seed1409 --out previews/fsg7a/smoke-fold_right-seed1409-eval --mode smoke
+    (then the four full trials fold_right/1409, fold_right/1453, fold_left/1409, fold_left/1453,
+     each run once and evaluated, then fsg7a_compare.py --root previews/fsg7a --out previews/fsg7a/full-comparison)
+
+**Stated explicitly, because it is the reason Increment 7 exists: true
+self-occlusion cannot be revealed by eye rotation at fixed centres.** Holding the
+eye centres fixed and changing fixation changes which rays are sampled at high
+resolution, not which world points are on a line of sight. A point behind a fold
+stays hidden however the eyes rotate. Every increment through FSG6f rotated the
+eyes about fixed centres, so none of them could have discovered hidden surface
+even in principle; D3 set head motion aside as its own question. **FSG7a permits
+prescribed lateral head translation, keeps H0 (the initial head frame) as the
+persistent map frame, and does NOT yet implement an active motion policy** - the
+two head positions and two gazes are constants in the public schedule and the
+observer does not choose them.
+
+**Preservation and frozen source.** `git diff 3fe2864` over the FSG1 stereo
+modules (`fsg_stereo_supported`, `fsg_stereo_hdr`, `fsg_stereo`, `fsg_evaluate`,
+`fsg_geometry`, `fsg_scene`, `fsg_validation_render`), `fsg3_surface_map.py`,
+**all FSG6, FSG6b, FSG6c, FSG6d, FSG6e and FSG6f modules**, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY. No prior decision block is
+edited. `fsg7a_run.py` imports neither `fsg7a_scene` nor any `evaluation_only`
+asset and calls `compute_once` behind `check_kernel_equivalence`.
+
+**The transport, read from the code.** `fsg7a_run.patch_from_record` builds each
+patch as `xyz_h0 = motion.points_ht_to_h0(rec["xyz_h"][mask], t)`, i.e.
+`x_H0 = x_Ht + t_H0`, and fuses in H0; `check_fsg7a.source_control` asserts that
+call is present, `world_fixed_control` asserts the rendered scene stays fixed in
+H0 while the head moves, and `schedule_control` asserts the seed is at H0 and the
+reveal translation is 0.45 m toward the correct side of each fold. The head
+origin is moved through `fsg_geometry.make_calibration(..., head_origin_w=...)`,
+a keyword that **already exists in the frozen module** and is already consumed by
+the frozen render path - no instrument change was needed to move the head.
+
+Design checks quoted from the handoff, not experimental results: at H0 direct
+evaluator geometry gives 0.0000 return visibility in both eyes on both fixtures,
+and after the prescribed +/-0.45 m translation gives 1.0000 in both eyes.
+
+Gates, all four trials judged independently and all four required: per-patch
+object measurement coverage >=90%; reveal patch >=5,000 fixed-H0 overlap matches,
+overlap median <=10 mm, P95 <=25 mm, idempotent replay; final map only instance
+151; >=5,000 surfels with support >=2; final folded-surface median <=10 mm and
+P95 <=30 mm; seed front coverage >=80% and seed return coverage <=5%; final
+return coverage >=80% with gain >=75 pp; final whole-object coverage >=90%; and
+evaluator direct visibility confirming fixed-head return <=2% and moved-head
+binocular return >=95%.
+
+Cost class: checks Interactive; smoke Interactive/Batch (two acquisitions only);
+each full trial Batch - two binocular acquisitions rather than five or six, so
+these should be markedly cheaper than the FSG6 trials.
+
+Likely failure modes, in the order I expect them: (a) the 0.45 m translation
+moves the front panel far enough that the reveal patch loses fixed-H0 overlap
+with the seed map, so matched drops below 5,000 even though the return wing is
+visible; (b) the return wing is seen at a very oblique angle after translation,
+costing object measurement coverage or inflating the folded-surface P95; (c) an
+error in the Ht->H0 transport sign or in the head-origin world mapping would show
+up as a bimodal map offset near 0.45 m - the `frame` negative is the guard; (d)
+the fold's inner corner is genuinely grazing for one eye, so binocular stereo
+fails exactly along the seam; (e) only then suspect the renderer or the scene
+build. Diagnose before editing. **I will not change the 0.45 m translation, the
+gazes, geometry, texture, seeds, SPP, the 2.10 m vergence, the stereo instrument,
+the 12 mm fusion rule, the coverage radius or any gate to obtain a pass; I will
+add no ICP, registration optimization, motion policy or extra views; and I will
+not rerender a numerical miss.** If the comparison fails I preserve everything
+and stop; if it passes I close FSG7a feasibility only, and active head-motion
+selection remains not implemented.
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`FSG7A_HEAD_MOTION_FEASIBILITY_FAIL`, trial_passes 0/4.** Every trial failed on
+**exactly one gate, the same one in all four**: `final map median folded-surface
+error`, 12.62-12.98 mm against a <=10 mm limit. The miss is preserved and FSG7a
+feasibility is NOT closed.
+
+**The head-motion mechanism worked on every trial.** Return-wing coverage went
+from 4.73-4.97% at the H0 seed to **87.49-96.20%** after the prescribed lateral
+translation - gain 82.75-91.36 pp - and the newly visible measurements landed in
+persistent H0 memory at **2.545-2.830 mm median overlap** with the seed map, P95
+7.037-7.741 mm, every replay idempotent. Direct evaluator visibility: return
+**0.0000/0.0000** in both eyes at H0 and **1.0000/1.0000** after translation, on
+both fixtures.
+
+Preservation: `git diff 3fe2864` over the FSG1 stereo modules,
+`fsg3_surface_map.py`, all FSG6-FSG6f modules, `rig.py`, `bl_common.py` and
+`requirements-fsg.txt` is EMPTY; no prior decision block edited; every manifest
+records `truth_opened: false`, `policy: none`, empty `policy_inputs`. The head
+origin moves through `make_calibration(..., head_origin_w=...)`, a keyword that
+**already existed in the frozen geometry module** and is already consumed by the
+frozen render path - no instrument change was needed to move the head.
+
+`[fsg7a-check] SUMMARY passed=7 failed=0` with
+`[fsg7a-motion] PASS h0_ht_roundtrip=true moving_frame_negative_m=0.451` and
+`[fsg7a-scene] PASS self_occlusion=true head_translation_reveals=true
+fixed_head_gaze_cannot_reveal=true`. All six negatives exited 1. All twenty prior
+suites green including `[fsg6f-check] passed=14 failed=0`.
+
+Frame-transport integrity measured on the saved arrays: `x_H0 - x_Ht` equals the
+prescribed translation to `max|delta-t| = 1.49e-08` (float32 storage of 0.45),
+exactly zero at the seed. The seed map spans z [-2.623,-2.446]; after the reveal
+it reaches z = -3.025 along a return wing running z = -2.50 to -3.15 - the motion
+genuinely added surface absent from the seed map.
+
+Smoke (`fold_right`/1409/small, 2.74 s run / 1.10 s eval) completed, exit 2,
+numerical only: return 0.0000 -> 0.4776, overlap 5.368/11.074 mm idempotent, nine
+resolution-scaled FAIL lines. No runtime, provenance, truth-leak, frame-transform,
+scene-motion or orchestration blocker, so full ran.
+
+Four full trials, each once, 419,430,400 samples each (1,677,721,600 total), two
+acquisitions per trial. fold_right/1409 and /1453: patch coverage 0.9208/0.9357-8,
+reveal matched 19,054-19,058 new 2,732, overlap 2.545-2.548/7.037-7.069 mm,
+return 0.0473-0.0477 -> 0.8749-0.8774, whole 0.9193-0.9209, median
+12.941-12.983 mm, P95 21.777-21.810 mm. fold_left/1409 and /1453: patch coverage
+0.9208/0.9315-7, reveal matched 14,923-14,943 new 3,259-3,283, overlap
+2.818-2.830/7.702-7.741 mm, return 0.0484-0.0497 -> 0.9602-0.9620, whole
+0.9743-0.9755, median 12.624-12.683 mm, P95 21.132-21.253 mm. Maps 26,392-26,943
+points, all pure instance 151, 6,789-9,672 surfels at support >=2. **Every gate
+passed on every trial except the final median.**
+
+**Root cause, measured: a front-panel depth bias inherited from the frozen
+instrument, not a head-motion or transport failure.** Splitting the final map by
+nearest panel: the **return wing is accurate at 1.600-2.334 mm median**, while
+the **front panel carries a uniform -13.7 mm z offset** (median -13.741 mm on
+fold_right, -13.664 mm on fold_left) and holds 87-89% of the surfels, so it sets
+the median. With baseline 0.0630 m and f = 1217.8 px, the front panel at
+Z = 2.50 m has nominal disparity 30.690 px, and +13.74 mm implies a disparity bias
+of **-0.1687 px** - within 7% of the **-0.1579 px SGBM bias FSG1 measured and
+recorded** in its step diagnostic. The fixture sits **0.40 m beyond the prescribed
+2.10 m vergence**, further than any previous FSG target, so the same fixed
+sub-pixel bias produces a larger metric offset than before. The return wing
+escapes it geometrically: the front normal is +z so a depth offset moves points
+OFF it, while the return normal is +/-x so the same offset slides points ALONG it.
+A single global +13.74 mm z correction - computed as a diagnostic only, applied to
+no tool - gives 3.776/11.333 mm and 3.663/10.808 mm, far inside the 10/30 gates.
+
+**No code fix was made and no source file was modified.** The code faithfully
+implements the written experiment; correcting the bias would mean changing the
+frozen FSG1 instrument or the 2.10 m vergence, both forbidden. Nothing tuned,
+nothing rerendered.
+
+Visuals: growth.png is a top-down (x,z) view and shows it directly - a flat front
+panel at the H0 seed, then an **"L"** whose return leg extends backward in z after
+translation. growth_truth.png reports front 100.0% / return 87.5% for
+fold_right/1409; fold_left mirrors it. Every surface_map.ply carries "comment
+fixed initial head frame H0", has NO `element face`, 26,392-26,943 vertices.
+
+Scope of what this does establish, short of the gate: prescribed lateral head
+translation reveals a genuinely binocularly self-occluded continuation, and
+exact-pose transport into H0 places the newly visible measurements into the
+frozen 12 mm fusion coherently - 2.5-2.8 mm median overlap, idempotent, no ICP or
+registration optimization. **Active head-motion selection remains not implemented
+and is untouched by this result.** Stopped for Luiz/Chat.
