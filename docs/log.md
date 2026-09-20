@@ -3135,3 +3135,165 @@ horizontal saccades only, fixed 2.10 m vergence, one policy and ONE comparison
 scan. Not policy optimality, not a population estimate, and silent on folds,
 self-occlusion, multi-object scenes, head motion, vergence control and calibrated
 uncertainty. Stopped for Luiz/Chat.
+
+
+### 2026-09-20 - FSG5 Increment 5, curved-surface growth: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg5-increment5.md` and D-FSG5a appended just above. **A curvature
+stress test, not a new-policy experiment**: geometry changes, intelligence does
+not. Commands, written before running them:
+
+    .venv/bin/python tools/fsg5_run.py  --out previews/fsg5/smoke-curve_right-seed601 --profile small --fixture curve_right --seed 601 --device OPTIX
+    .venv/bin/python tools/fsg5_eval.py previews/fsg5/smoke-curve_right-seed601 --out previews/fsg5/smoke-curve_right-seed601-evaluation --mode smoke
+    (then the four full trials curve_right/601, curve_right/647, curve_left/601, curve_left/647,
+     each run + evaluated, then fsg5_compare.py over exactly those four metrics.json)
+
+**Everything scientific is frozen and I verified it by reading the code, not
+assuming**: `git diff 47ba474` over the FSG1 stereo modules
+(`fsg_stereo_supported`, `fsg_stereo_hdr`, `fsg_stereo`, `fsg_evaluate`,
+`fsg_geometry`), `fsg4_policy.py`, `fsg3_surface_map.py`, `fsg4_public.py`,
+`rig.py`, `bl_common.py` and `requirements-fsg.txt` is EMPTY. `fsg5_run.py`
+imports the EXISTING `fsg4_policy` and the EXISTING `fsg3_surface_map`, calls
+`compute_once` with `check_kernel_equivalence` (never `compute_variants`),
+imports no fixture geometry and opens no `evaluation_only` asset.
+`fsg5_public` fixes association_radius_m = 0.012, hash_cell_m = 0.012,
+VERGENCE_DISTANCE_M = 2.10, FIXTURES = (curve_right, curve_left),
+SEEDS = (601, 647).
+
+Fixtures: two opaque diffuse cylindrical ribbons, vertical axis, radius 0.75 m,
+height 0.34 m, centre z = -2.80 m, 75 deg arc, 40 quad strips, mirrored with
+distinct textures. Pre-render geometry check measured max chord error 0.100 mm
+against the analytic cylinder (requirement < 0.2 mm) and visible spans
+right=[-8.487,+14.866] and left=[-14.866,+8.487] deg - so each seed exposes only
+one unresolved frontier. The design traces `-7,-2,+3,+8,+13` and
+`+7,+2,-3,-8,-13` are sanity notes, NOT acceptance criteria; **the policy chooses
+the actual trajectories from its own map and segmentation evidence.**
+
+Gates, all four trials judged independently and all four required: 4-6 fixations;
+termination `no_frontier`; every saccade exactly 5 deg with no repeat; >=100
+oracle object reference pixels and >=90% valid object measurement coverage per
+patch; per post-seed patch >=5,000 matched, overlap median <=10 mm and p95
+<=25 mm, idempotent duplicate replay, no fixed-grid coverage drop beyond 0.5 pp.
+Curved geometry on the final map: analytic finite-cylinder point-to-surface
+median <=10 mm and p95 <=30 mm; final curved-surface coverage >=90% (a truth
+sample on the fixed 256x84 (theta,y) grid counts as covered when a surfel lies
+within 15 mm, so this is CURVED-SURFACE completeness, not image coverage);
+coverage gain over the seed >=35 pp; only instance 81; >=5,000 surfels with
+support from >=2 fixations; and for those, **absolute median signed radial error
+<=7.5 mm** - the curvature-specific gate, since averaging across a curved surface
+can contract the map inward even when association distances look small.
+
+Preflight verified: clean main at 18cfd0a with 47ba474 an ancestor; D-FSG5a
+absent; `previews/fsg5` absent; environment Python 3.12.3 / NumPy 2.2.6 / OpenCV
+4.13.0 / Pillow 12.3.0, Blender 5.2.1 LTS on an RTX 4090. All seven new Python
+files compile. `[fsg5-scene] PASS right=[-8.487,14.866] left=[-14.866,8.487]
+chord_max_mm=0.100` and `[fsg5-check] SUMMARY passed=6 failed=0`. All five
+negatives exit 1: hard-coded/wrong curved frontier, flat substitute for the
+curved surface, 5 cm map shift, **15 mm fusion contraction**, and background
+contamination. All twelve existing FSG1-FSG4c regression suites remain green:
+24/29/34/48/37/46/4/5/7/7/7/8.
+
+Anticipated failure modes, in the order the handoff ranks them, to be diagnosed
+before any edit: (a) the current 12 mm Euclidean fusion losing overlap or
+radially contracting the curved surface; (b) the existing image-edge/map-yaw
+policy stopping early or failing to terminate on one mirror; (c) the FSG1 local
+matcher losing coverage on strongly oblique cylinder strips; (d) only then
+renderer/mesh integration.
+
+All four full trials run exactly once. A completed numerical exit 2 does NOT
+authorize tuning and does NOT cancel the remaining predeclared trials - it is
+preserved and the schedule continues; only an integrity/provenance/runtime
+exception stops early. No rerender after a numerical miss, no alternate radius,
+curvature, seed, texture, policy, threshold or fixation schedule; no ICP,
+normals-based registration, meshing, hole filling, new frontier logic or
+competing policy. Outcome unknown at writing: a pass closes Increment 5 and
+authorizes - but must NOT implement - the next experiment, with the claim limited
+to this controlled convex cylindrical family; a miss is preserved and returned to
+Luiz/Chat. Logs under `previews/fsg5/logs/`.
+
+Measured outcome, appended after the run. **FSG5_INCREMENT5_PASS**, exit 0,
+trial_passes 4, empty fails; all four full trials FSG5_CURVED_RUN_PASS with empty
+fail lists. **Increment 5 is CLOSED; the next experiment is AUTHORIZED BUT NOT
+IMPLEMENTED** - no design or code for it was written. The already validated
+active loop grew a metrically correct curved surface with no new policy, no
+registration step and no surface model.
+
+Integrity: diff from 47ba474 over the FSG1 stereo modules, fsg4_policy.py,
+fsg3_surface_map.py, fsg4_public.py, rig, bl_common and requirements-fsg.txt is
+EMPTY; nine files added, none modified. fsg5_run.py imports the EXISTING
+fsg4_policy and EXISTING fsg3_surface_map, calls compute_once with
+check_kernel_equivalence, imports no fixture geometry and opens no
+evaluation_only asset. Seven new files compile. [fsg5-scene] PASS
+right=[-8.487,14.866] left=[-14.866,8.487] chord_max_mm=0.100; [fsg5-check]
+SUMMARY passed=6 failed=0; all five negatives exit 1 (hard-coded curved frontier,
+flat substitute, 5 cm shift, **15 mm fusion contraction**, background
+contamination). All twelve FSG1-FSG4c suites green: 24/29/34/48/37/46/4/5/7/7/7/8.
+
+Smoke (curve_right/601, small): run exit 0, eval exit 2 on four numerical gates -
+surface median 12.225 mm, p95 30.546 mm, fix_00/fix_04 object coverage
+87.756%/89.819%. Familiar small-profile gap; integrity sound so full proceeded.
+The curvature gate already passed at small: signed radial median -4.295 mm on
+12,146 multi-look surfels.
+
+Four full trials, each 5 fixations terminating no_frontier with exactly 5 deg
+non-repeating saccades. **The policy produced the mirrored trajectory on the
+mirrored fixture unaided**: curve_right -7,-2,+3,+8,+13 and curve_left
++7,+2,-3,-8,-13. Coverage final 99.995% / 100.000% / 100.000% / 99.991%, gains
+over seed 69.79 / 69.81 / 62.90 / 62.89 pp. Map points 90,675-91,723 with
+54,526-55,383 multi-look surfels (gate >=5,000). Purity ID 81 only and every
+post-seed replay idempotent in all four.
+
+Curved geometry: surface median 3.647 / 3.654 / 3.362 / 3.363 mm (gate <=10) and
+p95 11.263 / 11.309 / 10.769 / 10.797 mm (gate <=30) - clearing both by about
+2.7x. **Signed radial median +1.335 / +1.335 / +1.251 / +1.252 mm** (gate
+|.|<=7.5), i.e. POSITIVE - the map sits ~1.3 mm outward of the analytic cylinder,
+so the anticipated failure mode (a), 12 mm Euclidean fusion radially contracting
+a curved surface, DID NOT occur. Independent check on the exported clouds agrees:
+reconstructed median radius 0.75075-0.75097 m against a true 0.750 m, y extent
+[-0.168,+0.166] m against a 0.34 m ribbon.
+
+Per-patch and overlap across all four: min oracle object reference 25,686 px
+(gate >=100); min object measurement coverage 93.561% (gate >=90%); post-seed
+matched 24,147-29,018 (gate >=5,000); overlap medians 1.800-2.014 mm (gate <=10);
+p95 4.722-6.012 mm (gate <=25); largest coverage decrease 0.005 pp (tolerance
+0.5 pp). Aggregate: mean final coverage 0.9999651; ranges surface median
+3.362-3.654 mm, p95 10.769-11.309 mm, signed radial +1.251 to +1.335 mm.
+
+Descriptive observation, not a failure: on curve_left the fifth fixation added
+essentially nothing - new fraction 0.00066/0.00074, coverage gain +0.014 pp
+(601) and -0.005 pp (647) - because coverage was already 99.99% after four looks.
+Under the closed FSG4c contract these are descriptive, so the runs stay valid and
+the tiny decrease is far inside tolerance. Same slight overshoot the policy showed
+on FSG4b's case_b; recorded rather than smoothed away. curve_right used its fifth
+fixation productively, gaining 5.86 pp.
+
+Visuals: growth.png and growth_truth.png for all four show the mirrored fixtures
+growing in mirror-image directions - curve_right seeds at -7 deg on the left edge
+and grows rightward 30.2->50.4->70.3->94.1->100.0%, curve_left seeds at +7 deg on
+the right edge and grows leftward 37.1->56.6->77.3->100.0->100.0%. The accumulated
+surfaces are visibly curved ribbons wrapping the cylinder, not flat rectangles.
+coverage_curved.png shows all four rising monotonically to 100.0% with per-trial
+median/p95 at 3.4-3.7 / 10.8-11.3 mm. Each surface_map.ply carries "comment fixed
+head frame H", no faces, a support property, 90,675-91,723 vertices, support
+histograms ~35-37k single / 48-50k double / 5.7-6.2k triple. No meshing, filling
+or registration anywhere.
+
+Cost: smoke 65,536,000 samples; each full trial 1,048,576,000, so 4,194,304,000
+across the four. Wall: smoke run 14.5 s, eval 9.3 s; full runs 1m16.6s, 1m17.0s,
+1m18.2s, 1m17.1s; aggregation 0.09 s. **No code fix was required or made.**
+Nothing tuned - no geometry, texture, seed, SPP, vergence, instrument, policy,
+fusion radius, coverage radius or gate change; no rerender after the smoke miss;
+no ICP, normals registration, meshing, hole filling, new frontier logic,
+competing policy or extra seed.
+
+Scope: the frozen FSG1 instrument, unchanged FSG4 policy and unchanged FSG3 12 mm
+fusion grew a convex curved surface to ~100% completeness at 3.4-3.7 mm median
+accuracy with no inward contraction, on both mirror orientations and both seeds.
+Narrow: two mirrored opaque diffuse cylindrical ribbons of ONE fixed radius
+(0.75 m) and arc (75 deg), two MC seeds, oracle segmentation, exact poses,
+horizontal saccades, fixed 2.10 m vergence. NOT a result about general curvature,
+varying radius, concave or saddle geometry, self-occlusion, folds, multi-object
+scenes, head motion, vergence control or calibrated uncertainty. The policy
+remains a 2D image-edge/map-yaw controller; a true 3D surface-frontier controller
+is now a clean next question and was deliberately not built. Stopped for
+Luiz/Chat.

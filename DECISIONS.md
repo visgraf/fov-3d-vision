@@ -699,3 +699,41 @@ this controlled fresh planar family - two opaque diffuse planar placements, two
 MC seeds, oracle segmentation, exact poses, horizontal saccades, fixed 2.10 m
 vergence - and is neither policy optimality nor a population estimate. The
 formal FSG4b FAIL and all earlier records are preserved.
+
+## D-FSG5a - Curvature stress test with the existing active observer (2026-09-20)
+Increment 4 closed the controlled planar efficiency question. Increment 5 changes **geometry, not intelligence**. Keep the closed FSG1 local RGB-D instrument, existing `tools/fsg4_policy.py` and its constants, existing `tools/fsg3_surface_map.py` with the fixed 12 mm Euclidean association and 12 mm spatial hash, oracle instance segmentation, exact calibrated head-frame poses, fixed 2.10 m vergence, 5-degree horizontal saccades, profile defaults, no ICP, no meshing and no hole filling. Replace the planar target by a finite convex cylindrical ribbon.
+
+The question: can the already validated active loop grow a metrically correct curved visible surface without a new policy, registration step or surface model? The policy is deliberately NOT upgraded to a 3D frontier controller in this increment; that would confound curvature with a new controller.
+
+Two mirrored opaque diffuse cylindrical ribbons (radius 0.75 m, height 0.34 m, centre z=-2.80 m, 75 deg arc, distinct textures) and fresh Monte-Carlo seeds 601 and 647 give four full trials, each judged independently and all four required to pass. Gates as written in `docs/fsg5-increment5.md`, including the curvature-specific rule that multi-look surfels (>=5,000 with support from >=2 fixations) must have absolute median signed radial error <=7.5 mm, recorded separately from unsigned point-to-surface error because averaging nearby samples on a curved surface can contract a map inward even when association distances are small. Per-fixation new fraction and coverage gain remain descriptive, not validity gates, following the closed FSG4c contract.
+
+A full pass closes Increment 5 and authorizes - but does not implement - the next experiment. A miss is preserved and returned to Luiz/Chat. Code may fix only a demonstrated implementation/orchestration defect that violates the written algorithm; it may never change the stereo instrument, policy, fusion radius, geometry, texture, seeds, SPP, vergence, coverage radius or numerical gates to obtain a pass. No ICP, normals-based registration, meshing, hole filling, new frontier logic, competing policy, extra seed or rerender after a numerical miss.
+
+Outcome 2026-09-20 (evidence: `docs/fsg5-increment5.md` Results and
+`docs/log.md`). **FSG5_INCREMENT5_PASS**, trial_passes 4, empty fails; all four
+full trials FSG5_CURVED_RUN_PASS with empty fail lists. The frozen FSG1
+instrument, the unchanged `fsg4_policy` and the unchanged `fsg3_surface_map` with
+its 12 mm Euclidean association grew a convex curved surface to ~100%
+completeness at 3.362-3.654 mm median and 10.769-11.309 mm p95 point-to-surface
+error, on both mirror orientations and both seeds, with no new policy,
+registration step or surface model. The policy produced the mirrored trajectory
+on the mirrored fixture unaided (curve_right -7,-2,+3,+8,+13; curve_left
++7,+2,-3,-8,-13), all terminating `no_frontier`. **The curvature-specific gate
+passed with room to spare and in the safe direction**: signed radial median
++1.251 to +1.335 mm on 54,526-55,383 multi-look surfels against a +/-7.5 mm
+limit - positive, i.e. slightly outward, so the anticipated inward contraction of
+a curved surface under 12 mm Euclidean fusion did not occur; an independent check
+of the exported clouds gives median radius 0.75075-0.75097 m against a true
+0.750 m. Every map pure ID 81, every post-seed replay idempotent, largest
+coverage decrease 0.005 pp. Descriptive and recorded rather than smoothed away:
+on curve_left the fifth fixation added essentially nothing (new fraction 0.0007,
+gain +0.014/-0.005 pp) because coverage was already 99.99% - valid under the
+closed FSG4c contract. No code fix was required and nothing was tuned. Per this
+decision: **Increment 5 is CLOSED and the next experiment is AUTHORIZED BUT NOT
+IMPLEMENTED.** The claim is limited to two mirrored opaque diffuse cylindrical
+ribbons of one fixed radius and arc, two MC seeds, oracle segmentation, exact
+poses, horizontal saccades and fixed vergence - not general curvature, varying
+radius, concave or saddle geometry, self-occlusion, folds, multi-object scenes,
+head motion, vergence control or calibrated uncertainty. The policy remains a 2D
+image-edge/map-yaw controller; a true 3D surface-frontier controller is now a
+clean next question and was deliberately not built here.
