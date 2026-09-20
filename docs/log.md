@@ -2968,3 +2968,170 @@ paired observations, the active policy beat the one frozen nonadaptive scan on
 every pair by a wide margin. What it does not: the active run is not yet a valid
 FSG3-contract run on case_b, so the increment's own pass rule is unmet.
 Increment 4 stays OPEN. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG4c fresh efficiency validation: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg4c-increment4.md` and D-FSG4c appended just above. **A FRESH
+validation, not a reinterpretation of FSG4b.** The formal FSG4b FAIL and every
+earlier record are preserved unchanged; FSG4b observations are
+development/diagnostic data and are NOT reused in this comparison. Commands,
+written before running them:
+
+    .venv/bin/python -u tools/fsg4c_pair.py --out previews/fsg4c/smoke-case_c-seed503 --profile small --fixture case_c --seed 503 --mode smoke --device OPTIX
+    .venv/bin/python -u tools/fsg4c_pair.py --out previews/fsg4c/full-case_c-seed503 --profile full --fixture case_c --seed 503 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4c_pair.py --out previews/fsg4c/full-case_c-seed557 --profile full --fixture case_c --seed 557 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4c_pair.py --out previews/fsg4c/full-case_d-seed503 --profile full --fixture case_d --seed 503 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4c_pair.py --out previews/fsg4c/full-case_d-seed557 --profile full --fixture case_d --seed 557 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4c_compare.py previews/fsg4c/full-case_c-seed503 previews/fsg4c/full-case_c-seed557 previews/fsg4c/full-case_d-seed503 previews/fsg4c/full-case_d-seed557 --out previews/fsg4c/full-comparison
+
+**The only contract correction is conceptual**: per-fixation `new_fraction` and
+incremental coverage gain become DESCRIPTIVE measurements rather than
+run-failure gates, and **no replacement threshold is introduced**. The reason is
+arithmetic: with coverage at 98.72% before the terminal fixation, at most 1.28 pp
+remains, so a >=2 pp terminal-gain rule is unsatisfiable even by a view that
+closes 100% of the residual. In an efficiency experiment a wasteful fixation
+should be penalised through C(k) and AUC, not invalidate the trial. Residual
+closure `gain/(1-C_previous)` will be reported where defined.
+
+**Everything else is frozen and I verified it by reading the code, not
+assuming**: `git diff 373d853` over `fsg4_policy.py`, `fsg4_public.py`,
+`fsg4_metrics.py`, `fsg4_scene.py`, `fsg4_eval.py`, `fsg4_compare.py`,
+`fsg4_pair.py`, `fsg4_run.py`, the FSG1 stereo modules, `fsg3_surface_map.py`,
+rig, bl_common and requirements-fsg.txt is EMPTY - FSG4b and earlier are
+untouched. `fsg4c_run.py` imports the EXISTING `fsg4_policy` unchanged, calls
+`compute_once` with `check_kernel_equivalence` (never `compute_variants`),
+imports no fixture geometry and opens no `evaluation_only` asset.
+`fsg4c_public.SCAN_YAWS_DEG = (0.0,-5.0,5.0,-10.0,10.0)`,
+`FIXTURES = ("case_c","case_d")`, `SEEDS = (503,557)`. `fsg4c_pair.py` still
+compares with `np.array_equal` - exact pairing is unchanged and no tolerance
+exists. `fsg4c_eval.py` declares `per_fixation_novelty_and_gain_gated: False`.
+
+Fresh fixtures: `case_c` centre x=-0.38 m z=-2.18 m, 1.00 x 0.34 m, tilt 9 deg,
+texture tag 7; `case_d` centre x=+0.34 m z=-2.05 m, 1.02 x 0.30 m, tilt 8 deg,
+texture tag 11. Analytic design check (a calculation, NOT a result and NOT an
+acceptance number): spans [-21.155,+3.100] and [-4.449,+23.122] deg with
+fixed-scan ideal angular coverage 0.787 and 0.742.
+
+Run validity gates, both policies: final map point-to-plane median <=10 mm and
+p95 <=30 mm; only object ID 81; no coverage decrease >0.5 pp; every post-seed
+fusion replay idempotent. Active additionally: 4-5 fixations; termination
+`no_frontier`; local non-repeating <=5 deg saccades; >=100 oracle reference
+pixels and >=90% object measurement coverage per patch; >=5,000 overlap matches
+per post-seed patch; overlap median <=10 mm and p95 <=25 mm; final fixed-grid
+coverage >=90%. Scan: exactly five prescribed yaws and `fixed_budget`
+termination, with NO completeness gate. Aggregate pass needs all four active runs
+valid, all four scan maps valid, exact reuse at every shared yaw, active logical
+samples <= scan in all four, active AUC > scan AUC in 4/4, mean AUC advantage
+>=0.10 and mean final-coverage advantage >=0.10.
+
+Preflight verified: clean main at ee2698c with 373d853 an ancestor; D-FSG4c
+absent; `previews/fsg4c` absent; FSG4b records preserved; environment Python
+3.12.3 / NumPy 2.2.6 / OpenCV 4.13.0 / Pillow 12.3.0, Blender 5.2.1 LTS on an RTX
+4090. All eight new Python files compile. `[fsg4c-check] SUMMARY passed=7
+failed=0`, including "per-fixation novelty is descriptive only" and "frozen
+policy responds to map/mask state". All five negatives exit 1 - the `novelty`
+control detects reintroduction of the obsolete per-fixation gain gate and notes
+residual closure would be 100%. All eleven FSG1/2/3/4 regression suites pass
+24/29/34/48/37/46/4/5/7/7/8.
+
+All four predeclared full pairs run exactly once and ALL FOUR are aggregated even
+if a pair exits 2 numerically; only an integrity/provenance/runtime exception
+stops early. No rerender after a numerical miss, no alternate policy, scan,
+fixture geometry, texture, seed, SPP, stereo instrument, fusion radius, budget,
+AUC, accuracy threshold, final-coverage threshold, aggregate threshold or pairing
+change. Active receives no paired cache; only the later scan may reuse active
+acquisitions at shared yaws, with arrays and seeds exactly equal. **A poor
+individual fixation is allowed to be poor** - it is reported and penalised
+through the curve, and no per-fixation utility gate will be reintroduced.
+
+Outcome unknown at writing. If and only if the aggregate is
+`FSG4C_INCREMENT4_PASS` do I close Increment 4 and authorize - but NOT implement
+- the next experiment; the claim would be limited to frontier feedback improving
+visible-surface acquisition efficiency over this ONE frozen nonadaptive scan on
+this controlled fresh planar family, and is neither policy optimality nor a
+population estimate. Otherwise I record `FSG4C_INCREMENT4_FAIL`, preserve every
+full pair and stop for Luiz/Chat. Logs under `previews/fsg4c/logs/`.
+
+Measured outcome, appended after the run. **FSG4C_INCREMENT4_PASS**, exit 0,
+empty fails. **Increment 4 is CLOSED; the next experiment is AUTHORIZED BUT NOT
+IMPLEMENTED** - no design or code for it was written. The formal FSG4b FAIL and
+all earlier records are preserved; this was a fresh validation, not a
+reinterpretation, and no FSG4b observation entered the comparison.
+
+Integrity: diff from 373d853 over fsg4_policy/public/metrics/scene/eval/compare/
+pair/run, the FSG1 stereo modules, fsg3_surface_map, rig, bl_common and
+requirements-fsg.txt is EMPTY; ten files added, none modified. fsg4c_run.py
+imports the EXISTING unchanged fsg4_policy, calls compute_once with
+check_kernel_equivalence, imports no fixture geometry and opens no
+evaluation_only asset; SCAN_YAWS_DEG=(0,-5,5,-10,10), FIXTURES=(case_c,case_d),
+SEEDS=(503,557); fsg4c_pair.py still uses np.array_equal so exact pairing is
+unchanged; fsg4c_eval.py declares per_fixation_novelty_and_gain_gated=False. All
+eight new files compile. [fsg4c-check] SUMMARY passed=7 failed=0; all five
+negatives exit 1 including the novelty control that detects reintroduction of the
+obsolete per-fixation gain gate; all eleven FSG1/2/3/4 suites pass
+24/29/34/48/37/46/4/5/7/7/8.
+
+Pairing: 3 shared yaws per pair, 12/12 rows arrays-exact and seeds-exact and
+reused; active reuse 0 with active newly-rendered equal to active logical in all
+four, proving no cache; truth_opened false in all eight runs. Logical budgets
+838,860,800 (case_c active) or 1,048,576,000 vs scan 1,048,576,000; active <=
+scan in 4/4. Harness newly rendered 419,430,400 per scan, provenance only.
+
+The policy found opposite directions on the mirrored placements without being
+told: case_c 0,-5,-10,-15 (4 fixations) and case_d 0,+5,+10,+15,+20 (5), both
+no_frontier. Curves: case_c active 0.390625/0.601423/0.823335/1.0/1.0 AUC
+0.780018 vs scan 0.390625/0.601423/0.601423/0.823335/0.823335 AUC 0.658290;
+case_d active 0.363002/0.546828/0.733073/0.917969/1.0 AUC 0.719843 vs scan
+0.363002/0.363002/0.546828/0.546828/0.733073 AUC 0.501174; second seeds match to
+~1e-4. Active reached 100.000% final coverage in all four.
+
+Descriptive per-fixation measurements (never gated): case_c post-seed matched
+25,445-27,555, new fractions 0.377-0.429, gains 17.66-22.20 pp, residual closure
+34.59% -> 55.68% -> 100.000%; case_d matched 23,701-25,035, new fractions
+0.272-0.451, gains 8.20-18.62 pp, residual closure 28.86% -> 41.10% -> 69.27% ->
+100.000%. The terminal fixation closes 100.000% of the residual in all four
+pairs. **Honest note: the contract correction was not load-bearing here** - the
+terminal new fractions (0.377/0.272) and gains (17.66/8.20 pp) would have
+satisfied the retired >=5% and >=2 pp rules anyway, so no run was rescued by
+removing them. The correction remains right in principle but this PASS does not
+depend on it.
+
+Run validity, both policies all four pairs: plane medians 4.308-4.520 mm and p95
+13.590-14.808 mm (gates 10/30); every map pure ID 81; every post-seed fusion
+idempotent; no coverage decrease anywhere. Active: 4-5 fixations, no_frontier,
+non-repeating 5 deg saccades, min object reference 34,730 px (gate >=100), min
+object measurement coverage 93.844% (gate >=90%), post-seed matches
+23,701-27,555 (gate >=5,000), overlap medians and p95 inside 10/25 mm, final
+coverage 100% (gate >=90%). Every run reports an empty fails list. The scan has
+no completeness gate and was not penalised for its low coverage.
+
+Aggregate: all seven conditions pass - four valid active runs, four valid scan
+maps, exact reuse at every shared yaw, active logical <= scan in 4/4, active AUC
+wins **4/4**, mean AUC advantage **0.170182** (>=0.10), mean final-coverage
+advantage **0.221831** (>=0.10). Per-pair AUC gains 0.121727/0.121704/0.218669/
+0.218628; final gains 0.176665/0.176572/0.266927/0.267160. No numerical FAIL line
+anywhere.
+
+Visuals: coverage_vs_budget.png shows both curves starting at the identical seed
+point with active above scan from k=2 onward in all four, and the scan's flat
+segments are the visible cost of nonadaptive allocation. growth_truth.png for
+case_d/503 shows active marching 0->+5->+10->+15->+20 with coverage
+36.3->54.7->73.3->91.8->100.0% while the scan spends its -5 and -10 looks
+entirely off the object, unchanged at 36.3% and 54.7%, finishing at 73.3%.
+
+Cost: smoke 78,643,200 samples in 27.8 s; full pairs 2m42.0s, 2m39.9s, 3m0.8s,
+3m1.0s; aggregation 0.1 s. No code fix was required or made. Nothing tuned - no
+policy, scan, geometry, texture, seed, SPP, instrument, fusion radius, budget,
+AUC, threshold or pairing change, no rerender after a miss, no per-fixation
+utility gate reintroduced.
+
+Scope of the closure: on this controlled fresh planar family, with exactly paired
+observations and equal-or-lower logical budget, the frozen frontier policy
+acquired visible surface more efficiently than the one frozen nonadaptive scan -
+AUC wins 4/4 by a mean 0.170, reaching 100% final coverage against 73-82%. Two
+opaque diffuse planar placements, two MC seeds, oracle segmentation, exact poses,
+horizontal saccades only, fixed 2.10 m vergence, one policy and ONE comparison
+scan. Not policy optimality, not a population estimate, and silent on folds,
+self-occlusion, multi-object scenes, head motion, vergence control and calibrated
+uncertainty. Stopped for Luiz/Chat.

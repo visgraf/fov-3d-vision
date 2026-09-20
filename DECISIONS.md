@@ -666,3 +666,36 @@ code fix was required. A tension for Luiz/Chat to resolve: the same `case_b`
 trajectory that violates the inherited FSG3 terminal-patch contract also produces
 the largest efficiency advantage in the experiment (AUC gain 0.2296, final gain
 0.2173, 100% coverage).
+
+## D-FSG4c - Fresh validation of the efficiency question (2026-09-19)
+FSG4c removes the FSG3 per-fixation novelty/new-fraction and minimum coverage-gain conditions from the FSG4 *validity* contract. Those quantities remain measured and reported. No numerical replacement threshold is introduced. All other scientific elements remain frozen: FSG1 instrument, FSG3/FSG4 frontier policy and parameters, fixed scan `0,-5,+5,-10,+10`, 12 mm fusion, exact shared-view artifact reuse, five-fixation logical camera budget, normalized AUC definition, map accuracy/purity gates, active final coverage >=90%, and aggregate comparison thresholds (4/4 AUC wins, mean AUC gain >=0.10, mean final-coverage gain >=0.10).
+
+Why: once coverage before the terminal fixation is 98.72%, at most 1.28 pp remains, so a `>=2 pp` terminal-gain requirement is impossible even for a view that closes 100% of the residual surface. In an efficiency experiment a wasteful fixation should hurt the coverage-vs-budget curve and its AUC; it should not invalidate the trial through a second, per-fixation utility gate.
+
+FSG4b observations are development/diagnostic data and are not reused. Validate on fresh opaque fixtures `case_c`, `case_d` and fresh Monte-Carlo seeds 503 and 557. Run small `case_c`/503 only as smoke. Then run all four full pairs exactly once and aggregate all four regardless of numerical exit-2 misses; stop early only for an integrity/provenance/runtime exception.
+
+Overturned if: exact pairing/reuse/provenance fails, the frozen policy or scan changes, or the fresh full comparison misses the prospective FSG4c aggregate/map-quality gates. Never tune fixture, policy, scan, seed, SPP, fusion radius, AUC, or thresholds after seeing results. The formal FSG4b FAIL and all earlier records are preserved; this is a fresh validation, not a reinterpretation.
+
+Outcome 2026-09-19 (evidence: `docs/fsg4c-increment4.md` Results and
+`docs/log.md`). **FSG4C_INCREMENT4_PASS**, empty fails. All seven aggregate
+conditions met: four valid active runs, four valid scan maps, exact reuse at
+every shared yaw (12/12 rows arrays- and seeds-exact), active logical samples <=
+scan in 4/4, active AUC wins **4/4**, mean AUC advantage **0.170182**, mean
+final-coverage advantage **0.221831**. The policy found opposite directions on
+the mirrored placements unaided - case_c 0,-5,-10,-15 and case_d
+0,+5,+10,+15,+20, both `no_frontier` - and reached 100.000% final coverage in all
+four against the scan's 73.3-82.3%. Map quality holds for both policies (plane
+medians 4.308-4.520 mm, p95 13.590-14.808 mm, every map pure ID 81, every fusion
+idempotent). Active received no cache, proven by newly-rendered equalling logical
+samples in every pair. **Honest qualification: the contract correction was not
+load-bearing** - the terminal new fractions (0.377/0.272) and gains (17.66/8.20
+pp) would have satisfied the retired >=5% and >=2 pp rules anyway, so no run was
+rescued by removing them; residual closure was 100.000% at the terminal fixation
+in all four pairs. Nothing was tuned and no code fix was needed. Per this
+decision: **Increment 4 is CLOSED and the next experiment is AUTHORIZED BUT NOT
+IMPLEMENTED.** The claim is limited to frontier feedback improving
+visible-surface acquisition efficiency over this ONE frozen nonadaptive scan on
+this controlled fresh planar family - two opaque diffuse planar placements, two
+MC seeds, oracle segmentation, exact poses, horizontal saccades, fixed 2.10 m
+vergence - and is neither policy optimality nor a population estimate. The
+formal FSG4b FAIL and all earlier records are preserved.
