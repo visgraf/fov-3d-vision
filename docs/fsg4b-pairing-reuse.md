@@ -145,3 +145,157 @@ In addition to the original FSG4 report fields, report for every pair:
 - confirmation that active received no cache/provider and that `fsg4_run.py` remains truth-free;
 - every active and scan coverage curve, AUC, final coverage, map median/P95 error and purity;
 - aggregate AUC win count, mean AUC advantage, mean final-coverage advantage and final status.
+
+## FSG4b Results — exact shared-view reuse executed; comparison ran; Increment 4 NOT closed
+
+Run 2026-09-19 on the workstation by Code. Every number is read from files under
+`previews/fsg4b/`.
+
+**Final status: `FSG4_INCREMENT4_FAIL`.** The pairing repair worked and the full
+four-pair comparison ran for the first time. **Every comparison gate (C) passed
+emphatically**, but the **active-run validity contract (B) failed on `case_b` at
+both seeds**, so the increment does not close. Increment 4 remains OPEN and no
+next experiment is authorized. All four pairs are preserved. Nothing was tuned.
+
+    [fsg4-compare] fails: ["case_b/401 active run failed", "case_b/443 active run failed"]
+    active fails, both case_b seeds: ["fix_04 too little new surface",
+                                      "active fixation 4 added too little visible surface"]
+
+### The exact-pairing gate was preserved, not relaxed
+
+`fsg4_pair.py` still compares with `np.array_equal`; no tolerance exists anywhere.
+The gate is now **stricter**: a shared yaw must have exact arrays AND exact seeds
+AND a declared `paired_observation_reused` flag. The repaired `--negative pairing`
+control mutates one float in an otherwise reused observation and still exits 1 —
+direct proof the gate was not weakened.
+
+Only three orchestration files differ from FSG4a: `tools/dev/check_fsg4.py`,
+`tools/fsg4_pair.py`, `tools/fsg4_run.py`. `git diff d4104d9` over
+`fsg4_scene.py`, `fsg4_policy.py`, `fsg4_metrics.py`, `fsg4_public.py`,
+`fsg4_eval.py`, `fsg4_compare.py`, the FSG1 stereo modules,
+`fsg3_surface_map.py`, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is
+EMPTY. `fsg4_run.py` remains truth-free and `truth_opened` is false for all eight
+runs.
+
+Checks: `[fsg4-check] SUMMARY passed=7 failed=0` including the new "exact
+shared-view artifact reuse" check; all four negatives exit 1; all ten
+FSG1/FSG2/FSG3 regression suites pass 24/29/34/48/37/46/4/5/7/8.
+
+### Pairing and budget accounting, all four pairs
+
+| pair | shared yaws | count | arrays exact | seeds exact | scan views reused | active reuse |
+| --- | --- | ---: | --- | --- | ---: | ---: |
+| case_a/401 | -10, -5, 0 | 3 | true | true | 3 | **0** |
+| case_a/443 | -10, -5, 0 | 3 | true | true | 3 | **0** |
+| case_b/401 | 0, +5, +10 | 3 | true | true | 3 | **0** |
+| case_b/443 | 0, +5, +10 | 3 | true | true | 3 | **0** |
+
+| pair | active logical | scan logical | active <= scan | active newly rendered | scan newly rendered |
+| --- | ---: | ---: | --- | ---: | ---: |
+| case_a/401 | 838,860,800 | 1,048,576,000 | yes | 838,860,800 | 419,430,400 |
+| case_a/443 | 838,860,800 | 1,048,576,000 | yes | 838,860,800 | 419,430,400 |
+| case_b/401 | 1,048,576,000 | 1,048,576,000 | yes (equal) | 1,048,576,000 | 419,430,400 |
+| case_b/443 | 1,048,576,000 | 1,048,576,000 | yes (equal) | 1,048,576,000 | 419,430,400 |
+
+Active's newly rendered samples equal its logical samples in every pair, which
+independently confirms it rendered every view itself and received no cache. Reuse
+never reduced any policy's logical budget: the scan is still charged five
+fixations everywhere.
+
+### Coverage curves, AUC and final coverage
+
+| pair | policy | C(1..5) | AUC | final |
+| --- | --- | --- | ---: | ---: |
+| case_a/401 | active | 0.44112, 0.65625, 0.88629, 0.99995, 0.99995 | 0.815756 | 0.999947 |
+| case_a/401 | scan | 0.44112, 0.65625, 0.65625, 0.88629, 0.88629 | 0.715625 | 0.886292 |
+| case_a/443 | active | 0.44112, 0.65657, 0.88613, 0.99995, 0.99995 | 0.815796 | 0.999947 |
+| case_a/443 | scan | 0.44112, 0.65657, 0.65657, 0.88613, 0.88613 | 0.715723 | 0.886134 |
+| case_b/401 | active | 0.37815, 0.58183, 0.78262, 0.98724, 1.00000 | 0.760189 | 1.000000 |
+| case_b/401 | scan | 0.37815, 0.37815, 0.58183, 0.58183, 0.78262 | 0.530548 | 0.782616 |
+| case_b/443 | active | 0.37815, 0.58178, 0.78267, 0.98718, 1.00000 | 0.760176 | 1.000000 |
+| case_b/443 | scan | 0.37815, 0.37815, 0.58178, 0.58178, 0.78267 | 0.530528 | 0.782668 |
+
+The first curve point is identical between policies in every pair, as the exact
+pairing requires. AUC gains 0.100131, 0.100072, 0.229642, 0.229648; final
+coverage gains 0.113655, 0.113813, 0.217384, 0.217332.
+
+### Gate C — comparison: ALL PASS
+
+- active AUC wins **4 / 4** (required 4/4);
+- mean AUC advantage **0.164873** (required >= 0.10);
+- mean final-coverage advantage **0.165546** (required >= 0.10);
+- active logical samples <= scan in **4 / 4**;
+- all shared-yaw observations exactly paired and reused in **4 / 4**.
+
+### Gate A — metric geometry: ALL PASS, both policies, all four pairs
+
+| pair | active median / p95 | scan median / p95 | purity | idempotent |
+| --- | --- | --- | --- | --- |
+| case_a/401 | 3.994 / 12.878 mm | 3.837 / 12.283 mm | ID 81 only | true |
+| case_a/443 | 3.968 / 12.833 mm | 3.813 / 12.258 mm | ID 81 only | true |
+| case_b/401 | 4.325 / 14.144 mm | 4.194 / 13.185 mm | ID 81 only | true |
+| case_b/443 | 4.346 / 14.139 mm | 4.201 / 13.245 mm | ID 81 only | true |
+
+All within the 10 mm / 30 mm limits. No coverage drop beyond 0.5 pp anywhere.
+The scan's low completeness is not an integrity failure, as the handoff states.
+
+### Gate B — active validity: PASSES on case_a, FAILS on case_b
+
+`case_a`, both seeds: 4 fixations at 0, -5, -10, -15, terminating `no_frontier`;
+matched 24,741-26,880 per post-seed patch; overlap medians 1.998-2.088 mm and p95
+5.972-6.169 mm; new fractions 0.4185-0.4260 nonterminal and 0.2727/0.2734
+terminal; incremental gains 21.51/23.00/11.37 and 21.54/22.96/11.38 pp; final
+coverage 99.995%; gain over seed 55.88 pp. **`FSG4_ACTIVE_RUN_PASS`.**
+
+`case_b`, both seeds: 5 fixations at 0, +5, +10, +15, +20 — the mirrored
+trajectory — terminating `no_frontier`. Matched 24,942-26,073; overlap medians
+1.874-2.013 mm and p95 5.331-6.126 mm; nonterminal new fractions 0.4278-0.4513
+and nonterminal gains 20.37/20.08/20.46 pp; final coverage 100.000%; gain over
+seed 62.19 pp; plane errors well inside limits. **But the terminal fixation
+fails two predeclared terminal rules:**
+
+| quantity | gate | case_b/401 | case_b/443 |
+| --- | --- | ---: | ---: |
+| terminal new fraction | >= 0.05 | **0.03912** | **0.03970** |
+| terminal coverage gain | >= 2 pp | **1.276 pp** | **1.282 pp** |
+
+The cause is legible rather than mysterious. On `case_b` the policy has already
+reached 98.72% after four looks, so its fifth look at +20 catches only the last
+sliver of the object's right boundary at +21.329 degrees. It still reported
+frontier remaining, so it spent a fixation that bought almost nothing. That is a
+genuine miss of the FSG3 feasibility contract this increment inherited unchanged,
+and it is preserved rather than tuned away.
+
+Note the tension worth recording: the same trajectory that violates the terminal
+rule also produces the largest advantage over the scan in the whole experiment
+(AUC gain 0.2296, final gain 0.2173, reaching 100% coverage). The efficiency
+question and the terminal-patch contract disagree here, and resolving that is a
+specification decision, not Code's.
+
+### Visual inspection
+
+`coverage_vs_budget.png`: in all four pairs both curves start at the identical
+seed point and the active curve lies above the scan from k=2 onward. The scan's
+flat segments are the visible cost of nonadaptive allocation — `case_a` gains
+nothing from k=2 to k=3, `case_b` nothing from k=1 to k=2 and from k=3 to k=4.
+
+`growth_truth.png` for `case_b/401` is the clearest single view: active marches
+monotonically rightward 0 -> +5 -> +10 -> +15 -> +20 with coverage
+37.8 -> 58.2 -> 78.3 -> 98.7 -> 100.0%, while the scan spends its second look at
+-5 and its fourth at -10 entirely off the object, its coverage unchanged at
+37.8% and 58.2% respectively, ending at 78.3%. The truth-free `growth.png` files
+show the same accumulation without any truth overlay.
+
+### Status and scope
+
+`FSG4_INCREMENT4_FAIL`. **Increment 4 is NOT closed and no next experiment is
+authorized.** All four pairs, both policies, every map and every manifest are
+preserved. No tolerance was introduced, no rerender followed a miss, and no
+alternate scan, threshold, seed, geometry, texture, policy, fusion radius or AUC
+definition was touched.
+
+What the run does establish, and only this: on this controlled mirrored planar
+family with exactly paired observations, the active frontier policy beat the one
+frozen nonadaptive scan on every pair by a wide margin. What it does not
+establish: the active run is not yet a valid FSG3-contract run on `case_b`, so
+the increment's own pass rule is unmet. Stopped for Luiz and Chat.

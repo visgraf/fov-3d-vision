@@ -633,3 +633,36 @@ no next experiment is authorized.** The decision for Luiz/Chat is whether
 or is restated as bit-exact seeds and oracle masks plus an explicit RGB tolerance
 with gate C5 reworded. The four pairs and the AUC aggregation remain unrun and
 unprejudiced.
+
+## D-FSG4b - preserve exact FSG4 pairing by reusing the observation artifact (2026-09-19)
+FSG4a stopped at the small paired-noise integrity gate and produced no full-profile comparison: two independent OptiX executions of the same seeded view are not bit-reproducible (seeds and oracle masks exact, scene-linear float32 RGB differing by one to two ulp, max 5.96e-7, reproduced by repeating the identical command). That is an execution-property mismatch, not a policy result.
+
+Do NOT weaken Gate C5 and do NOT introduce an RGB tolerance. Instead make the paired condition true by construction: run the active policy first with no cache, index its completed acquisitions by yaw, then run the fixed scan, cloning the completed active acquisition at any shared yaw (rewriting only step-local metadata) and rendering scan-only yaws normally with the frozen yaw-keyed seed rule. After both runs, require exact equality of every saved array, exact seed equality, and a declared reuse flag on every scan shared-yaw record.
+
+The scientific experiment is unchanged: same frontier policy, fixed scan 0,-5,+5,-10,+10, fixtures case_a/case_b, seeds 401/443, FSG1 instrument, FSG3 fusion with 12 mm association, five-fixation budget, AUC definition, geometry gates and pass thresholds. The budget remains logical camera samples consumed per policy - a reused shared view is still charged to the scan as one fixation - while new_primary_camera_samples records execution provenance only and never reduces the policy budget.
+
+Code may fix only a demonstrated implementation/orchestration defect in this handoff, and may not change the policy, scan, geometry, texture, seed, stereo instrument, fusion radius, camera budget, metric, thresholds, exact-pairing requirement or pass rule. If the four-pair full comparison passes the unchanged FSG4a gates, close Increment 4 and record the limited claim that active frontier feedback improves surface acquisition efficiency over this one frozen nonadaptive scan on the controlled mirrored planar family. If it misses, preserve all four pairs and stop for Luiz/Chat. No next-increment implementation is delegated.
+
+Outcome 2026-09-19 (evidence: `docs/fsg4b-pairing-reuse.md` Results and
+`docs/log.md`). **FSG4_INCREMENT4_FAIL.** The pairing repair worked - 3 shared
+yaws per pair, all arrays and seeds exact, all reused, active reuse count 0 and
+active newly-rendered equal to active logical in all four pairs - and the full
+four-pair comparison ran for the first time. The exact gate was preserved, not
+relaxed: `np.array_equal` unchanged, the gate additionally requires a declared
+reuse flag, and the repaired `--negative pairing` control still exits 1 on a
+single mutated float. Gate C ALL PASS: AUC wins 4/4, mean AUC advantage 0.164873,
+mean final-coverage advantage 0.165546, active logical samples <= scan in 4/4.
+Gate A ALL PASS: plane medians 3.968-4.346 mm active and 3.813-4.201 mm scan, p95
+12.258-14.144 mm, every map pure ID 81, every fusion idempotent. **Gate B fails
+on `case_b` at both seeds, on the terminal patch only**: new fraction
+0.03912/0.03970 against >=0.05 and terminal coverage gain 1.276/1.282 pp against
+>=2 pp, because the policy is already at 98.72% after four looks and its fifth at
++20 catches only the sliver up to the object's right boundary at +21.329 deg.
+`case_a` passes fully at both seeds. Per this decision the miss is preserved and
+returned: **Increment 4 remains OPEN, nothing is adopted, and no next experiment
+is authorized.** Nothing was tuned - no tolerance, rerender, alternate scan,
+threshold, seed, geometry, texture, policy, fusion radius or AUC change, and no
+code fix was required. A tension for Luiz/Chat to resolve: the same `case_b`
+trajectory that violates the inherited FSG3 terminal-patch contract also produces
+the largest efficiency advantage in the experiment (AUC gain 0.2296, final gain
+0.2173, 100% coverage).

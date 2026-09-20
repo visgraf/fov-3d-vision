@@ -2812,3 +2812,159 @@ explicit RGB tolerance, with a stated value and gate C5 reworded to match. The
 four full pairs and the AUC aggregation remain unrun and unprejudiced; no
 alternate scan, threshold, placement, seed or AUC definition has been seen or
 selected. Increment 4 stays open. Stopped for Luiz/Chat.
+
+
+### 2026-09-19 - FSG4b exact shared-view reuse: authorized, prospective entry (written before acquisition)
+
+Per `docs/fsg4b-pairing-reuse.md` and D-FSG4b appended just above. Corrective
+ORCHESTRATION only, after FSG4a stopped at the paired-noise gate with no
+full-profile comparison. Commands, written before running them:
+
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4b/smoke-case_a-seed401 --profile small --fixture case_a --seed 401 --mode smoke --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4b/full-case_a-seed401 --profile full --fixture case_a --seed 401 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4b/full-case_a-seed443 --profile full --fixture case_a --seed 443 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4b/full-case_b-seed401 --profile full --fixture case_b --seed 401 --mode full --device OPTIX
+    .venv/bin/python -u tools/fsg4_pair.py --repo . --out previews/fsg4b/full-case_b-seed443 --profile full --fixture case_b --seed 443 --mode full --device OPTIX
+    .venv/bin/python tools/fsg4_compare.py previews/fsg4b/full-case_a-seed401 previews/fsg4b/full-case_a-seed443 previews/fsg4b/full-case_b-seed401 previews/fsg4b/full-case_b-seed443 --out previews/fsg4b/full-comparison
+
+**The exact pairing gate is NOT relaxed and no RGB tolerance is introduced.**
+Verified by reading the code before running: `fsg4_pair.py` still uses
+`np.array_equal`, and the gate is now STRICTER - it requires exact arrays AND
+exact seeds AND a declared `paired_observation_reused` flag on every scan
+shared-yaw record. The repaired `--negative pairing` control mutates one float in
+an otherwise reused observation and still exits 1, which is the direct proof the
+gate was not weakened.
+
+Mechanism: active runs FIRST with no cache
+(`ma=fsg4_run.execute(_ns(args,ar,"active"))`, no provider argument); its
+completed acquisitions are indexed by yaw; the scan runs second with a provider
+that clones the completed active acquisition at shared yaws, rewriting only
+step-local metadata, and renders scan-only yaws normally with the frozen
+yaw-keyed seed rule. The fixed scan is nonadaptive, so reuse cannot influence its
+schedule, and active cannot inspect scan state.
+
+**The scientific experiment is unchanged**, and I verified it rather than
+assuming: `git diff d4104d9` over `fsg4_scene.py`, `fsg4_policy.py`,
+`fsg4_metrics.py`, `fsg4_public.py`, `fsg4_eval.py`, `fsg4_compare.py`, the FSG1
+stereo modules, `fsg3_surface_map.py`, rig, bl_common and requirements-fsg.txt is
+EMPTY. Only three orchestration files differ from FSG4a:
+`tools/dev/check_fsg4.py` (added 7th check, repaired pairing negative),
+`tools/fsg4_pair.py` (reuse orchestration) and `tools/fsg4_run.py` (optional view
+provider). `fsg4_run.py` remains truth-free: it imports no fixture geometry and
+opens no `evaluation_only` asset.
+
+Budget accounting: logical `primary_camera_samples` is charged in full per
+fixation regardless of reuse - a reused shared view still costs the scan one
+fixation - while `new_primary_camera_samples` records only what this execution
+actually rendered. Confirmed in `fsg4_run.py`: `samples += primary_camera_samples`
+unconditionally, `new_samples += new_primary_camera_samples`, and the clone sets
+the latter to 0 while preserving the former.
+
+Preflight verified: clean main at 83b6038 with d4104d9 an ancestor; D-FSG4b
+absent; `previews/fsg4b` absent; the stopped FSG4a record preserved at
+`previews/fsg4/smoke-case_a-seed401`; environment Python 3.12.3 / NumPy 2.2.6 /
+OpenCV 4.13.0 / Pillow 12.3.0 with Blender 5.2.1 LTS.
+`[fsg4-scene] PASS case_a=[-19.847,4.189] scan_ideal=0.840 case_b=[-3.874,21.329] scan_ideal=0.789`,
+`[fsg4-policy] PASS mirrored_frontiers=true resolved_frontier_stops=true`,
+`[fsg4-metrics] PASS known_auc_gain=0.220000 early_stop_padding=true`,
+`[fsg4-check] SUMMARY passed=7 failed=0` including the new "exact shared-view
+artifact reuse" check. All four negatives exit 1. All ten FSG1/2/3 regression
+suites pass 24/29/34/48/37/46/4/5/7/8.
+
+Gates are the unchanged FSG4a ones: (A) both policies every trial - final
+point-to-plane median <=10 mm, p95 <=30 mm, only object ID 81, idempotent
+duplicate replay, no coverage drop beyond 0.5 pp, with the scan NOT required to
+achieve high completeness; (B) active validity - 4-5 fixations, termination
+`no_frontier`, saccades nonzero <=5 deg without revisit, >=90% object coverage
+per patch, >=5,000 matched per post-seed patch, overlap median <=10 mm and p95
+<=25 mm, nonterminal >=15% new and >=10 pp gain, terminal >=5% new and >=2 pp
+gain, final coverage >=90%, gain over seed >=35 pp; (C) comparison across four
+pairs - active AUC wins 4/4, mean AUC advantage >=0.10, mean final-coverage
+advantage >=0.10, active logical samples <= scan in every pair, all shared-yaw
+observations exactly paired.
+
+All four predeclared full pairs run once each. A completed pair's numerical exit
+2 does NOT authorize tuning and does NOT cancel the remaining pairs; an integrity
+exception stops execution. No tolerance, rerender after a miss, alternate scan,
+threshold, seed, geometry, texture, policy, fusion radius or AUC change. No full
+FSG4 pair has been observed yet, so the comparison remains unprejudiced. Outcome
+unknown at writing: a pass closes Increment 4 with the limited claim that active
+frontier feedback improves surface acquisition efficiency over this ONE frozen
+nonadaptive scan on this controlled mirrored planar family - not optimality, not
+a population-level statistical result - and authorizes but does not implement the
+next experiment. Logs under `previews/fsg4b/logs/`.
+
+Measured outcome, appended after the run. **FSG4_INCREMENT4_FAIL.** The pairing
+repair worked and the full four-pair comparison ran for the first time. Every
+comparison gate (C) passed emphatically, but the active-run validity contract (B)
+failed on case_b at BOTH seeds, so **Increment 4 is NOT closed and no next
+experiment is authorized.** All four pairs preserved; nothing tuned.
+
+    fails: ["case_b/401 active run failed", "case_b/443 active run failed"]
+    active fails, both case_b seeds: ["fix_04 too little new surface",
+                                      "active fixation 4 added too little visible surface"]
+
+The exact-pairing gate was preserved, not relaxed: fsg4_pair.py still uses
+np.array_equal and the gate is STRICTER, requiring exact arrays AND exact seeds
+AND a declared reuse flag. The repaired --negative pairing control mutates one
+float in an otherwise reused observation and still exits 1. Only three
+orchestration files differ from FSG4a (check_fsg4.py, fsg4_pair.py,
+fsg4_run.py); the diff over fsg4_scene/policy/metrics/public/eval/compare, the
+FSG1 stereo modules, fsg3_surface_map, rig, bl_common and requirements-fsg.txt is
+empty. fsg4_run.py remains truth-free and truth_opened is false in all eight runs.
+Checks 7/0 including the new exact shared-view reuse check, four negatives exit 1,
+ten FSG1/2/3 suites pass 24/29/34/48/37/46/4/5/7/8.
+
+Pairing: 3 shared yaws per pair, all arrays exact, all seeds exact, all reused;
+active reuse count 0 in all four, and active newly-rendered equals active logical
+in all four, independently confirming it received no cache. Budgets unchanged by
+reuse: case_a active 838,860,800 vs scan 1,048,576,000; case_b both
+1,048,576,000. The harness newly rendered 419,430,400 for each scan instead of
+1,048,576,000, which is execution provenance only.
+
+Curves and comparison. case_a/401 active 0.44112/0.65625/0.88629/0.99995/0.99995
+AUC 0.815756 final 0.999947 vs scan 0.44112/0.65625/0.65625/0.88629/0.88629 AUC
+0.715625 final 0.886292; case_a/443 nearly identical. case_b/401 active
+0.37815/0.58183/0.78262/0.98724/1.00000 AUC 0.760189 final 1.0 vs scan
+0.37815/0.37815/0.58183/0.58183/0.78262 AUC 0.530548 final 0.782616; case_b/443
+nearly identical. Gate C ALL PASS: AUC wins 4/4, mean AUC advantage 0.164873
+(>=0.10), mean final-coverage advantage 0.165546 (>=0.10), active logical <= scan
+in 4/4, all shared yaws exactly paired.
+
+Gate A ALL PASS both policies all pairs: active plane median 3.968-4.346 mm and
+p95 12.833-14.144 mm; scan 3.813-4.201 mm and 12.258-13.245 mm; every map pure ID
+81; every post-seed fusion idempotent; no coverage drop beyond 0.5 pp. The scan's
+low completeness is not an integrity failure, as specified.
+
+Gate B: case_a PASSES both seeds (4 fixations 0,-5,-10,-15, no_frontier, matched
+24,741-26,880, overlap medians 1.998-2.088 mm p95 5.972-6.169 mm, final 99.995%,
+gain over seed 55.88 pp). case_b FAILS both seeds on the TERMINAL patch only: new
+fraction 0.03912/0.03970 against a >=0.05 rule and terminal coverage gain
+1.276/1.282 pp against a >=2 pp rule. Everything else on case_b passes - 5
+fixations 0,+5,+10,+15,+20, no_frontier, matched 24,942-26,073, overlap medians
+1.874-2.013 mm, nonterminal gains 20.08-20.46 pp, final coverage 100.000%, gain
+over seed 62.19 pp. Cause is legible: the policy is already at 98.72% after four
+looks, so its fifth at +20 catches only the last sliver up to the object's right
+boundary at +21.329 deg, yet it still reported frontier remaining.
+
+Worth recording as a tension rather than smoothing over: the same case_b
+trajectory that violates the terminal-patch rule also produces the largest
+advantage in the experiment (AUC gain 0.2296, final gain 0.2173, 100% coverage).
+The efficiency question and the inherited FSG3 terminal contract disagree here;
+resolving that is a specification decision for Luiz/Chat, not Code's.
+
+Visuals: coverage_vs_budget.png shows both curves starting at the identical seed
+point in all four pairs with active above scan from k=2 onward, and the scan's
+flat segments are the visible cost of nonadaptive allocation (case_a gains
+nothing k=2->3; case_b nothing k=1->2 and k=3->4). growth_truth.png for
+case_b/401 is the clearest view: active marches 0->+5->+10->+15->+20 with
+coverage 37.8->58.2->78.3->98.7->100.0%, while the scan spends its -5 and -10
+looks entirely off the object, unchanged at 37.8% and 58.2%, ending at 78.3%.
+
+No tolerance introduced, no rerender after a miss, no alternate scan, threshold,
+seed, geometry, texture, policy, fusion radius or AUC change; no code fix needed.
+What the run establishes: on this controlled mirrored planar family with exactly
+paired observations, the active policy beat the one frozen nonadaptive scan on
+every pair by a wide margin. What it does not: the active run is not yet a valid
+FSG3-contract run on case_b, so the increment's own pass rule is unmet.
+Increment 4 stays OPEN. Stopped for Luiz/Chat.
