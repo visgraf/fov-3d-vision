@@ -4655,3 +4655,182 @@ exact-pose transport into H0 places the newly visible measurements into the
 frozen 12 mm fusion coherently - 2.5-2.8 mm median overlap, idempotent, no ICP or
 registration optimization. **Active head-motion selection remains not implemented
 and is untouched by this result.** Stopped for Luiz/Chat.
+
+### 2026-09-20 - Stage II / Scene-1a, seeded multi-object active reconstruction: authorized, prospective entry (written before acquisition)
+
+Per `docs/scene1a-stage2.md` and D-SCENE1A appended just above. **FSG6f/Increment
+6 is CLOSED/PASS and is the frozen per-object controller; FSG7a is preserved as
+an exploratory moving-head FAIL and is DEFERRED - the moving-head branch is not
+continued. Stage II returns to fixed head, static scene.** Commands, written
+before running them:
+
+    .venv/bin/python -m py_compile tools/scene1a_{public,scene,policy,render_fix,run,eval,compare}.py tools/dev/check_scene1a.py
+    .venv/bin/python tools/dev/check_scene1a.py --self-test
+    for n in hardcoded targetonly premature revisit truth copiedpolicy overlap; do .venv/bin/python tools/dev/check_scene1a.py --negative "$n"; done
+    (all prior regression suites, including the FSG7a report set and at minimum FSG6f and FSG7a)
+    .venv/bin/python tools/scene1a_run.py  --out previews/scene1a/smoke-triad_a-seed1601 --profile small --fixture triad_a --seed 1601 --device OPTIX
+    .venv/bin/python tools/scene1a_eval.py previews/scene1a/smoke-triad_a-seed1601 --out previews/scene1a/smoke-triad_a-seed1601-eval --mode smoke
+    (then the four full trials triad_a/1601, triad_a/1667, triad_b/1601, triad_b/1667,
+     each run once and evaluated, then scene1a_compare.py over exactly those four metrics.json)
+
+**Integrity audit, done before writing this entry.** HEAD `0997eae` on clean
+`main`; `50eb782` confirmed an ancestor. `git diff --name-status 50eb782 HEAD`
+shows exactly ten files, **all additions, no modifications**: the eight
+`scene1a_*` tools plus `docs/scene1a-stage2.md` and `docs/scene1a-checks.md`. An
+explicit `git diff 50eb782` over the FSG1 stereo modules, `fsg3_surface_map.py`,
+**every FSG6/6b/6c/6d/6e/6f module**, every FSG7a module, `rig.py`,
+`bl_common.py` and `requirements-fsg.txt` is EMPTY - in particular the FSG6f
+modules are unchanged.
+
+**FSG6f is reused by import, not copied.** `scene1a_policy.py` imports
+`fsg6f_public` and `fsg6f_frontier as object_policy` and calls
+`object_policy.choose_next(...)` at a single site; it contains no definition of
+`extract_frontier`, `classify_frontier_state`, `candidate_state_consensus`, the
+projected-corridor helpers, `_new_box_area`, or any `candidates.sort` ranking.
+Neither `scene1a_run.py` nor `scene1a_policy.py` mentions `scene1a_scene` or
+`evaluation_only`, and the runner calls `compute_once` behind
+`check_kernel_equivalence`. The public contract carries `fixed_head: True`,
+`static_scene: True` and `VERGENCE_DISTANCE_M = 2.10`.
+
+The frozen contract, restated so it is on the record before any acquisition:
+three known objects 201/202/203, one prescribed seed fixation each; after the
+seeds every object asks the frozen FSG6f controller and the scene scheduler picks
+**lexicographically by largest predicted new angular area, then largest frontier
+score, then smaller instance ID as a deterministic final tie-break** - no weight,
+learned utility or fitted scene constant. `scene_complete <=> every object
+independently reports no_frontier`. Every fixation is processed for ALL known
+object IDs, any non-target object contributing >=100 valid stereo points is fused
+into its own map, and the completed binocular observation enters every object's
+history. Physical gaze is globally no-revisit and the global history is supplied
+to each object's controller. Fresh non-mirror scenes `triad_a` and `triad_b`,
+fresh seeds 1601 and 1667, objects angularly disjoint (**object-object occlusion
+is not part of Scene-1a**).
+
+Gates as written in `docs/scene1a-stage2.md`: per object at least one autonomous
+post-seed target fixation, targeted patch coverage >=90%, targeted post-seed
+overlap >=5,000 matched with median <=10 mm and P95 <=25 mm, idempotent replay,
+own-ID purity, >=5,000 multi-look surfels, final surface median <=10 mm and P95
+<=30 mm, final coverage >=90% and gain >=25 pp; scene-level the first three
+fixations exactly the prescribed seeds, all later selection autonomous, every
+object receiving autonomous attention, >=2 post-seed attention switches, no
+repeated physical fixation, no object over the six-target budget, total <=18
+fixations, termination `scene_complete`, every final object state `no_frontier`.
+All four trials must pass. Poor opportunistic visibility is descriptive only.
+
+Cost class: checks Interactive; smoke Interactive/Batch; each full trial Batch -
+up to 18 binocular fixations, so these should cost more than an FSG6 trial and
+markedly more than FSG7a's two-view trials.
+
+Likely failure modes, in the order I expect them: (a) the scheduler starves one
+object - two objects keep out-bidding the third on predicted new area until the
+18-look global budget ends the scene, so "every object receives autonomous
+attention" or `scene_complete` fails; (b) opportunistic fusion contributes
+essentially nothing because the three objects are angularly disjoint and a
+12-degree fovea cannot see two of them at once, which would be honest but makes
+that mechanism untested here; (c) a targeted patch that lands near an object's
+edge misses the >=90% measurement fraction, exactly as FSG6/FSG7a smokes did at
+small profile; (d) an object's own FSG6f run terminates at `no_frontier` before
+reaching 90% coverage, which would be an inherited FSG6f property surfacing on
+new geometry rather than a scheduler fault; (e) only then suspect the scheduler
+implementation or the renderer. Diagnose before editing. **I will not change the
+fixtures, geometry, instance IDs, textures, seeds, the three prescribed seeds,
+the fixed-head/static-scene assumptions, the 2.10 m vergence, the FSG1
+instrument, the FSG3 12 mm fusion or hash, any FSG6f code or constant, the
+six-look or 18-look budgets, the scheduler ordering, global no-revisit, the
+opportunistic rule, or any gate to obtain a pass; I will add no object discovery,
+semantics, occlusion logic, head motion, ICP, meshing, filling, learned policy,
+extra views or alternate seeds; and I will not rerender a numerical miss. A
+faithfully implemented rule that fails is a specification result: I preserve it
+and stop.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`SCENE1A_STAGEII_FAIL`, trial_passes 0/4.** The miss is preserved; Scene-1a is
+NOT closed and no next Stage-II experiment is authorized.
+
+`[scene1a-check] SUMMARY passed=8 failed=0` with `[scene1a-scene] PASS
+fixtures=triad_a,triad_b objects=[201, 202, 203] fixed_head=true
+static_scene=true` and `[scene1a-policy] PASS frozen_fsg6f=true
+scheduler=area_then_score opportunistic=true all_object_completion=true`. All
+seven negatives exited 1. All twenty-one prior suites green, including
+`[fsg6f-check] passed=14 failed=0` and `[fsg7a-check] passed=7 failed=0`, plus
+FSG6f's fifteen and FSG7a's six negatives.
+
+Smoke (`triad_a`/1601/small, run 59.3 s exit 0 / eval 6.8 s exit 2): 14
+fixations, `object_budget_exhausted`, 41 numerical fails. Every integrity item
+that would have blocked full PASSED - first three fixations exactly the
+prescribed seeds, 14/14 unique gazes, per-object targets {201:4, 202:6, 203:4}
+inside the six-look budget, 14 <= 18, all three objects got autonomous attention,
+3 switches, `truth_opened: false`, opportunistic fired twice. No runtime
+exception, provenance/truth leak, scene-motion error, scheduler integrity error
+or broken FSG6f reuse, so full ran.
+
+Four full trials, each once. **All four ended `object_budget_exhausted`, never
+`scene_complete`.** triad_a/1601: 12 fixations, 4 switches, targets {201:5,
+202:6, **203:1**}, 2,516,582,400 samples, loop 144.9 s. triad_a/1667: 13, 5
+switches, {201:6, 202:6, **203:1**}, 2,726,297,600 samples, 161.9 s.
+triad_b/1601 and /1667: 11 fixations each, 3 switches, {201:6, 202:2, 203:3},
+2,306,867,200 samples, 141.9/141.6 s.
+
+**What the substrate did do.** In every trial the first three fixations were
+exactly the prescribed seeds, all later selection was autonomous, no physical
+fixation repeated, no object exceeded six targets, totals stayed under 18, every
+per-object map was pure in its own ID, and every fused patch replayed
+idempotently. Targeted overlap medians 2.01-5.11 mm and P95 5.43-11.33 mm all
+passed. Per-object surface accuracy passed everywhere: median 4.368-5.201 mm,
+P95 13.153-18.249 mm across all twelve object-instances. **The lexicographic rule
+was obeyed exactly: 39 autonomous decisions across the four trials, 39
+rule-compliant, 0 violations.**
+
+**Root cause, measured: a starvation loop in the scheduler's primary key.** The
+rule ranks by largest `predicted_new_angular_area_deg2`. An object that is not
+selected does not acquire, so its map does not change, so **its bid does not
+change**. On triad_a object 203's proposal is frozen at **area 105.48 / score
+18.12 for all ten decisions**, permanently below the 122-140 deg^2 that 201 and
+202 keep offering, so it receives **zero autonomous post-seed attention** and its
+map never leaves the seed state - coverage 0.4726 -> 0.4726, gain +0.0000, 23,197
+points, support histogram {1: 23197}, **not one multi-look surfel**. The sharp
+part: **203 carries the HIGHEST frontier score of the three at every decision**
+(18.12 against 12.86 and 19.28->6.74). It would have won on the second key, but
+the first key never ties so the second is never consulted. triad_b shows the same
+dynamic redistributed - 202 frozen at 110.93 for seven consecutive decisions
+before winning once and immediately reporting `no_frontier`; 203 frozen at 119.99,
+two looks, then 104.40 and never selected again, with the final decision
+separating 201 from 203 by **0.01 deg^2** (104.41 vs 104.40).
+
+Final object policy states: only 2 of 12 object-instances reached `no_frontier`
+(202 on both triad_b trials). The others ended `continue` with 21-98 OPEN
+frontier surfels and 1-4 live candidates. No object reached the 90% coverage
+gate; best was 0.7919.
+
+**Opportunistic processing fired but rarely, reported honestly.** Non-target
+objects were processed at every fixation (22-26 non-target patches per trial) but
+only 1-2 per trial cleared the 100-valid-point threshold and fused: triad_a steps
+6 and 7 (obj 202, 1360 and ~1367 points), triad_b step 7 (obj 202, 147 points).
+Not dead, but on deliberately angularly disjoint base scenes a 12-degree fovea
+rarely holds two objects, so it contributes little. That is a property of the
+separated base case, not evidence the mechanism is wrong.
+
+Visuals: `scene_map.png` shows the failure directly - objects 201 and 202 built
+up across many numbered fixation markers while **object 203 carries a single seed
+patch and the lone marker "2"**. `scene_surface_map.ply` carries "comment fixed
+head frame H; Stage II Scene-1a", has NO `element face`, 99,107 vertices
+(triad_a) and 91,598 (triad_b).
+
+**No code fix was required or made and no source file was modified.** The
+scheduler is faithfully implemented and fails, which the frozen contract defines
+as a scientific/specification result. Nothing was tuned - no fixture, geometry,
+instance ID, texture, seed, prescribed seed fixation, fixed-head/static-scene
+assumption, 2.10 m vergence, FSG1 instrument, FSG3 12 mm fusion or hash, FSG6f
+code or constant, six-look or 18-look budget, scheduler ordering, no-revisit
+rule, opportunistic rule or gate changed; nothing rerendered.
+
+Scope of what holds: three persistent object models were maintained
+simultaneously with pure per-object identity and idempotent fusion; attention
+switched autonomously 3-5 times per trial; per-object surface accuracy stayed
+inside the gates everywhere; and the frozen FSG6f controller was driven
+unmodified by import, with its full frontier-state, consensus and corridor record
+preserved in every proposal. **What is unresolved is attention allocation**:
+ranking by largest predicted new area is not stable under the fact that an
+unselected object's bid cannot change, and it admits a starvation fixed point in
+which the object most in need of looks is never selected at all. Stopped for
+Luiz/Chat.

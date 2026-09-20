@@ -1238,3 +1238,80 @@ stereo/fusion stack does place it coherently in H0 without ICP. What stands
 between that and a PASS is the FSG1 sub-pixel bias at a working distance beyond
 its prescribed vergence, which is a question about the instrument or the fixture
 distance, not about head motion.
+
+## D-SCENE1A - Stage II opens: seeded multi-object active reconstruction with a scene scheduler (2026-09-20)
+FSG6f / Increment 6 is **CLOSED/PASS** and is the frozen per-object active controller. FSG7a is preserved as an exploratory moving-head feasibility **FAIL** and is **deferred - the moving-head branch is not continued here**. Every earlier FSG record stands unedited, as does the accepted `z -> gaze` implementation repair; no prior decision block is modified.
+
+**Stage II returns to the project's base assumptions: fixed head, static scene.** Scene-1a is the first Stage II experiment and asks one question: can the fixed-head, static-scene observer maintain several persistent object models, allocate attention among them using their own unresolved state, return to objects when useful, and stop only when every object is independently complete?
+
+**Scene-1a imports the existing FSG6f controller; it does not copy or modify it.** The frontier extraction, the persistent OPEN/MAP_RESOLVED/BOUNDARY_RESOLVED surfel state, the candidate consensus, the projected binocular continuation corridor, the ranking and sort key, the 5-degree lattice and the per-object six-fixation budget are all reused by import. Verified before acquisition: `scene1a_policy.py` imports `fsg6f_frontier` and calls `object_policy.choose_next(...)` at a single site, and contains no copy of `extract_frontier`, `classify_frontier_state`, `candidate_state_consensus`, the corridor helpers, `_new_box_area` or the candidate sort. Also frozen: the FSG1 instrument `FSG1-HDR-SGBM-one-original-update-original-validity-v1`; FSG3 12 mm association and hash; fixed head and static scene; prescribed vergence 2.10 m; oracle instance segmentation as object identity only; no ICP, meshing, hole filling or learned policy.
+
+**The one new abstraction is a scene scheduler.** Three known objects carry instance IDs 201, 202 and 203, each with one prescribed seed fixation. Once all three seeds exist, every object asks the frozen FSG6f controller for its next action; FSG6f either reports `no_frontier` or returns its already-defined selected candidate with `predicted_new_angular_area_deg2`, `frontier_score` and a next yaw/pitch. The scheduler chooses **lexicographically: largest predicted new angular area, then largest frontier score, then smaller instance ID purely as a deterministic final tie-break.** No weight, learned utility or fitted scene-level constant is introduced. Scene completion is exactly `scene_complete <=> every object independently reports no_frontier`.
+
+**Opportunistic perception.** A physical fixation has one nominal attention target, but the stereo observation is processed for all known object IDs: any non-target object contributing at least 100 valid stereo points is fused into its own persistent map, and the completed binocular observation enters every object's history so later boundary resolution can profit from looks taken while attention was elsewhere. Physical gaze is **globally no-revisit**, and the global fixation history is supplied to each object's frozen FSG6f controller.
+
+Two fresh non-mirror scenes are used - `triad_a` (left-upper plane, centre-lower convex ribbon, right-upper convex ribbon) and `triad_b` (right-upper plane, left-upper convex ribbon, centre-lower convex ribbon) - with fresh Monte-Carlo seeds **1601** and **1667**, giving four full trials judged independently. The objects are angularly disjoint: **object-object occlusion is not part of Scene-1a.** All geometry lies inside the frozen FSG6f yaw/pitch domain. Each prescribed seed is analytically partial (about 29-53% ideal 12-degree box coverage) with at least one neighbouring 5-degree gaze that improves it; those are design checks, not results.
+
+Per-object gates: at least one autonomous post-seed target fixation; targeted patch object-measurement fraction >=90%; targeted post-seed overlap >=5,000 matched with median <=10 mm and P95 <=25 mm; idempotent replay for every fused patch; final map containing only the object's own instance ID; >=5,000 multi-look surfels; final analytic surface median <=10 mm and P95 <=30 mm; final truth coverage >=90%; final coverage gain over the object's seed-state map >=25 percentage points. Scene-level gates: the first three fixations are exactly the prescribed seeds; all later gaze selection is autonomous; every object receives autonomous post-seed attention; at least two post-seed attention switches; no physical fixation repeats; no object exceeds the frozen six-target budget; total scene budget <=18 physical fixations; final termination `scene_complete`; every final object policy state `no_frontier`. **Scene-1a passes only if all four fresh full trials pass.** Poor opportunistic visibility is descriptive, not a per-patch gate - only nominal target patches carry the inherited FSG measurement and overlap gates.
+
+Scene-1a does **not** address object discovery, object-object occlusion, semantics, moving objects or head motion; those are separate scene-stage questions once the scheduling/memory substrate works.
+
+Code may fix only a demonstrable implementation/runtime defect (undefined name, wrong path, schema mismatch), diagnosed first and repaired minimally. Never change the fixtures, object geometry, instance IDs, textures or fresh seeds; the three prescribed seed fixations; the fixed-head/static-scene assumptions; the 2.10 m vergence; the FSG1 instrument; the FSG3 12 mm fusion or hash; any FSG6f code, constant, frontier state, consensus, corridor, ranking or lattice; the per-object six-look or global 18-look budget; the scheduler ordering; the global no-revisit rule; the opportunistic all-known-object fusion and history; or any prospective gate. Add no object discovery, semantics, object-object occlusion logic, head motion, ICP, meshing, filling, learned policy, extra views, alternate seeds or rerenders after a numerical miss. **A faithfully implemented rule that fails is a scientific/specification result: preserve it and stop for Luiz/Chat.**
+
+Outcome 2026-09-20 (evidence: `docs/scene1a-stage2.md` Results and
+`docs/log.md`). **SCENE1A_STAGEII_FAIL**, trial_passes 0/4. The miss is
+preserved; **Scene-1a is NOT closed** and no next Stage-II experiment is
+authorized. FSG6f remains CLOSED/PASS and unmodified; FSG7a remains a preserved,
+deferred FAIL.
+
+`[scene1a-check] SUMMARY passed=8 failed=0`; all seven negatives exit 1; all
+twenty-one prior suites green including FSG6f (14) and FSG7a (7) with their full
+negative sets. The applied commit added exactly ten files, all additions, and an
+explicit diff over every FSG1-FSG7a source is empty.
+
+**The scheduler mechanics are correct and the failure is in the rule itself.** In
+every trial the first three fixations were exactly the prescribed seeds, all
+later selection was autonomous, no physical fixation repeated, no object exceeded
+six targets, totals stayed under 18, each per-object map was pure in its own ID,
+every fused patch replayed idempotently, targeted overlap medians ran 2.01-5.11
+mm with P95 5.43-11.33 mm, and per-object surface accuracy passed everywhere
+(median 4.368-5.201 mm, P95 13.153-18.249 mm across twelve object-instances).
+**The lexicographic ordering was obeyed at all 39 autonomous decisions with zero
+violations.**
+
+**Root cause, measured: a starvation fixed point in the primary key.** Ranking by
+largest `predicted_new_angular_area_deg2` is not stable, because an object that
+is not selected does not acquire, so its map does not change, so its bid does not
+change. On `triad_a` object 203's proposal is frozen at **area 105.48 / score
+18.12 for all ten decisions**, permanently below the 122-140 deg^2 the other two
+keep offering; it receives **zero autonomous post-seed attention** and ends at
+coverage 0.4726 -> 0.4726, gain +0.0000, support histogram {1: 23197} - **not one
+multi-look surfel**. Decisively, **203 carried the HIGHEST frontier score of the
+three at every decision** (18.12 vs 12.86 and 19.28->6.74): it would have won on
+the second key, but the first key never ties so the second is never consulted.
+`triad_b` redistributes the same dynamic - 202 frozen at 110.93 for seven
+consecutive decisions, 203 frozen at 119.99 then dropping to 104.40 and never
+selected again, with one decision separated by 0.01 deg^2. All four trials ended
+`object_budget_exhausted`, never `scene_complete`; only 2 of 12 object-instances
+reached `no_frontier`; no object reached the 90% coverage gate (best 0.7919).
+
+Opportunistic processing fired but rarely and is reported as such: 22-26
+non-target patches processed per trial, of which only 1-2 cleared the
+100-valid-point threshold and fused. On deliberately angularly disjoint base
+scenes a 12-degree fovea rarely holds two objects, so the mechanism is exercised
+but contributes little - a property of the separated base case, not evidence
+against the mechanism.
+
+**No code fix was required or made and no source file was modified.** A
+faithfully implemented rule that fails is a scientific/specification result under
+this decision, preserved rather than repaired. Nothing was tuned and nothing
+rerendered.
+
+Recorded for the next handoff: the memory and identity substrate works - three
+persistent object models maintained simultaneously, pure per-object identity,
+idempotent fusion, autonomous attention switching 3-5 times per trial, per-object
+accuracy inside the gates, and the frozen FSG6f controller driven unmodified by
+import. **What is unresolved is attention allocation.** Any successor rule has to
+break the fixed point in which an unselected object's bid cannot improve; the
+diagnostic to keep is that the starved object was the one with the highest
+frontier score at every decision.
