@@ -5031,3 +5031,175 @@ when the per-object budgets are consumed, leaving no slack for an object needing
 one more look. Any successor has to address the relationship between the
 per-object budget, the scene budget and the number of objects - not the ordering
 rule. Stopped for Luiz/Chat.
+
+### 2026-09-20 - Stage II / Scene-1c, certified composition of active object reconstructions: authorized, prospective entry (written before acquisition)
+
+Per `docs/scene1c-stage2.md` and D-SCENE1C appended just above. **FSG6f is
+CLOSED/PASS and frozen; FSG7a is a preserved, deferred FAIL; Scene-1a and
+Scene-1b remain preserved formal FAILs and are not edited or relabelled.**
+Scene-1b settled the scheduler abstraction (least autonomous post-seed service
+first, then area / frontier-score / instance-ID) with a 64/64 compliant audit and
+starvation gone; Scene-1c asks whether three active object processes **compose**
+when each actor is first prospectively certified solvable inside the unchanged
+six-look budget. Commands, written before running them:
+
+    .venv/bin/python -m py_compile tools/scene1c_{public,scene,policy,render_fix,certify_run,certify_eval,certify_compare,run,eval,compare}.py tools/dev/check_scene1c.py
+    .venv/bin/python tools/dev/check_scene1c.py --self-test
+    for n in incompletecert areaonly schedulercopy targetonly premature revisit truth overlap underdesigned budgetbump; do .venv/bin/python tools/dev/check_scene1c.py --negative "$n"; done
+    (all prior regression suites from the Scene-1b report, including FSG6f, FSG7a, Scene-1a and Scene-1b)
+    component smoke: scene1c_certify_run.py/-eval.py on cert_triad_e/1847/obj201 at --profile small
+    twelve full component controls: {cert_triad_e,cert_triad_f} x {1847,1901} x {201,202,203}
+    scene1c_certify_compare.py over all twelve -> must say SCENE1C_COMPONENT_CERTIFICATION_PASS with 12/12
+    ONLY THEN: ensemble smoke, then four full ensembles, then scene1c_compare.py with --certification
+
+**The authorization rule, on the record before any acquisition: full ensemble
+acquisition is FORBIDDEN unless all twelve component controls certify.** If the
+aggregate does not return exactly `SCENE1C_COMPONENT_CERTIFICATION_PASS` with
+12/12, I stop with `SCENE1C_COMPONENT_CERTIFICATION_FAIL`, preserve every
+control, and run no ensemble acquisition. A failed actor is not replaced,
+resized, reseeded or tuned. Certification is an authorization condition only and
+is never supplied to the scene policy as a runtime input.
+
+**Integrity audit, done before writing this entry.** HEAD `7c59ac6` on clean
+`main`; `3f4b490` confirmed an ancestor. `git diff --name-status 3f4b490 HEAD`
+shows exactly **thirteen files, all additions, no modifications**. An explicit
+`git diff 3f4b490` over the FSG1 stereo modules, `fsg3_surface_map.py`, every
+FSG6/6b/6c/6d/6e/6f module, every FSG7a module, **every `scene1a_*` and
+`scene1b_*` module** (including both dev checks), `rig.py`, `bl_common.py` and
+`requirements-fsg.txt` is EMPTY.
+
+Specific verifications required by the handoff, all measured: (1)
+`scene1c_policy.py` imports `scene1b_policy as frozen_scene_scheduler`, has
+**zero** direct `import fsg6f` lines, and aliases rather than reimplements every
+scheduler symbol - `remap_instance`, `remap_observation`, `proposal_rank_key`,
+`select_proposal`, `propose_for_object`, `choose_scene_action`,
+`split_visible_object_masks`, `is_global_repeat`; (2) `scene1b_policy.py` still
+imports `fsg6f_public` and `fsg6f_frontier` and shows no diff; (3)
+`scene1c_certify_run.py:46` and `scene1c_run.py:70` both invoke
+`tools/scene1c_render_fix.py`; (4) neither prediction runner nor the policy
+mentions `scene1c_scene`, `evaluation_only` or any `witness`, and both runners
+call `compute_once`; (5) constants equal Scene-1b exactly -
+`PER_OBJECT_MAX_FIXATIONS` 6, `MAX_SCENE_FIXATIONS` 18, `FUSION`
+{0.012, 0.012}, `TARGETS` identical with **no differing keys**, vergence 2.10,
+objects (201,202,203), instrument ID identical;
+`FROZEN_SCENE_SCHEDULER_ID = Scene1b-least-service-then-area-score-id-v1`,
+`FROZEN_OBJECT_POLICY_ID = FSG6f-candidate-frontier-consensus-v1`.
+
+The component protocol, restated: each control renders the **complete
+three-object fixture** with the same renderer, geometry, textures, seed and
+prescribed seed gaze the ensemble will use; reconstructs only the nominated
+object; lets unchanged FSG6f choose its later gazes; allows at most six target
+looks including the seed; sees no truth during prediction; and is judged by
+exactly the Scene-1b per-object gates, terminating `no_frontier`. Fresh scenes
+`cert_triad_e` / `cert_triad_f`, three compact convex ribbons each in angularly
+disjoint regions, fresh seeds 1847 and 1901. The evaluator-only three-look
+witness (>=98% ideal box coverage using three of six looks) is a **geometry
+sanity check only - not a prediction path and not the certification**.
+
+Cost class: checks Interactive; component smoke Interactive/Batch; **twelve full
+component controls plus four full ensembles is the largest acquisition of the
+project so far** - Scene-1b's four full trials alone ran ~250 s each, so the
+component stage is Batch and the whole run is expected to be the longest yet.
+Recorded here before it runs, per the Cost-classes rule.
+
+Likely failure modes, in the order I expect them: (a) one or more component
+controls fails to reach `no_frontier` within six looks, exactly as Scene-1b's
+objects did, in which case certification fails and **no ensemble is run at all** -
+this is the outcome the protocol is designed to detect cleanly; (b) all twelve
+certify but the ensemble still cannot finish, because interleaving changes each
+object's FSG6f history and hence its later state, which would be the genuinely
+interesting composition failure; (c) the ensemble completes but a per-object
+measurement or overlap gate misses on a patch near an object edge, as in every
+prior Stage-II smoke; (d) opportunistic fusion stays at zero as in Scene-1b,
+descriptive only; (e) only then suspect orchestration or the renderer. Diagnose
+before editing. **I will not change either fixture, any geometry, ID, texture or
+seed, the prescribed seeds, the fixed-head/static-scene assumptions, the 2.10 m
+vergence, the FSG1 instrument, the FSG3 fusion or hash, any FSG6f or Scene-1b
+code or constant, the six-look or 18-look budgets, no-revisit, the opportunistic
+rule or any gate to obtain a pass; I will substitute no actor, add no look,
+change no seed and relax no gate; and I will not rerender a numerical miss. A
+faithfully implemented rule that fails is a specification result: I preserve it
+and stop.**
+
+**Measured outcome, appended after the run (2026-09-20).**
+**`SCENE1C_COMPONENT_CERTIFICATION_FAIL`, control_passes 1/12.** Per the
+prospective decision rule recorded before acquisition, **the ensemble stage was
+NOT run**: no ensemble smoke, no full ensemble trials, no ensemble aggregate, no
+composition diagnostic. All twelve controls are preserved. Scene-1c is not
+closed.
+
+`[scene1c-check] SUMMARY passed=10 failed=0` with `[scene1c-scene] PASS
+fixtures=cert_triad_e,cert_triad_f objects=[201, 202, 203] fixed_head=true
+static_scene=true witnesses_lt_budget=true` and `[scene1c-policy] PASS
+frozen_fsg6f=true frozen_scene1b_scheduler=true fairness=true
+component_certification=true opportunistic=true`. All ten negatives exited 1
+including `incompletecert`, `schedulercopy` and `budgetbump`. All twenty-three
+prior suites green - Scene-1a (8), Scene-1b (9), FSG6f (14), FSG7a (7) - and
+Scene-1a's seven, Scene-1b's eight, FSG6f's fifteen and FSG7a's six negatives all
+still exit 1. `git diff 3f4b490` over the FSG1 stereo modules,
+`fsg3_surface_map.py`, all FSG6* / FSG7a / `scene1a_*` / `scene1b_*` modules,
+`rig.py`, `bl_common.py` and pins is EMPTY; Scene-1a and Scene-1b remain
+preserved formal FAILs, unedited.
+
+Component smoke (cert_triad_e/1847/obj201/small, run 34.1 s exit 0 / eval 2.9 s
+exit 2): 6 looks, `max_object_fixations`, coverage 0.4617 -> 0.9591. Integrity
+clean - `truth_opened` false, fixed/static true,
+`complete_three_object_scene_rendered` true, role
+`component_certification_control`, 6/6 unique gazes, FSG6f reached only through
+the frozen Scene-1b layer - so the full controls ran.
+
+Twelve full component controls, 11,744,051,200 primary camera samples total.
+**Only cert_triad_e/1847/obj203 certified** (4 looks, `no_frontier`, coverage
+0.6153 -> 1.0000, median 5.169 mm, 12,935 multi-look surfels, zero fails).
+Everything structural passed in every control: every map pure in its nominated
+ID, every fused patch idempotent, no physical fixation repeated, no control over
+six looks, and every surface median 5.169-6.616 mm with P95 16.252-18.092 mm
+inside the 10/30 gates.
+
+**Three distinct failure modes, separated cleanly by the protocol.**
+(1) **Premature `no_frontier` after one unproductive autonomous look** - object
+203 on e/1901, f/1847 and f/1901 took exactly one post-seed look and stopped with
+**gain exactly +0.0000** and 4,185-4,472 multi-look surfels against the 5,000
+gate. Against the recorded angular bounds (203 spans yaw [+6.180,+23.816] on e
+and [+5.554,+22.389] on f, seeds at +11 and +10), the failing runs moved to
+**(+6,+3)** and **(+5,+9)** - toward the near edge the seed already covers -
+while the one certifying control moved to **(+16,+13)** then (+21,+13),(+21,+8)
+into the unexplored far tail and reached 1.0000 in four looks. The e/1847 vs
+e/1901 pair is the sharpest comparison in the record: **identical fixture,
+identical prescribed seed gaze (+11,+8), different Monte-Carlo seed, opposite
+first autonomous decision, opposite outcome** - the only recorded difference is
+the renderer seed, so the divergence enters through stereo noise changing the
+frozen controller's first post-seed choice.
+(2) **`max_object_fixations` without `no_frontier`** - five controls
+(e/1847/201, e/1901/201, e/1901/202, f/1847/202, f/1901/202) used all six looks
+with the controller still reporting `continue`; three of them had already reached
+1.0000, 1.0000 and 0.9999 coverage, so the reconstruction was finished but the
+frontier was not declared resolved.
+(3) **Per-look measurement coverage below 0.90** in eleven of twelve controls,
+0.8669-0.8994 on the offending looks. Only e/1847/203 kept every look >=0.9036.
+No claim is made about *why* the first autonomous choice is seed-sensitive on
+this geometry; that is beyond what the recorded state supports.
+
+Proof the controls exercised the real context: all twelve manifests record
+`complete_three_object_scene_rendered: true`, and both runners invoke the
+identical `tools/scene1c_render_fix.py` (certify_run.py:46, run.py:70). These
+were not isolated single-object renders.
+
+**No code fix was required or made and no source file was modified.** No actor
+was replaced, resized, reseeded or tuned; no look added; no gate relaxed; FSG6f
+untouched. Nothing rerendered.
+
+What this establishes: **the certification protocol worked as designed and was
+worth running.** It detected, before any ensemble acquisition, that eleven of
+twelve actors are not solvable inside the unchanged six-look budget in the exact
+complete-scene rendering context - including a mode Scene-1b could not have
+isolated, where the frozen controller declares `no_frontier` after one
+unproductive look with zero gain. Run ensemble-first, those actor-level failures
+would have been confounded with scheduling and budget effects, exactly as
+Scene-1b's budget-sufficiency question was confounded with component
+solvability. **The composition question is not reached**: its premise
+(individually solvable actors) does not hold on these fixtures. The open question
+is now the frozen FSG6f controller's post-seed behaviour on this fixture family -
+why its first autonomous choice is seed-sensitive at object 203's seed, and why
+five controls exhaust six looks without resolving the frontier despite reaching
+~1.0 coverage. Stopped for Luiz/Chat.
