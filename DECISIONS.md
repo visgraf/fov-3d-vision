@@ -2568,3 +2568,115 @@ this loop. And **`OBSERVED_TARGET_NO_DEPTH` is exactly where Cyclopean-1d left
 it**: the question of what action, if any, belongs to a region the instrument
 cannot measure is untouched by a loop whose success consisted of stepping around
 it. **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1G - Cyclopean-1g: re-centered measurement probe (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a through 1f** are preserved exactly
+as acquired and are **not edited, relabelled or rerun**; FSG6f remains CLOSED/PASS
+and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1f reached **attention completion** on seed 2111: no exterior
+`NEVER_OBSERVED` shoreline remained, and the loop stopped on its own condition.
+What survives is qualitatively different from everything the series has chased so
+far - an internal residue **imaged as target** for which the frozen stereo
+instrument returned **no valid depth**. Looking harder is not obviously the
+answer, because the observer has already looked. This block asks one narrow
+question:
+
+> If that dominant `OBSERVED_TARGET_NO_DEPTH` residue is placed at the foveal
+> centre for **one** new look, does the **unchanged** stereo instrument recover
+> valid target depth there?
+
+Recorded for this step:
+
+- **The completed Cyclopean-1f seed-2111 record is the parent**, located by
+  manifest and read only, and its required conditions are asserted before
+  anything runs: `scientific_stop_reached` true, `stop_reason`
+  `NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`, `exterior_never_observed_cells` **0**,
+  and the established 28-cell residue present. Pinned hashes are verified
+  byte-identical afterwards.
+- **The candidate entity is the inverse of every earlier step.** Only
+  **`INTERNAL` + `OBSERVED_TARGET_NO_DEPTH`** is eligible - specifically the
+  component with the most such cells, and within it the eligible cell nearest
+  that residue's chart centroid, with a revisit falling through to the next cell
+  in the same centroid-distance ordering. **`NEVER_OBSERVED` and exterior
+  components are ineligible**, which reverses Cyclopean-1e/1f exactly.
+- **The only deliberate measurement change is re-centering.** The Reality/FSG
+  renderer, rectification, SGBM front end, baseline, vergence and render
+  settings, the chart, the footprint, the 12 mm fusion scale and every geometric
+  tolerance stay frozen. **This isolates foveal placement as the single
+  variable**, so a negative result means placement is not the cause.
+- **The outcome is binary and diagnostic, never a gate.** `DEPTH_RECOVERED` if
+  at least one pre-probe residue cell is observed as target *with* valid stereo
+  depth in the new look; `DEPTH_STILL_ABSENT` otherwise. **No recovered-cell
+  count, coverage figure or surfel gain is a PASS threshold**, and none may be
+  added after seeing the result.
+- **Exactly one added fixation, and the branch closes regardless of outcome.**
+  No second view, alternate matcher, interpolation, texture rescue, normal cue or
+  any new mechanism. A still-unmeasurable residue is **recorded and deferred, not
+  turned into a rescue subproject**.
+- **The only automated FAIL condition is structural**: parent and ancestry read
+  only and byte-identical afterwards; no parent fixation rerendered; exactly one
+  added fixation; no evaluator truth opened; inherited scales reused; any fused
+  patch target-pure and replay-idempotent.
+- **The deliberate negatives are restored to genuine source-mutation controls.**
+  Cyclopean-1f's named flags were declaration-only - they printed and exited 1
+  regardless of the code - and that weakness was recorded rather than patched.
+  Here each negative mutates the real source, re-evaluates the checks, and exits
+  1 **only if a previously-passing check now fails**, with an escaped mutation
+  reported as an error instead of a pass.
+
+**What this decision would resolve.** If re-centering recovers depth, then part
+of this measurement failure is a placement artifact and the instrument is less
+limited than it appeared. If depth is still absent with every other variable
+frozen, then the residue is a genuine limit of the current fixed-head stereo
+instrument on this material, and the case is closed and deferred rather than
+chased.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1g.md` Results and `docs/log.md`).
+**CYCLOPEAN1G_COMPLETE**, `structural_fails: []`, measurement outcome
+**`DEPTH_STILL_ABSENT`**. One added fixation, no parent rerender, parent
+byte-identical afterwards, no FAIL line anywhere. **Diagnostic only; no gate.**
+Cyclopean-1a..1f, the Reality Checks and FSG6f remain preserved and unedited. No
+prior decision is edited. **No code fix was made and nothing outside the seven
+Cyclopean-1g files was modified.**
+
+**The prewritten rule resolves on its second branch, as cleanly as it could.**
+The selector chose component **2** - **27** no-depth cells of 31, the dominant
+residue - and its centroid-nearest cell **(y=66, x=197)**, gaze
+**(+6.8000, -2.2000) deg**, `revisit_fallback_rank` **0**. In the new look **all
+27** residue cells had a **supported projection** and **all 27 were imaged as
+target**; **zero** recovered valid stereo depth, and **zero** saw non-target.
+**The re-centering worked as an acquisition change and the instrument still
+returned nothing.** Placement is not the cause.
+
+The re-centering is independently visible in the observation: with the residue at
+the fovea centre, the central **32x32** window is **23.0%** valid against
+**86.7%** frame-wide, and its mean RGB **[0.9514, 0.4590, 0.3305]** against a
+frame mean of [0.6358, 0.5021, 0.4057] - the saturated, near-uniform emblem,
+squarely in the fovea, with no internal detail for a correspondence matcher.
+
+**The residue count moved 28 -> 22, and this block records that as bookkeeping
+rather than progress.** Traced cell by cell: 21 kept, **7 disappeared, 1 newly
+appeared**, and **all 7 that disappeared became support** because the 194 newly
+fused surfels - all from the textured cloth *around* the emblem - brought their
+12 mm footprints over those rim cells. **Not one cell left the state by being
+measured.** Ordinary structural checks held: 55,567 target points, 194 new /
+55,373 matched (**99.7%** overlap within 12 mm), map 155,490 -> 155,684,
+replay-idempotent, ids exactly **{141}**, and the fusion reproduced **bitwise**
+independently of the runner.
+
+What would overturn or extend this. **One look, one residue, one seed.** It says
+nothing about whether some *other* instrument change - a different matcher,
+baseline, vergence, illumination or an active pattern - would recover the depth;
+**none was tried, by design**, and that is the deferred case. It is **not an
+accuracy claim**: evaluator truth stayed closed, so the 194 new surfels and the
+99.7% overlap are internal consistency only. And `DEPTH_STILL_ABSENT` is **not a
+failure of the experiment** - it is the measurement the experiment was built to
+take, and it closes the branch honestly rather than leaving an open rescue thread.
+
+**Disposition.** The residue is recorded as **unresolved under the current
+fixed-head stereo instrument and deferred**. **The intended next research stage
+is multiple objects** - declared before the run and unchanged by this outcome -
+progressing afterward toward the full cyclopean scene. **Luiz/Chat decide what to
+ask next.**

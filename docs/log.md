@@ -6744,3 +6744,140 @@ remain base-`UNOBSERVED`, 423 imaged-with-background and 28 seen-but-unmeasurabl
 seeds or scenes**; **the empty-look branch was never exercised**; and
 **`OBSERVED_TARGET_NO_DEPTH` remains exactly where 1d left it** - the loop's
 success is precisely a success at avoiding it. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1g, re-centered measurement probe: placement was not the cause
+
+Per `docs/cyclopean1g.md`, `docs/cyclopean1g-checks.md` and D-CYCLOPEAN1G, run on
+the prospective package Luiz applied and committed as **`8944c17`** (pre-1g
+parent `a4d9b7d`).
+
+**Measured outcome. `CYCLOPEAN1G_COMPLETE`, `structural_fails: []`, measurement
+outcome `DEPTH_STILL_ABSENT`.** One re-centered fixation, no parent rerender,
+parent byte-identical afterwards. The outcome is a **diagnostic label, not a
+PASS/FAIL** - no recovered-cell count is a gate and the branch closes either way.
+
+Provenance. Clean tree; **exactly the seven expected files, all `A`**; `git diff`
+against `a4d9b7d` over **59 frozen sources** - every FSG1/FSG3/FSG6f source,
+renderer, scene, rig, pin file, every Reality Check 1/2/2b source and **every
+Cyclopean-1a through 1f source** - **empty (0 lines)**, all 59 sha256 SAME; the
+acquisition path reused unchanged, `tools/reality2_render_fix.py`, is
+byte-identical at `9f1433d189fbcbb5...`, as is `fsg_stereo_supported.py` at
+`683ae91eaca7b6af...`. Parent located **by manifest**: exactly one
+`Cyclopean1f-epistemic-loop-v1` seed-2111 `full` record, with
+`scientific_stop_reached` true, `stop_reason`
+**`NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`**, `exterior_never_observed_cells` **0**
+and the established **28**-cell residue; pinned `prediction_manifest.json`
+`fee393ec99d0c81d...5fe9b647`, `surface_map.npz` `7bc4e94a9c24fea4...1bcf2cf6`,
+`epistemic_final.png` `200b6dd6f9a944eb...6380eea6`, all identical after.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **Interactive at 36.0 s**.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. **The six 1g
+negatives are genuine source-mutation controls and this was verified rather than
+assumed**: each mutates the real source, re-evaluates the checks and exits 1
+**only if a previously-passing check now fails**, each naming its detector -
+`external`/`unseen` by `internal_no_depth_only`, `multiprobe` by `one_probe`,
+`quality` by `binary_outcome_no_gate`, `rescueloop`/`truth` by
+`no_truth_or_rescue_loop`. The escape path was exercised: an inert mutation added
+to a scratch copy produced `ERROR noop mutation escaped detection` and **exit 2**,
+not a silent exit 1. This **restores the property Cyclopean-1f lacked**; the 1f
+caveat stands recorded and **1f was not edited here**. Prior suites green with
+sets still firing, **67 prior negatives, none weakened**: cyclopean1f/1e/1d/1c/1b/1a
+6/6 (6/6 each), reality2b 7/7 (10/10), reality1 6/6 (6/6), fsg6f 14/14 (15/15).
+
+Selection, on the inherited chart **263 x 199**, grid **0.1 deg**, footprint **4
+cells**, from **155,490** surfels at 17 fixations, new step **`fix_17`**:
+eligible INTERNAL no-depth components **2**; chosen component **2** with **27**
+no-depth cells of 31; residue centroid cell **(66.481, 196.926)**, nearest
+eligible cell **(y=66, x=197)** at squared distance **0.2373**; gaze
+**(+6.8000, -2.2000) deg**, `revisit_fallback_rank` **0**; state
+`OBSERVED_TARGET_NO_DEPTH`, kind `INTERNAL`, `never_observed_eligible` false;
+the 27 local range references span **2.1177 / 2.1474 / 2.1800 m**, all finite.
+`NEVER_OBSERVED` was ineligible by construction and empty anyway at this parent.
+
+**The one look.** Unchanged `reality2_render_fix.py`, frozen stereo, vergence and
+render settings; the **only** deliberate change is where the fovea points. The
+pre-probe residue cells evaluated in the new observation using their existing
+continuation points and the saved oracle/valid masks: **27** selected cells,
+**27** target-seen, **0** recovered valid-target-depth, **0** non-target-seen,
+**0** unsupported → **`DEPTH_STILL_ABSENT`**.
+
+**This is the cleanest form the negative could take.** The re-centering *worked*
+as an acquisition change - all 27 cells had a supported projection and all 27
+were imaged as target, none outside the core, none on background - and the
+instrument still returned no depth for a single one. **Placement is not the
+cause.** The re-centering is independently visible: with the residue at the fovea
+centre the central **32x32** window is only **23.0%** valid against **86.7%**
+frame-wide (60.9% at 64x64, 76.1% at 96x96), and its mean RGB is
+**[0.9514, 0.4590, 0.3305]** against a frame mean [0.6358, 0.5021, 0.4057] - the
+saturated emblem, squarely in the fovea. Frame-wide, valid pixels carry median
+local texture **0.01031** against **0.00501** for invalid ones.
+
+Fusion under the unchanged 12 mm contract: **55,567 target points**, **194 new**
+/ **55,373 matched**, map **155,490 -> 155,684** (+0.12%), multi-look
+**89,740 -> 97,825**, max support **5 -> 6**, ids **{141}**, `idempotent_replay`
+**true**. Verified independently: `map_before` equals the 1f `surface_map`
+bitwise; refusing the recomputed patch reproduces the saved map **exactly - xyz
+max difference 0.00 nm** with support, provenance and ids identical; replay gives
+`duplicate_patch: true`, new 0, matched 0. Observation **56,852 of 65,536** valid
+(**86.7%**), instances **{141: 55,567, 143: 1,285}**. **Only 194 of 55,567 points
+were new - 99.7% matched within 12 mm** - expected and itself informative: the
+re-centered fovea looked almost entirely at surface the map already had, because
+the one thing it was aimed at is the one thing it cannot measure.
+
+**The residue moved 28 -> 22, and that is bookkeeping, not progress.** Traced cell
+by cell: **21 kept, 7 disappeared, 1 newly appeared**, and **all 7 that
+disappeared became support** - the 194 newly fused surfels, all from the textured
+cloth *around* the emblem, brought their 12 mm footprints over those rim cells.
+**Not one cell left the state by being measured.** After the look: shoreline
+**1,000 -> 990**, support **43,001 -> 43,011**, complement **9,336 -> 9,326**;
+refined census `NEVER_OBSERVED` **0**, `OBSERVED_TARGET_NO_DEPTH` **22**,
+`OBSERVED_TARGET_WITH_DEPTH` **0**, `OBSERVED_NONTARGET_ONLY` **421**,
+`MIXED_OBSERVATION` **0**, `NO_RANGE_REFERENCE` **74**. The residue persists as
+two components, **23** cells at **(+6.6609, -2.1391)** and **2** at
+**(+7.4500, -2.1000)**.
+
+Coherence, **not** accuracy (truth stayed closed; no 1g source mentions
+`evaluation_only`, `reality2b_eval` or a truth file): overlap agreement is the
+highest in the series at **99.7%** within 12 mm; pre-existing surfels moved by
+median **0.0000**, p99 **1.72**, max **5.87 mm**; the 194 new surfels span
+[2.0855, 2.2139] m inside an old envelope [2.0659, 2.2372] with **zero** outside;
+purity ids exactly **{141}**.
+
+Visual reading. `probe_rgb.png` shows the emblem at the centre of the fovea, a
+flat and almost perfectly uniform ellipse with the printed blue band to its left
+- no internal detail for a correspondence matcher to lock onto.
+`epistemic_before.png` and `epistemic_after.png` are almost indistinguishable:
+solid grey support, cyan and blue rim, and the small **orange
+`OBSERVED_TARGET_NO_DEPTH` crescent** middle-right, marginally thinner after (the
+7 rim cells that became support) but unmistakably still there. **One re-centered
+look changed essentially nothing about the residue, and the picture says so.**
+
+**No structural FAIL line anywhere, and no code fix was made**; nothing outside
+the seven 1g files was modified. The inherited `RuntimeWarning: invalid value
+encountered in cast` from `cyclopean1a_topology.py:117-118` appears again -
+**36** occurrences - and is recorded again as harmless: `_indices` filters on an
+**explicit** `isfinite` term, and a NaN-prefiltered rebuild raises **0** warnings
+with **bitwise identical** evidence arrays. The **8,684** non-finite angle pairs
+at `fix_17` are exactly its invalid-pixel count.
+
+What this establishes: **foveal re-centering alone does not rescue this
+measurement failure.** With every other acquisition variable frozen - matcher,
+baseline, vergence, render settings, chart, footprint, fusion, every tolerance -
+the experiment isolates placement, and placement is not the cause. Also, more
+narrowly, **the 28 -> 22 change is bookkeeping and the record says so rather than
+reporting it as improvement**. What it does not establish: **one look, one
+residue, one seed**, saying nothing about whether some *other* instrument change -
+a different matcher, baseline, vergence, illumination or active pattern - would
+recover the depth, **none of which was tried, by design**; and it is **not an
+accuracy claim**, since truth stayed closed. `DEPTH_STILL_ABSENT` is not a failure
+of the experiment - it is the measurement the experiment was built to take.
+
+**Branch disposition, as declared before the run**: Cyclopean-1g stops after this
+one look regardless of outcome. The residue is recorded as **unresolved under the
+current fixed-head stereo instrument and deferred**; no second view, alternate
+matcher, interpolation, texture rescue or normal cue was attempted and none is
+proposed. **The intended next research stage is multiple objects, unchanged by
+this outcome** - it was the declared next step either way - progressing afterward
+toward the full cyclopean scene. Stopped for Luiz/Chat.
