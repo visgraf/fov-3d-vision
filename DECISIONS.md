@@ -2201,3 +2201,130 @@ within the frozen 12 mm radius - but coherent is not accurate. The sharpest
 question this run raises is not whether topology can aim a look, which it did,
 but **what a topology-driven controller should do when the thing it can see is
 something the instrument cannot measure**. **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1D - Cyclopean-1d: observation versus measurement (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a, 1b and 1c** are preserved exactly
+as acquired and are **not edited, relabelled or rerun**; FSG6f remains CLOSED/PASS
+and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1c filled a bay with one chart-chosen fixation and left a tiny residue
+that its own diagnosis called **seen but not measured** - image evidence existed
+where frozen stereo returned no valid depth. That exposed a flaw in the
+vocabulary rather than in the instrument: the Cyclopean-1b state `UNOBSERVED`
+means only "no valid 3D evidence landed here", which silently merges two
+different situations. Cyclopean-1d asks only:
+
+> Of the final shoreline cells that the frozen Cyclopean-1b semantics still call
+> `UNOBSERVED`, which were **truly never imaged**, and which were **imaged as
+> target but not measured in depth**?
+
+Read-only. It takes no look. **The representation should first say what actually
+happened, so no controller has to invent a heuristic for it later.**
+
+Recorded for this step:
+
+- **The completed Cyclopean-1c seed-2111 record is the parent**, located by
+  manifest, and its whole ancestry - Cyclopean-1b, Cyclopean-1a, Reality Check 2b
+  and Reality Check 1 - is **read only**. All pinned hashes are verified
+  byte-identical after the audit.
+- **Nothing is acquired.** No Blender process, no fixation, no fusion, no write
+  into any parent. Only already-saved calibration, rectification, crop, oracle
+  instance masks, calibration support and the frozen stereo `valid` mask are read.
+- **The base semantics are not redefined.** The final Cyclopean-1c support is
+  rebuilt on the exact inherited chart and Cyclopean-1b's shoreline states are
+  reused unchanged; `PHYSICAL_DEPTH_BREAK` and `AMBIGUOUS` are untouched, and
+  **only** base-`UNOBSERVED` cells are refined.
+- **Observation and measurement are independent fields.** Target instance at a
+  calibration-supported projected pixel means the target was **observed**; that
+  same pixel also satisfying the saved `valid` mask means depth was **measured**.
+  Collapsing the two is a deliberate negative (`depthonly`) that must fail.
+- **The continuation test point is a projection hypothesis and never geometry.**
+  It uses only the inherited Cyclopean-1b `local_target_range_m` on the cell's
+  cyclopean ray, to ask what completed images contained at its projected
+  location. **It is never fused and never treated as measured surface.**
+- **No texture or quality threshold is introduced.** The audit reads the
+  instrument's already-saved validity rather than reverse-engineering why stereo
+  failed. Cyclopean-1c's texture statistics were a diagnosis, not a rule.
+- **Six refined states, all descriptive**: `NEVER_OBSERVED`,
+  `OBSERVED_TARGET_NO_DEPTH`, `OBSERVED_TARGET_WITH_DEPTH` (diagnostic - imaged,
+  measured, yet still outside support), `OBSERVED_NONTARGET_ONLY`,
+  `MIXED_OBSERVATION`, and `NO_RANGE_REFERENCE` for cells where the inherited
+  local range is undefined so no projection is attempted.
+- **No state selects a fixation.** No gaze policy, no ranking, no stopping change,
+  no FSG6f import, no mesh, no morphology, no minimum-arc pruning, no normal cue,
+  no evaluator truth, and **no percentage becomes a completeness gate**.
+- **The only automated FAIL condition is structural**: parent and ancestry read
+  only and byte-identical afterwards; no acquisition launched; no evaluator truth
+  opened; inherited chart, footprint and boundary scale reused; observation kept
+  separate from depth.
+- **A projection defect may be repaired from camera geometry and round-trip or
+  known-point checks only.** An empirical pixel offset, dilation, tolerance or
+  texture threshold introduced **after seeing the result** is forbidden; if the
+  declared continuation projection were intrinsically too ambiguous to support the
+  audit, the run stops for Luiz/Chat rather than being tuned. The inherited
+  NaN-cast warning remains outside this step.
+
+**What this decision would resolve.** If the refinement separates the residue that
+Cyclopean-1c called seen-but-unmeasured from boundary that was genuinely never
+imaged, then the representation can state *why* a boundary is still open, and the
+open question becomes what a controller should do differently for each cause. If
+every cell looks alike, the distinction is not carried by the saved record and
+the conflation stays.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1d.md` Results and `docs/log.md`).
+**CYCLOPEAN1D_COMPLETE**, `structural_fails: []` - read-only, parent and ancestry
+byte-identical afterwards, no Blender process, no FAIL line anywhere. **Structural
+only; no state is a PASS and none selects a fixation.** Cyclopean-1a/1b/1c, the
+Reality Checks and FSG6f remain preserved and unedited. No prior decision is
+edited. **No code fix was made and no source file was modified.**
+
+**The prewritten rule resolves on its first branch, and more sharply than it
+asked.** Replaying **14 completed fixations** (`fix_00`..`fix_13`) split the
+**918** base-`UNOBSERVED` cells exactly, with nothing left over, and the split
+follows an anatomical line:
+
+- **`OBSERVED_TARGET_NO_DEPTH` 28 cells - every one of them internal.** Component
+  2 gives 27 cells at (+6.7926, -2.1519) with **27 target-seen and 0 depth-valid**
+  over 27 supported projections; component 1 gives 1 cell at (+7.3000, -2.9000).
+  Both centroids match the residue Cyclopean-1c reported. **Every internal cell
+  with a range reference is seen-but-unmeasured, 28 of 28, and not one is
+  `NEVER_OBSERVED`.** Of the 14 views, **exactly one - `fix_13`, the 1c probe
+  itself - contributed any supported projection there.** This confirms
+  Cyclopean-1c's emblem diagnosis **from the instrument's own saved `valid` mask**
+  rather than from the RGB texture proxy 1c had to use.
+- **`NEVER_OBSERVED` 388 cells in one single arc**, centroid (-3.621, +2.306), at
+  the maximum penetration depth **168** - the deep bay remnant. All **5,432**
+  projection attempts (388 cells x 14 views) fell **entirely outside the rectified
+  core of every view**; zero landed inside a core at all. Absence of attention in
+  the strongest available sense, and checked rather than assumed.
+- **`OBSERVED_NONTARGET_ONLY` 398 cells on the outer rim** - imaged, with the
+  continuation hypothesis finding background rather than target. Not unexplored:
+  the object ends, and the boundary stayed open only because the inherited state
+  had no way to say so.
+- **`NO_RANGE_REFERENCE` 104 cells**, all at distance **5.10 cells** from the
+  nearest raw support, strictly beyond the inherited 5-cell disk - a deterministic
+  artifact of the inherited radius, left unadjusted because widening it would be a
+  new tolerance.
+
+**Two of the six states never fired**: `OBSERVED_TARGET_WITH_DEPTH` and
+`MIXED_OBSERVATION` are both **0**. Preserved as honest nulls; the diagnostic
+state finding nothing means no fusion or support-rasterization loss showed up.
+
+**The projection was validated before it was trusted**, because the shipped
+self-test uses an identity `R_hc` and cannot confirm the convention on real data:
+round-tripping each observation's own reconstructed points gave **0.0000 px**
+median, p95 **and max** reprojection error on all three ancestry branches. No
+defect, and no empirical offset was introduced.
+
+What would overturn or extend this. **Nothing here changes any controller** - no
+gaze proposed, no ranking touched, no stopping rule consulted, FSG6f never
+imported - and **no completeness claim is made**: 42.27% and 43.36% describe a
+shoreline, not an object. **The continuation test point remains a hypothesis**, so
+`OBSERVED_NONTARGET_ONLY` is evidence about that hypothesis at that assumed range,
+not proof the surface ends; a different continuation range could read differently
+and none was tried. **104 cells stay unclassified by construction.** The sharp
+question this run hands forward is the one it deliberately refuses: **what should
+a controller do differently for boundary that was never seen versus boundary the
+instrument cannot measure** - the first is answerable by looking, the second is
+not. **Luiz/Chat decide what to ask next.**

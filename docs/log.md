@@ -6306,3 +6306,160 @@ gap this method can close**, which means bay depth alone would keep proposing
 looks at a spot the instrument cannot resolve. That last point is the sharpest
 thing this run says about using topology to drive stopping, and it is a caution,
 not a result. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1d, observation versus measurement: the same word was hiding three situations
+
+Per `docs/cyclopean1d.md`, `docs/cyclopean1d-checks.md` and D-CYCLOPEAN1D, run on
+the prospective package Luiz applied and committed as **`47b33f2`**.
+
+**Measured outcome. `CYCLOPEAN1D_COMPLETE`, `structural_fails: []`.** Read-only:
+the Cyclopean-1c record and its whole ancestry were never written, and the four
+pinned parent files are byte-identical afterwards. Structural only - **no quality
+gate exists here, no state is a PASS, and no refined state selects a fixation or
+touches stopping.**
+
+Provenance. Clean tree at `47b33f2`; **exactly seven files, all `A`**; `git diff`
+against the Cyclopean-1c result commit `b32ce44` over **44 frozen sources** -
+every FSG1/FSG3/FSG6f source, renderer, scene, rig, pin file, every Reality Check
+1/2/2b source and **every Cyclopean-1a, 1b and 1c source** - **empty (0 lines)**,
+all 44 sha256 SAME. Parent located **by manifest**: exactly one
+`Cyclopean1c-bay-probe-v1` record, `previews/cyclopean1c/full-seed2111`, pinned
+`prediction_manifest.json` `fb4e250959288019...75945b12`, `surface_map.npz`
+`66adebea5ece578f...ca54b7fb`, `probe_patch.npz` `52f052d153e0c032...767b1b24`,
+`shoreline_after.png` `f187ae296c30fc03...a133607c8`, all identical after.
+Ancestry followed to its root: Reality Check 1 `full-seed2111` supplies fixations
+**0-5**, Reality Check 2b `full-seed2111` fixations **6-12**
+(`parent_fixation_count` 6, 13 gazes), Cyclopean-1a **none** (seed 2111 took no
+1a probe), Cyclopean-1b **none** (read-only), Cyclopean-1c fixation **13**. **14
+completed fixations, `fix_00`..`fix_13`**, replayed from saved calibration,
+rectification, oracle instance mask, calibration support and frozen stereo
+`valid` mask.
+
+Nothing was acquired, verified rather than asserted: no `subprocess`, `blender`
+or `bpy` token in any 1d source, no Blender process, and the output holds exactly
+three host artifacts with no `acquisition/`, `.ply`, `.exr` or `render.log`
+beneath it. **Interactive at 2.6 s** under `.venv/bin/python` 3.12.3.
+
+Checks. `py_compile` clean on all five modules; the three prescribed lines
+verbatim - `[cyclopean1d-epistemic] PASS never_observed=true seen_no_depth=true
+measured=true mixed=true projection=true`, `[cyclopean1d-policy] PASS
+parent=cyclopean1c read_only=true observation_separate_from_depth=true
+no_acquisition=true no_policy=true quality_gated=false`, `[cyclopean1d-check]
+SUMMARY passed=6 failed=0`; all six negatives exit 1 (`depthonly`, `acquire`,
+`truth`, `policy`, `threshold`, `mutateparent`). Prior suites green with negative
+sets still firing: **cyclopean1c 6/6 (6/6)**, **cyclopean1b 6/6 (6/6)**,
+**cyclopean1a 6/6 (6/6)**, **reality2b 7/7 (10/10)**, **reality1 6/6 (6/6)**,
+**fsg6f 14/14 (15/15)**.
+
+**The projection was validated before it was trusted.** The shipped self-test
+uses an identity `R_hc` and `R1`, so it cannot confirm the head-to-camera
+convention on real data, and a wrong convention would silently mislabel every
+cell. Each observation's own reconstructed head-frame points were therefore
+pushed back through `project_head_to_rectified_core` and compared with the pixels
+they came from: reprojection error median/p95/**max** = **0.0000 px** on
+`fix_00` (44,518 points, Reality Check 1 branch), `fix_09` (25,268, RC2b branch)
+and `fix_13` (53,894, the 1c probe), 100% within 0.5 px, `crop_xywh`
+`[192,192,256,256]` on a 256x256 core. `R_hc`, `R1`, `P1` and the crop offset are
+exact. **No projection defect, and no empirical offset, dilation or tolerance was
+introduced.**
+
+Base, unchanged: chart **263 x 199**, grid **0.1 deg**, footprint **4 cells /
+0.322236 deg**, map **137,734** points, shoreline **1,384** cells.
+`PHYSICAL_DEPTH_BREAK` (314) and `AMBIGUOUS` (152) were **not redefined**; only
+the **918** base-`UNOBSERVED` cells were refined.
+
+The refinement, summing exactly to 918 with nothing left over: **`NEVER_OBSERVED`
+388** (42.27%, all exterior), **`OBSERVED_TARGET_NO_DEPTH` 28** (3.05%, all
+internal), **`OBSERVED_TARGET_WITH_DEPTH` 0**, **`OBSERVED_NONTARGET_ONLY` 398**
+(43.36%, all exterior), **`MIXED_OBSERVATION` 0**, **`NO_RANGE_REFERENCE` 104**
+(100 exterior + 4 internal). Exterior 886, internal 32. By arc: **141** total -
+`NEVER_OBSERVED` **1** arc/388 cells, `OBSERVED_TARGET_NO_DEPTH` **2** arcs/28,
+`OBSERVED_NONTARGET_ONLY` **44** arcs/398, `NO_RANGE_REFERENCE` **94** arcs/104.
+**The exterior/internal split is total**: no cell family overlaps.
+
+**The Cyclopean-1c diagnosis is confirmed, from a stronger source.** 1c inferred
+its residue was seen-but-unmeasured from an RGB texture proxy; 1d reads the
+instrument's own **saved `valid` mask** and no texture threshold at all. Component
+2 (31 cells) refines to **27 cells `OBSERVED_TARGET_NO_DEPTH`** at (+6.7926,
+-2.1519) with **27 target-seen, 0 depth-valid, 27 supported projections**, plus 4
+`NO_RANGE_REFERENCE` cells; component 1 refines to **1 cell
+`OBSERVED_TARGET_NO_DEPTH`** at (+7.3000, -2.9000). Both centroids match the
+components 1c reported at (+6.7903, -2.1484) and (+7.3000, -2.9000). **Every
+internal cell with a range reference is `OBSERVED_TARGET_NO_DEPTH` - 28 of 28 -
+and not one is `NEVER_OBSERVED`.** Per observation: of the 14 completed views
+**exactly one, `fix_13`, the 1c probe itself, contributed any supported
+projection** (28 of 28 target-seen, 0 depth-valid); all thirteen earlier views
+contributed **zero**. The region was imaged once, by the very fixation that
+filled the bay around it, and the frozen instrument returned no depth.
+
+**The remaining exterior bay is genuinely unseen.** It is **one single
+`NEVER_OBSERVED` arc of 388 cells** - 42.27% of all remaining unobserved
+shoreline - centroid **(-3.621, +2.306)**, at the maximum exterior penetration
+depth **168**, with 0 target seen, 0 non-target seen and **0 supported
+projections**. That zero was checked rather than assumed, because it could mean
+*out of frame* or *in frame but outside calibration support*: over all **5,432**
+attempts (388 cells x 14 views), **5,432 (100.00%) fell entirely outside the
+rectified core of every view** and **zero** landed inside a core at all. Absence
+of attention in the strongest available sense.
+
+**The 398 `OBSERVED_NONTARGET_ONLY` cells are a different thing entirely**, and
+they sit on the **outer rim** - largest arcs at (+5.500, +9.542) 71 cells,
+(+12.209, +8.309) 45, (-11.116, +9.789) 45, (-6.955, +10.580) 20, all shallow
+(depth 4-22). There the continuation hypothesis *was* carried into completed
+imagery and found **non-target** - background, table or room. Those cells are not
+unexplored; the object ends, and the boundary stayed open only because the
+inherited base state had no way to say so.
+
+`NO_RANGE_REFERENCE` is a deterministic artifact of the inherited radius, not a
+defect: all **104** cells lie at distance **min 5.10, median 5.10, max 5.10**
+cells from the nearest raw target support, every one strictly beyond the
+inherited local-range disk radius `footprint_cells + 1 = 5` (5.10 is sqrt(26),
+the first lattice distance past 5). The Cyclopean-1b local target range is simply
+undefined there, so by contract no continuation point was built. **Nothing was
+adjusted to reduce them**; widening that radius would be a new tolerance.
+
+**Two states never occurred, and both were preserved rather than explained
+away.** `OBSERVED_TARGET_WITH_DEPTH` is **0** - the state the contract calls
+diagnostic, which would have indicated fusion or support-rasterization loss - and
+`MIXED_OBSERVATION` is **0**, consistent with target evidence appearing only on
+the internal residue and non-target evidence only on the outer rim. Four of six
+declared states carry all 918 cells; the vocabulary is wider than this record
+needs.
+
+Visual reading. `epistemic_shoreline.png` separates three reasons a boundary
+stays open and they are distinct at a glance: the residual L-shaped bay slot
+centre-left is entirely **red `NEVER_OBSERVED`**; the outer rim is **cyan
+`OBSERVED_NONTARGET_ONLY`** - looked at, and the object ends; a small **orange
+crescent** middle-right is `OBSERVED_TARGET_NO_DEPTH`, the emblem residue; and
+the bottom edge stays **blue `PHYSICAL_DEPTH_BREAK`** with purple `AMBIGUOUS`,
+both inherited and untouched. No yellow and no magenta appear anywhere. The
+rendering was verified against the report rather than read by eye: counting
+legend-colour pixels and dividing by the 3x upscale gives exactly **388 / 398 /
+28 / 104 / 314 / 152** cells and **38,971** support cells.
+
+**No structural FAIL line was produced anywhere, and no code fix was made**; no
+source file was modified. The inherited `RuntimeWarning: invalid value
+encountered in cast` from `cyclopean1a_topology.py:117-118` appears again - **28**
+occurrences - and is recorded again as harmless, now tested against the 1d output
+itself: rebuilding the whole audit with a NaN-prefiltered `_indices` raises **0**
+warnings and yields **bitwise identical** `raw_support`, `support`, `shoreline`,
+base `state_code`, `local_target_range_m`, `component_labels` **and the refined
+state array**, with all six counts unchanged. It changes no 1d number, so the
+parent was correctly left alone.
+
+What this establishes: **the old `UNOBSERVED` really was conflating different
+situations, and separating them costs nothing but bookkeeping**; on this record it
+splits along an anatomical line - **internal = seen but unmeasured, deep exterior
+= never seen, rim = imaged and the object ends** - and it confirms the 1c emblem
+diagnosis from the instrument's own valid mask. What it does not establish:
+**nothing here changes any controller** - no gaze proposed, no ranking touched, no
+stopping rule consulted, FSG6f never imported; **no completeness claim is made**,
+since 42.27% and 43.36% describe a shoreline and not an object; **the continuation
+test point is a projection hypothesis, never geometry**, so
+`OBSERVED_NONTARGET_ONLY` is evidence about the hypothesis at that assumed range
+rather than proof the surface ends, and no other range was tried;
+**`NO_RANGE_REFERENCE` leaves 104 cells unclassified** by construction; and **two
+of six states never fired**, so the full vocabulary is unexercised. The obvious
+next question - what a controller should do differently for *never seen* versus
+*seen but unmeasurable* - is exactly what 1d refuses to answer. Stopped for
+Luiz/Chat.
