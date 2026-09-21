@@ -1315,3 +1315,70 @@ import. **What is unresolved is attention allocation.** Any successor rule has t
 break the fixed point in which an unselected object's bid cannot improve; the
 diagnostic to keep is that the starved object was the one with the highest
 frontier score at every decision.
+
+## D-SCENE1B - Fairness before utility: least-served-first scene scheduling (2026-09-20)
+FSG6f / Increment 6 is **CLOSED/PASS** and remains the frozen per-object controller. FSG7a is a **preserved, deferred moving-head FAIL** and is not reopened. **Scene-1a remains a formal FAIL in the record and is not edited**; its multi-object memory, identity and fusion substrate worked, but its unconstrained area-first scheduler admitted a starvation fixed point - a live object could stay unvisited because its bid did not change while other objects kept winning the primary key. On `triad_a` object 203 was frozen at area 105.48 / score 18.12 for all ten decisions, took zero autonomous looks and ended with not one multi-look surfel, while carrying the highest frontier score of the three at every decision.
+
+**Scene-1b changes exactly one abstraction: the scene scheduler.** For each live object `i` let `n_i` be the number of autonomous post-seed target fixations already allocated to it. Compute `n_min = min_i n_i` over **live objects only**. Only objects with `n_i == n_min` are eligible for the next scene action. Within that fairness class the Scene-1a utility ordering is retained **exactly**: largest FSG6f `predicted_new_angular_area_deg2`, then largest FSG6f `frontier_score`, then smaller instance ID as a deterministic final tie-break. A completed object (`no_frontier`) leaves the live set and does not constrain the service count of the remaining objects. **No fitted weight, learned utility, confidence threshold, age bonus, starvation timeout, weighted sum or round-robin hard-coding is introduced** - fairness is a structural eligibility constraint and the old utility is preserved as the within-class ranking.
+
+**Scene-1b does not repair or alter the object controller.** It imports the existing FSG6f controller unchanged; verified before acquisition that `scene1b_policy.py` imports `fsg6f_frontier` and calls `object_policy.choose_next(...)` at a single site, defining none of FSG6f's frontier extraction, persistent state classifier, candidate consensus, projected corridor, `_new_box_area` or candidate ranking. Also frozen: the FSG1 instrument; FSG3 12 mm association and hash; fixed head, static scene, 2.10 m vergence; oracle instance segmentation; the six-target-per-object and 18-look global budgets; opportunistic all-known-object processing from every physical fixation; global physical no-revisit; and scene completion only when every object independently reports `no_frontier`. No ICP, meshing, hole filling, object discovery, learned policy, semantics, head motion or object-object occlusion logic.
+
+**Scene-1b also uses fresh, deliberately easier base fixtures so this experiment isolates scheduling from Scene-1a's harder geometry** - `fair_triad_c` (upper-left plane, lower-centre convex ribbon, upper-right convex ribbon) and `fair_triad_d` (lower-centre plane, upper-left convex ribbon, upper-right convex ribbon), with all front surfaces near the validated 2.10 m vergence regime and objects compact and angularly disjoint. Fresh Monte-Carlo seeds **1723** and **1789**. Each object has one prescribed partial seed. Evaluator-only geometry carries a three-look 5-degree-lattice **design witness** from each seed covering at least 98% of the analytic object under ideal 12-degree boxes using only three of the six available looks; **the witness is not exposed to the prediction loop, is not a prescribed path and is not a policy prediction** - it is a prospective scene-design reachability check only, and the check suite asserts the prediction side contains no witness reference.
+
+Per-object gates, unchanged from Scene-1a plus one addition: at least one autonomous post-seed target fixation; targeted patch object-measurement fraction >=90%; targeted post-seed overlap >=5,000 matched with median <=10 mm and P95 <=25 mm; idempotent replay for every fused patch; final map containing only the object's own instance ID; >=5,000 multi-look surfels; final analytic surface median <=10 mm and P95 <=30 mm; final truth coverage >=90%; final coverage gain over the object's seed-state map >=25 percentage points; **and final per-object policy state `no_frontier`**. Scene-level: the first three fixations are exactly the prescribed seeds; all later selection autonomous; **every scheduler decision obeys least-service eligibility before the frozen area/score/ID ordering**; every object receives autonomous post-seed attention; at least two post-seed attention switches; no physical fixation repeats; no object over six targets; total <=18; final termination `scene_complete`. **Scene-1b passes only if all four fresh full trials pass and the aggregate returns `SCENE1B_STAGEII_PASS`.** Poor opportunistic visibility remains descriptive, not a per-patch gate.
+
+Code may fix only a demonstrable implementation/runtime defect, diagnosed first and repaired minimally. Never change the fixtures, object geometry, types, IDs, textures or fresh seeds; the three prescribed seed fixations; the fixed-head/static-scene assumptions; the 2.10 m vergence; the FSG1 instrument; the FSG3 12 mm fusion or hash; any FSG6f code, constant, frontier state, consensus, corridor, ranking or lattice; the six-look or 18-look budgets; the least-served-first eligibility rule; the within-class area/score/ID ordering; global no-revisit; the opportunistic rule; or any prospective gate. Add no age bonuses, starvation timers, weighted sums, round-robin hard-coding, completeness-percentage stops, low-gain stops, object discovery, semantics, occlusion logic, head motion, ICP, meshing, filling, learned policy, extra views, alternate seeds or rerenders after a numerical miss. **A faithfully implemented rule that fails is a scientific/specification result: preserve it and stop for Luiz/Chat.**
+
+Outcome 2026-09-20 (evidence: `docs/scene1b-stage2.md` Results and
+`docs/log.md`). **SCENE1B_STAGEII_FAIL**, trial_passes 0/4. The miss is
+preserved; **Scene-1b is NOT closed** and no next Stage-II experiment is
+authorized. FSG6f remains CLOSED/PASS and unmodified; FSG7a remains a preserved,
+deferred FAIL; **Scene-1a remains a formal FAIL and was not edited**.
+
+**The abstraction under test worked.** `[scene1b-check] passed=9 failed=0`; all
+eight negatives exit 1 including `areaonly`; all twenty-two prior suites green.
+**Fair scheduler audit: 64 autonomous decisions across four trials, 64
+rule-compliant, 0 violations** - in every decision the selected object was inside
+the least-served live class and ranked first within it by area, then frontier
+score, then instance ID. **38 of 64 decisions had a fairness class strictly
+smaller than the live set, and in 31 of 64 fairness rejected a strictly
+higher-area proposal**, so the rule is decisively load-bearing rather than
+decorative. Service counts finished **perfectly equal at {201:5, 202:5, 203:5} in
+all four trials** with 13-14 attention switches. **Scene-1a's starvation fixed
+point does not occur anywhere in Scene-1b.**
+
+Reconstruction improved sharply. **Every per-object surface, purity, multi-look
+and idempotence gate passed on all twelve object-instances**: median 3.834-5.339
+mm, P95 15.519-16.900 mm, all maps pure in their own ID, 12,681-20,406 multi-look
+surfels, every fused patch idempotent, gains +0.3594 to +0.5451. **Three
+object-instances reached exactly 1.0000 coverage** and ten of twelve passed the
+90% gate. `fair_triad_c/1789` came within **two** fail lines of passing.
+
+**Why it still failed - arithmetic, and structural rather than a defect.** Three
+objects x six per-object looks = 18 = the global scene cap. Under
+least-served-first the objects advance in lockstep, so by the time one could
+complete, all three have consumed nearly the same number of looks and there is no
+slack to redistribute. Every trial ended at exactly 18 fixations with each object
+having spent its full allowance, and `scene_complete` requires all three to reach
+`no_frontier` within six looks each; only **5 of 12 object-instances** did.
+Scene-1a failed the opposite way - it stopped early with budget unspent and
+objects starved.
+
+Opportunistic non-target fused updates were **0 in all four full trials**,
+against 1-2 per trial in Scene-1a. Reported honestly: the `fair_triad` objects
+are more widely separated and fair round-robin makes consecutive fixations jump
+between distant objects, so nothing cleared the 100-valid-point threshold. The
+mechanism is exercised and inert here, not broken.
+
+**No code fix was required or made and no source file was modified.** A
+faithfully implemented rule that fails is a scientific/specification result,
+preserved rather than repaired. Nothing was tuned and nothing rerendered.
+
+Recorded for the next handoff: **fairness is settled; budget sufficiency is
+not.** Least-served-first removes starvation while preserving the frozen utility
+ordering and introducing no weight, timer or learned term. What remains is the
+relationship between the per-object budget, the scene budget and the number of
+objects - with three objects at six looks each and an 18-look cap, perfectly fair
+service exhausts the global budget exactly when the per-object budgets are
+exhausted, leaving no slack for an object that needs one more look. A successor
+should address that relationship, not the ordering rule.
