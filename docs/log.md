@@ -5651,3 +5651,124 @@ alternate seed. I will fix only a demonstrable implementation defect **in the ne
 Reality 2b files**, minimally, after diagnosis. All outcomes are preserved,
 including watchdog termination, repeated off-target exploration and any crashed
 attempt, and the report goes back to Luiz/Chat.
+
+**Measured outcome, appended after the run (2026-09-21).**
+**`REALITY2B_COMPLETE`.** Both full records are structurally valid,
+`integrity_fails` empty in both per-run evaluations and in the aggregate, and
+**no FAIL line was produced anywhere**. **Both terminated by the scientific rule,
+`no_frontier`; neither reached the 24-look watchdog.** The Reality Check 2
+blockage is resolved, and it was exactly what the diagnosis said: an artifact of
+treating negative perception as a runtime error.
+
+Checks first, all before acquisition. `py_compile` clean on all five new
+modules. `[reality2b-policy] PASS exact_parent_continuation=true
+frozen_fsg6f=true empty_look_is_evidence=true empty_fuses=false
+scientific_stop=no_frontier watchdog_total=24 quality_gated=false`,
+`[reality2b-check] SUMMARY passed=7 failed=0`, **all ten deliberate negatives
+exit 1** for their own named reasons. Prior suites green with negative sets still
+firing: reality1 6/6 (+6 negatives), reality2 7/7 (+7), fsg6f 14/14 (+**15/15**).
+The installed package adds exactly the seven authorized files, all `A`, and the
+diff over every FSG1/FSG3/FSG6f, renderer, rig, pin **and Reality Check 1/2**
+source against `27cfcc2` is empty.
+
+Smoke (`small` seed 2111, once): `REALITY2B_OBSERVATION_COMPLETE`, fails `[]`,
+14 fixations (8 new), **one empty observation at step 13, termination
+`no_frontier`**, coverage 0.5276 -> 0.7904, median/P95 16.705 / 46.167 mm,
+12,286 multi-look surfels. Structurally clean, so full acquisition proceeded;
+nothing was changed in response to it.
+
+Full **seed 2111**: **13 fixations (7 new), `no_frontier`**, watchdog not
+reached, 1 empty observation at step 12. Coverage **0.5345 -> 0.7984 (+0.2639)**;
+median **5.878 mm**, P95 18.599 mm; measurement fraction min 0.8466 median
+0.8740 over fused looks; worst overlap median 3.025 mm P95 8.534 mm; 117,567 map
+points and **48,350 multi-look surfels (41.1%)**; 1,468,006,400 new samples;
+94 s run + 176 s eval.
+
+Full **seed 2179**: **16 fixations (10 new), `no_frontier`**, watchdog not
+reached, 2 empty observations at steps 14 and 15. Coverage **0.7329 -> 0.8834
+(+0.1505)**; median **5.812 mm**, P95 18.858 mm; measurement fraction median
+0.8555 (min 0.0629 is itself an empty look); worst overlap median 2.897 mm P95
+8.759 mm; 138,010 map points and **57,571 multi-look surfels (41.7%)**;
+2,097,152,000 new samples; 135 s run + 296 s eval.
+
+Every empty observation, in full. **seed 2111 step 12, gaze (-16,+6)**: 0 target
+points from 0 reference pixels; map before/after bitwise identical (117,567 ->
+117,567 points, support sum 173,427 -> 173,427 across `xyz_h`, `rgb`,
+`instance_id`, `support_count`, `provenance_mask`), re-verified outside the
+evaluator; the **immediate** policy response was `stop: True, reason:
+no_frontier` with zero candidates offered. **seed 2179 step 14, gaze (-16,-4)**:
+25 target points from 317 reference pixels (fraction 0.0789); map identical
+(138,010 -> 138,010, support sum 214,527 -> 214,527); the immediate policy
+response was **`stop: False, reason: continue, next_gaze_deg (-16,+1)`** with two
+surviving candidates, `(-16,+1)` area 123.71 / score 10.19 / OPEN 23 / MAP 1 /
+BND 3 and `(-11,+1)` area 63.71 / score 5.78 / OPEN 17 / MAP 1 / BND 0 - **this
+is the recovery behaviour the experiment was built to test: the observer
+incorporated a near-empty look and kept going instead of failing**. **seed 2179
+step 15, gaze (-16,+1)**: 11 points from 175 reference pixels (0.0629); map
+identical; `stop: True, reason: no_frontier`, zero candidates.
+
+A precise note so a flag is not misread: the evaluator's
+`recovered_after_first_empty` is `false` for both seeds, but it is defined as *a
+later look that actually fused >= 100 target points*. Neither seed had one
+because in both cases the empty looks fell at the very end. It does **not** mean
+the policy failed to continue - seed 2179 demonstrably did.
+
+Structure re-verified independently of the evaluator on both records: parent
+`maps/map_00..05.npz` **byte-identical** to the Reality Check 1 source, **no
+parent acquisition directory recreated** (not one of the twelve saved views was
+rerendered), `truth_opened` False, fixed head and static scene True, map instance
+ids exactly {141}, every *fused* patch `idempotent_replay` True (12/12 and
+14/14) with the empty entries carrying `fused: false` and no idempotence claim,
+all gazes unique (13/13 and 16/16), and frozen policy, instrument, fusion, the
+`<100` limit and the watchdog unchanged.
+
+Two-seed comparison. Both `no_frontier`; fixation counts differ by 3 (13 vs 16);
+trajectories still completely different - 2111 sweeps the top row right-to-left,
+2179 the right column then the bottom row. But **the final reconstructions are
+far more comparable than Reality Check 1's**: the coverage gap **narrowed from
+0.1984 at look 6 to 0.0850**, the surface medians differ by 0.066 mm and the
+P95s by 0.26 mm, both maps are ~41% multi-look, and the seed that was behind
+gained more (+0.2639 vs +0.1505). **Seed divergence became largely an efficiency
+difference rather than a quality difference.**
+
+Visual reading, descriptive and not a score. Empty looks are plainly visible and
+exactly where the numbers say - seed 2111's `fix_12` shows grey wall and a blue
+side prop with no cloth at all; seed 2179's `fix_14` is the blue prop and wall
+with a sliver of cloth at the top edge. The added looks **fill rather than
+wander**: seed 2111 climbs from the bottom band into the whole top row it had
+never seen (y extent -0.319..0.261 at look 6 -> -0.319..**0.400**, against a true
+span of -0.326..0.405) and seed 2179 wraps the right edge and the entire bottom
+row. Sliced into +/-12 mm bands against the exported truth mesh, the points track
+the true non-periodic undulation closely across every band including the new top
+ones, with no band where the cloud departs from the surface, and multi-look
+proportion roughly doubled (27.9% -> 41.1%, 24.3% -> 41.7%). **No gross
+wrong-depth region appeared.** Termination is **sensible in mechanism but
+premature in result**: both stopped by their own rule immediately after an empty
+look resolved the frontier in that direction, yet seed 2111's final map is
+visibly a **ring** - the observer swept the perimeter and declared `no_frontier`
+with a large unvisited rectangular hole still in the middle of the cloth, which
+is most of its missing 20%; seed 2179 ends far more complete with one small
+square hole in the lower right. **`no_frontier` here means "no open frontier
+reachable from the perimeter I walked", not "the surface is finished".**
+Efficiency is also worth recording: **five of the seventeen new fused looks
+returned under 1% new points**.
+
+**No code fix was made and no source file was modified.** Every failure mode the
+authorization listed was checked against the acquired records and none occurred:
+the zero-point patch serialized, visualized and evaluated without incident; both
+empty observations are present in the gaze list and the binocular history before
+`choose_next`, proven by the policy trace carrying
+`observation_was_empty_target: true`; every no-fusion step left the map bitwise
+unchanged; the evaluator requires idempotence only of patches actually fused; and
+parent provenance is exact.
+
+What this establishes: **an empty look can be negative perceptual evidence, and
+that single semantic change is enough for the unchanged observer to finish by its
+own rule.** Both seeds now terminate `no_frontier` instead of being interrupted
+or crashing, coverage rises to 0.798 and 0.883, geometry stays at ~5.8 mm median,
+and the two stochastic trajectories converge to comparable quality. What it does
+**not** establish is completeness: frozen FSG6f declares `no_frontier` while a
+large interior hole remains on seed 2111, so the open question moves from "can
+the observer continue?" to **"why does the frontier rule consider an enclosed
+interior hole resolved?"** - which is about FSG6f's frontier/consensus rule, not
+the scheduler, the scene or the stopping semantics. Stopped for Luiz/Chat.

@@ -1736,3 +1736,53 @@ off-target gazes or reaches the watchdog still saying `continue`, then FSG6f's
 area-first ranking - already shown to walk off a fixture twice, in FSG6c at three
 looks and Reality Check 2 at thirteen - is implicated directly, and no amount of
 extra looking fixes it.
+
+Outcome 2026-09-21 (evidence: `docs/reality-check-2b.md` Results and
+`docs/log.md`). **REALITY2B_COMPLETE** - both full records are structurally
+valid, every `integrity_fails` list is empty, no FAIL line was produced
+anywhere, and **both terminated by the scientific rule, `no_frontier`; neither
+reached the watchdog.** Reality Checks 1 and 2 remain preserved and unedited;
+FSG6f remains CLOSED/PASS and unmodified; FSG7a, Scene-1a, Scene-1b and Scene-1c
+remain preserved records. No prior decision is edited.
+
+**The prewritten rule resolves on its first branch.** This block recorded before
+acquisition that if an empty look lets the observer recover and frozen FSG6f then
+reaches `no_frontier`, the Reality Check 2 blockage was an artifact of treating
+negative perception as a runtime error. It was. Seed 2111 finished in **13
+fixations** and seed 2179 in **16**, both `no_frontier`, with coverage rising
+**0.5345 -> 0.7984** and **0.7329 -> 0.8834** and surface medians of **5.878 mm**
+and **5.812 mm**. The one semantic change - record the gaze, keep the binocular
+observation, fuse nothing, leave the map unchanged, ask the unchanged policy
+again - was sufficient on its own. **No code fix was made and no source file was
+modified**; FSG6f, the `<100` condition, ranking, scene, texture, seeds,
+vergence, fusion, parent views and the 24-look watchdog are untouched, and not
+one of the twelve saved Reality Check 1 views was rerendered.
+
+The recovery behaviour is directly evidenced, not inferred. At seed 2179 step 14,
+gaze (-16,-4), a look returning **25 target points from 317 reference pixels**
+left the map bitwise identical and the **immediate** frozen-FSG6f response was
+`continue` with a new gaze and two surviving candidates. The observer
+incorporated a near-empty look and kept going. Its next look was also near-empty
+(11 points from 175) and then the frontier resolved. Seed 2111's single empty
+look, 0 points from 0 reference pixels, resolved the frontier immediately.
+
+Seed divergence largely stopped being a quality question: the two-seed coverage
+gap **narrowed from 0.1984 at look 6 to 0.0850**, medians differ by 0.066 mm,
+P95s by 0.26 mm, and both maps are ~41% multi-look, while the trajectories remain
+entirely different and the fixation counts differ by three. It is now mainly an
+efficiency difference.
+
+What this does **not** resolve, and what it opens instead. `no_frontier` here
+means "no open frontier reachable from the perimeter I walked", **not** "the
+surface is finished": seed 2111 stops with a large unvisited rectangular hole in
+the middle of the cloth, which is most of its missing 20%, and **five of the
+seventeen new fused looks returned under 1% new points**. So the open question
+moves off stopping semantics and onto the frozen controller again - **why does
+FSG6f's frontier/consensus rule consider an enclosed interior hole resolved, and
+why does area-first ranking keep spending full-cost looks on sub-1% returns?**
+That is about FSG6f, not about the scheduler, the scene or the continuation
+machinery. What would overturn or extend this: it is two seeds on one fixture
+family with oracle segmentation, a fixed head and a static scene, so it says
+nothing about specular, shadowed, thin or adversarial material, occlusion, object
+discovery, or a target whose interior is not enclosed by its own perimeter.
+**Luiz/Chat decide what to ask next.**
