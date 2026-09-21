@@ -5572,3 +5572,82 @@ off a fixture** - FSG6c's `max()` case at three looks, and this one at thirteen 
 which is evidence about the object controller, not about the scheduler or the
 scene. Stopped for Luiz/Chat, who decide what an off-object look means here and
 whether simply letting the observer continue is good enough.
+
+### 2026-09-21 - Reality Check 2b, learn from an empty look: authorized, prospective entry (written before acquisition)
+
+Per `docs/reality-check-2b.md`, `docs/reality-check-2b-checks.md` and D-REALITY2b
+appended just above. **One semantic change relative to Reality Check 2: a
+completed fixation with fewer than 100 reconstructed target points is negative
+perceptual evidence, not a runtime failure.** Reality Checks 1 and 2 stand
+preserved and unedited.
+
+Provenance audited before anything was run. `git status --short` empty; HEAD
+**`e962ff6`** ("Add Reality Check 2b empty-look recovery") on `main`;
+**`27cfcc2` (the Reality Check 2 result) is an ancestor of HEAD**, confirmed by
+`git merge-base --is-ancestor`. `git diff --name-status HEAD~1 HEAD` is exactly
+the seven authorized files, all `A`: `tools/reality2b_{public,run,eval,
+compare}.py`, `tools/dev/check_reality2b.py`, `docs/reality-check-2b.md`,
+`docs/reality-check-2b-checks.md`.
+
+`git diff HEAD~1 HEAD` restricted to every FSG1/FSG3/FSG6f source, the renderer,
+`fsg_scene.py`, `fsg_validation_render.py`, `rig.py`, `bl_common.py`,
+`requirements-fsg.txt` **and every Reality Check 1 and Reality Check 2 source**
+is EMPTY, confirmed additionally by per-file sha256 against `27cfcc2` - all
+SAME: `fsg_stereo_supported` 683ae91eaca7b6af, `fsg_stereo_hdr`
+67e2ec4667bcc179, `fsg_stereo` faebf0f1b3acbfde, `fsg_evaluate`
+a5134b8d8537714d, `fsg_geometry` d9537d8ebc23b60c, `fsg3_surface_map`
+1b9dbeb873105ec9, `fsg6f_public` c79f58c9b51f33d4, `fsg6f_frontier`
+d636c9405d719916, `fsg6f_run` f2d4bdd54b8d395f, `fsg_render` 681237fa8533b7cc,
+`fsg_scene` 1f410577c1103e01, `fsg_validation_render` f18883e1e2764dd7, `rig`
+dff43ec0cd9d5047, `bl_common` aa7a56e8cd4988cb, `reality1_public`
+d2b00211021ff65d, `reality1_run` c0d4f18a682fd9fe, `reality1_eval`
+91720f42932b463c, `reality1_scene` b4392230292bb51c, `reality1_render_fix`
+bdc068ad931e1072, `reality2_public` c7e7bd44d1a28de3, `reality2_run`
+2b846a3413500dfc, `reality2_eval` ebfaa9e036db224b, `reality2_render_fix`
+9f1433d189fbcbb5, `check_reality1` b057b1d307aebfde, `check_reality2`
+ca832846a44b88bc.
+
+Checks, all before acquisition. `py_compile` clean on all five new modules.
+`[reality2b-policy] PASS exact_parent_continuation=true frozen_fsg6f=true
+empty_look_is_evidence=true empty_fuses=false scientific_stop=no_frontier
+watchdog_total=24 quality_gated=false`, `[reality2b-check] SUMMARY passed=7
+failed=0`, and **all ten deliberate negatives exit 1** for their own named
+reasons: `abortempty`, `skipempty`, `dropgaze`, `fuseempty`, `sixlimit`,
+`rerenderparent`, `policycopy`, `truth`, `qualitygate`, `watchdoggate`. Prior
+suites green and their negative sets still firing: `[reality1-check] passed=6
+failed=0` with six negatives exit 1, `[reality2-check] passed=7 failed=0` with
+seven negatives exit 1, `[fsg6f-check] passed=14 failed=0` with **15 of 15**
+negatives exit 1.
+
+Where the fail-capable map-invariance check lives, for the record: the runner
+asserts the map is untouched around an empty look, but the load-bearing check is
+evaluator-side - `reality2b_eval` reloads the saved `map_{step-1}` and
+`map_{step}` from disk and fails the record if they differ, so a no-fusion step
+that silently mutated the map could not pass.
+
+Cost class: checks Interactive; the smoke and the two full continuations
+**Batch**. Reality Check 2 spent about 9 s of Blender per look and its `small`
+continuation ran 34 s for eight looks; a full continuation that runs to the
+24-fixation watchdog adds at most eighteen looks, and the evaluator's cost grows
+with total fixation count. If any single command exceeds five minutes it is
+reported as such, not split or shortened.
+
+Likely outcomes, in the order I expect them, none of which changes anything:
+(a) the empty look at roughly (-16,+6) is recorded, resolves the false frontier
+through FSG6f's existing BOUNDARY_RESOLVED mechanism, and the observer returns to
+useful target surface - the result this check exists to test for; (b) recovery
+happens but the run reaches the **24-fixation watchdog** still reporting
+`continue` - an observation, explicitly not a FAIL; (c) repeated off-target
+exploration, several empty looks in a row, because area-first ranking keeps
+preferring the largest predicted new area - descriptive only; (d) the two seeds
+ending at different fixation counts or different completeness - descriptive
+either way; (e) only then suspect the new no-fusion path, zero-point patch
+handling in visualization/serialization, history insertion order, or
+parent-state provenance. **None of (a)-(d) authorizes tuning or rerendering.** I
+will not alter FSG6f, the `<100` inherited condition, ranking, scene, texture,
+seeds, vergence, fusion, parent views or the 24-look watchdog in response to any
+result; I will not rerender a completed numerical result and will not use an
+alternate seed. I will fix only a demonstrable implementation defect **in the new
+Reality 2b files**, minimally, after diagnosis. All outcomes are preserved,
+including watchdog termination, repeated off-target exploration and any crashed
+attempt, and the report goes back to Luiz/Chat.

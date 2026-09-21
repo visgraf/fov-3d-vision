@@ -1659,3 +1659,80 @@ demonstrations that FSG6f's area-first ranking can walk off a fixture** - FSG6c'
 object controller, not about the scheduler or the scene. **Luiz/Chat decide what
 an off-object look means here and whether letting the observer simply continue is
 good enough.**
+
+## D-REALITY2b - Reality Check 2b: learn from an empty look (2026-09-21)
+
+Reality Check 1 and Reality Check 2 are **preserved exactly as acquired and are
+not edited, relabelled or rerun**; FSG6f remains CLOSED/PASS and unmodified, and
+FSG7a, Scene-1a, Scene-1b and Scene-1c remain preserved records. No prior
+decision is edited by this block.
+
+Reality Check 2 established that continuing past the retired six-look
+interruption is useful - its `small` continuation took visible coverage from
+0.5276 to 0.7904 in seven further looks - and then aborted when frozen FSG6f
+selected an off-target gaze whose stereo patch held fewer than 100 reconstructed
+target points. Reality Check 2b asks the smaller follow-up: **if an exploratory
+fixation finds essentially no target surface, can the observer treat that
+completed binocular observation as negative evidence, recover, and continue until
+frozen FSG6f itself says `no_frontier`?**
+
+**Exactly one semantic change relative to Reality Check 2.** The inherited
+condition `reconstructed target point count < 100` is **retained unchanged** and
+reinterpreted: such a fixation (1) records its physical gaze as visited, (2)
+appends its completed left/right instance masks and raw-support arrays to the
+persistent observation history, (3) fuses **zero** target points and leaves the
+persistent map unchanged, and (4) is followed by another call to the unchanged
+FSG6f controller. This lets FSG6f's already-existing `BOUNDARY_RESOLVED`
+mechanism learn from a place where the object was expected but not found. No
+evaluator truth enters the prediction path.
+
+Recorded before acquisition:
+
+- **The two saved Reality Check 1 full records remain the parent states** and
+  their first six views are **not rerendered**; `tools/reality2_render_fix.py` is
+  reused directly and no new renderer is introduced.
+- **Nothing else changes.** FSG6f ranking, every FSG6f constant, the scene and
+  texture, the FSG1 stereo instrument at 256 spp, the 2.10 m prescribed
+  vergence, FSG3's 12 mm fusion/hash, seeds 2111 and 2179, oracle target
+  segmentation, fixed head, static scene and Reality Check 2's 24-total-fixation
+  watchdog are all frozen. Verified before acquisition: the installed package
+  adds exactly seven files, all `A`, and `git diff` over every FSG1/FSG3/FSG6f,
+  renderer, rig, pin **and Reality Check 1/2** source against `27cfcc2` is empty.
+- **The `<100` limit is not a tuned quality threshold** and will not be changed
+  after seeing outcomes. It is exactly the retired Reality Check 2 abort guard,
+  given semantics instead of being moved.
+- **Scientific stopping is exactly `no_frontier` from frozen FSG6f.** The
+  24-fixation watchdog remains an engineering guard only; **reaching it is
+  descriptive, not a scientific or integrity FAIL.**
+- **There is still NO numerical quality PASS threshold.** Coverage, recovery
+  after an empty look, error, overlap, measurement fraction, fixation count and
+  efficiency are all descriptive.
+- **The only automated FAIL condition remains structural integrity**: exact
+  parent reuse without rerender, truth never opened, map containing only instance
+  141, every *fused* patch replay-idempotent, **every empty observation retained
+  in gaze and binocular history while leaving the persistent map provably
+  unchanged**, no repeated physical fixation, and FSG6f imported rather than
+  copied.
+- **The previously observed off-target direction near (-16,+6) is not
+  hard-coded, forced or avoided.** Frozen FSG6f either reproduces it or does
+  not; either is an observation.
+- **After the two continuations, stop and return the report to Luiz/Chat.** A
+  poor numerical result, repeated off-target exploration or watchdog termination
+  authorize **no** tuning: no seed replacement, no gaze edit, no threshold move,
+  no ranking change, no watchdog enlargement and no rerender after a numerical
+  disappointment. A demonstrable implementation defect **in the new Reality 2b
+  files only** may be repaired minimally after diagnosis; FSG6f, the `<100`
+  condition, ranking, scene, seeds, watchdog and numerical outcomes may not.
+
+The per-run evaluator reports `REALITY2B_OBSERVATION_COMPLETE` and the two-run
+aggregate `REALITY2B_COMPLETE` when structural integrity holds - **even if one or
+both reach the watchdog** - or `REALITY2B_INTEGRITY_FAIL` otherwise.
+
+**What this decision would resolve.** If an empty look lets the observer recover
+and frozen FSG6f then reaches `no_frontier`, the Reality Check 2 blockage was an
+artifact of treating negative perception as a runtime error, and the open
+question returns to reconstruction quality. If the observer keeps selecting
+off-target gazes or reaches the watchdog still saying `continue`, then FSG6f's
+area-first ranking - already shown to walk off a fixture twice, in FSG6c at three
+looks and Reality Check 2 at thirteen - is implicated directly, and no amount of
+extra looking fixes it.
