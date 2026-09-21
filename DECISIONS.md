@@ -2446,3 +2446,125 @@ it. The question this hands forward is therefore unchanged in shape but now
 sharper: **a topology-driven action works where looking helps, so what action, if
 any, belongs to a region the instrument cannot measure from any viewpoint?**
 **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1F - Cyclopean-1f: iterate epistemic gaze to a fixed point (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a, 1b, 1c, 1d and 1e** are preserved
+exactly as acquired and are **not edited, relabelled or rerun**; FSG6f remains
+CLOSED/PASS and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1e showed that one literal read-out of the refined perceptual field -
+`EXTERIOR + NEVER_OBSERVED -> deepest inherited border distance -> one foveation`
+- aimed a useful look while ignoring `OBSERVED_TARGET_NO_DEPTH`. It was one
+action by construction, so it could say nothing about where repetition leads.
+This block asks only:
+
+> If exactly that rule is repeated **without modification**, does the observer
+> reach a state with no eligible exterior `NEVER_OBSERVED` shoreline?
+
+This is a convergence/fixed-point experiment for one seed, **not a new controller
+design**.
+
+Recorded for this step:
+
+- **The completed Cyclopean-1e seed-2111 record is the parent**, located by
+  manifest, and it and every ancestor are **read only**, with pinned hashes
+  verified byte-identical afterwards. The runner additionally asserts that its own
+  rebuild reproduces the parent's published epistemic fields **before** acquiring
+  anything.
+- **The mechanism is frozen end to end**: fixed head, static scene, the same
+  cyclopean chart and 0.1 degree grid, the same footprint from the frozen 12 mm
+  FSG3 radius, the same Cyclopean-1d epistemic state definition, **the same
+  Cyclopean-1e gaze selector reused unchanged at every iteration**, the same
+  Reality/FSG stereo path and 12 mm fusion, and the same Reality Check 2b
+  empty-look semantics. **No FSG6f ranking or stopping logic is imported.**
+- **The candidate entity does not widen with iteration.** Only `EXTERIOR`
+  shoreline refined `NEVER_OBSERVED` is eligible. **`OBSERVED_TARGET_NO_DEPTH`
+  never becomes eligible merely because geometry is still missing there**, and no
+  `INTERNAL` component is eligible. An empty look remains valid negative evidence
+  and fuses nothing.
+- **The scientific stop is the absence of an eligible cell**,
+  `NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`, and nothing else. **The inherited
+  total-24-fixation limit is an engineering watchdog only; reaching it is not
+  scientific success** and must be reported plainly as a guardrail stop.
+- **There is NO numerical quality PASS threshold, and none may be added after
+  seeing results.** No minimum bay depth, area, gain, coverage or accuracy; no
+  fixed number of scientific iterations; no mesh, morphology tuning, normal cue,
+  texture threshold, new geometric tolerance or evaluator truth.
+- **The only automated FAIL condition is structural**: parent and ancestry read
+  only and byte-identical afterwards; no parent fixation rerendered; no evaluator
+  truth opened; inherited scales reused; each fused patch replay-idempotent with
+  target-map purity preserved.
+- **A disappointing trajectory authorizes no rescue.** No retargeting after
+  seeing a low-yield look, no threshold introduced to force termination, and no
+  check weakened to obtain green output. Only a demonstrable implementation
+  defect in the new Cyclopean-1f files may be repaired.
+
+**What this decision would resolve.** If the unchanged rule exhausts its own
+eligible field and stops on its own condition, then this epistemic action rule
+has a fixed point on this record and the remaining boundary can be described by
+what is left rather than by what was tried. If it reaches the watchdog, or
+oscillates, or starts selecting the excluded residue, then the rule does not
+terminate by itself and iteration is not yet the right frame.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1f.md` Results and `docs/log.md`).
+**CYCLOPEAN1F_COMPLETE**, `structural_fails: []`, stop reason
+**`NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`** - the **scientific** stop, not the
+watchdog. **Structural only; no PASS is inferred** from coverage, gain, depth or
+look count. Cyclopean-1a..1e, the Reality Checks and FSG6f remain preserved and
+unedited. No prior decision is edited. **No code fix was made and nothing outside
+the seven Cyclopean-1f files was modified.**
+
+**The prewritten rule resolves on its first branch.** Repeated unchanged, the
+selector consumed the remaining eligible field in **two** fixations - **17 total
+against the 24-look watchdog**, so the guardrail was never approached. **Step
+15**, gaze **(+1.3000, +4.2000)**, cell (y=130, x=142) at depth **142** = the
+component maximum, returned **58,475 target points** and fused **3,298** new
+surfels; `NEVER_OBSERVED` **290 -> 142**, max depth **142 -> 69**. **Step 16**,
+gaze **(-6.0000, +4.2000)**, cell (y=130, x=69) at depth **69** = again the
+maximum, returned **50,010 target points** and fused **5,196**;
+`NEVER_OBSERVED` **142 -> 0**, max depth **69 -> None**. Both replay-idempotent,
+ids **{141}**, map **146,996 -> 155,490**, and **the maximum depth of the whole
+exterior component fell 142 -> 22**, so no deep pocket survives anywhere.
+
+**The exclusion held for the whole loop, not just the first step.**
+`OBSERVED_TARGET_NO_DEPTH` was **28 at every iteration**, and both internal
+components are bitwise the same objects at the same centroids -
+**(+7.3000, -2.9000)** and **(+6.7903, -2.1484)** - that Cyclopean-1c, 1d and 1e
+each reported. The loop's termination is therefore precisely a success at
+**avoiding** the region it could not use.
+
+**The residual is described, not repaired.** At the fixed point 527 shoreline
+cells remain base-`UNOBSERVED`: **423** `OBSERVED_NONTARGET_ONLY` on the outer
+rim at shallow ordinary depth (min 0, median 9, max 22) - the object's own edge,
+imaged with background beyond; **28** `OBSERVED_TARGET_NO_DEPTH`, the untouched
+emblem; and **76** `NO_RANGE_REFERENCE`, all at **5.10 cells** from raw support,
+just past the inherited 5-cell disk - the same deterministic artifact
+Cyclopean-1d measured, **left unadjusted** because widening that radius would be
+a new tolerance.
+
+**One weakness in this step's own controls is recorded rather than patched.** The
+six `--negative` paths in `check_cyclopean1f.py` print a FAIL line and exit 1
+**unconditionally** for any recognised name; they do not inject the named
+mutation into the real selector and verify the production code rejects it, which
+is weaker than the negative sets of Cyclopean-1a through 1e. The **positive**
+checks were verified genuinely fail-capable against mutated scratch copies of the
+real sources - three independent invariants each produced their own FAIL and
+exit 1 - so what this step asserts is enforced, but the `--negative` flags are
+declarations rather than controls. Nothing was modified, since this does not
+block the experiment; **if these checks are to be relied on later as controls,
+they need rewriting to mutate and detect.**
+
+What would overturn or extend this. **This is one rule on one seed**, and the
+contract says so: a scientific stop shows only that *this* epistemic action rule
+reached *its own* fixed point on *this* record. **It is not object completeness** -
+527 shoreline cells remain, 423 of them imaged-with-background and 28
+seen-but-unmeasurable. **It is not accuracy**: evaluator truth stayed closed, so
+every coherence number is internal consistency and nothing more. **It says
+nothing about other seeds or scenes**, or about whether the rule terminates where
+the geometry is less benign. **The empty-look branch was never exercised**, since
+both fixations were rich, so the negative-evidence path remains untested inside
+this loop. And **`OBSERVED_TARGET_NO_DEPTH` is exactly where Cyclopean-1d left
+it**: the question of what action, if any, belongs to a region the instrument
+cannot measure is untouched by a loop whose success consisted of stepping around
+it. **Luiz/Chat decide what to ask next.**

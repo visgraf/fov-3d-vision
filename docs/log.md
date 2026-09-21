@@ -6597,3 +6597,150 @@ quality claim is made**, since 9,262 surfels is a count and with truth closed th
 correctness of the new surface is unmeasured; and **nothing was learned about what
 to do with `OBSERVED_TARGET_NO_DEPTH`** - the experiment stepped around it, so that
 question is exactly as open as 1d left it. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1f, iterate epistemic gaze: the rule reached its own fixed point in two looks
+
+Per `docs/cyclopean1f.md`, `docs/cyclopean1f-checks.md` and D-CYCLOPEAN1F, run on
+the prospective package Luiz applied and committed as **`81fec0a`** (pre-1f
+parent `8672bba`).
+
+**Measured outcome. `CYCLOPEAN1F_COMPLETE`, `structural_fails: []`, scientific
+stop `NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`.** Two added fixations, **17 total
+against the 24-look watchdog**, so the watchdog was never approached. Structural
+only - **no coverage, gain, depth or look-count number is a PASS gate.**
+
+Provenance. Clean tree; **exactly seven files, all `A`**; `git diff` against
+`8672bba` over **54 frozen sources** - every FSG1/FSG3/FSG6f source, renderer,
+scene, rig, pin file, every Reality Check 1/2/2b source and **every Cyclopean-1a
+through 1e source** - **empty (0 lines)**, all 54 sha256 SAME; in particular the
+selector 1f must reuse unchanged, `tools/cyclopean1e_gaze.py`, is byte-identical
+at `a3599ea14fc00e60...`. Parent located **by manifest**: exactly one
+`Cyclopean1e-epistemic-gaze-v1` seed-2111 `full` record,
+`previews/cyclopean1e/full-seed2111`, pinned `prediction_manifest.json`
+`d94c90ef97d173b0...a894df70`, `surface_map.npz` `5dfef59dd8203cd3...062e492e`,
+`probe_patch.npz` `eda539ae9a36684b...dd83515a`, `epistemic_after.png`
+`16decefba9adb4a3...f99f978`, all identical after. The runner's own guard passed
+before acquisition: the rebuilt initial state reproduces the parent's published
+`exterior_never_observed_cells` **290** and max depth **142** exactly.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **Interactive at 60.6 s** including both
+Blender launches.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim; all six declared
+negatives exit 1 (`nodepth`, `internal`, `threshold`, `quality`, `fixedlooks`,
+`policy`). Prior suites green with their sets still firing, **61 prior negatives,
+none weakened**: cyclopean1e/1d/1c/1b/1a 6/6 (6/6 each), reality2b 7/7 (10/10),
+reality1 6/6 (6/6), fsg6f 14/14 (15/15).
+
+**A note on this step's control strength, recorded because it bears on how much
+the green line means.** The six `--negative` paths in `check_cyclopean1f.py`
+print a FAIL line and exit 1 **unconditionally** for any recognised name; they do
+not inject the named mutation into the real selector or runner and verify the
+real code rejects it. That is weaker than 1a-1e, whose negatives genuinely mutate
+behaviour. The **positive** checks were verified fail-capable on a scratch copy of
+the real sources, one condition at a time: `"candidate_component_kind"`
+`EXTERIOR -> ANY` gives `FAIL exterior_only`, replacing the imported selector
+gives `FAIL iterates_same_rule`, rewriting the no-quality-gate clause gives
+`FAIL no_quality_gate`, each exiting 1, with the unmutated copy back at
+`passed=6 failed=0`. The asserted invariants are therefore real and enforced on
+the actual sources; the `--negative` flags are declarations rather than controls.
+**Nothing was modified** - this does not block the experiment and the package is
+frozen.
+
+The loop, on the inherited chart **263 x 199**, grid **0.1 deg**, footprint **4
+cells**, from **146,996** surfels at 15 completed fixations. **Step 15, gaze
+(+1.3000, +4.2000)**: component 0, `EXTERIOR`, `NEVER_OBSERVED`, cell
+(y=130, x=142) at depth **142** = the component maximum, fallback rank 0,
+`observed_target_no_depth_eligible` false; **58,475 target points**, fused,
+**3,298 new** / 55,177 matched, idempotent; `NEVER_OBSERVED` **290 -> 142**, max
+depth **142 -> 69**; support 41,342 -> 41,877, complement 10,995 -> 10,460,
+shoreline 1,287 -> 1,120; `OBSERVED_TARGET_NO_DEPTH` **28 -> 28**. **Step 16,
+gaze (-6.0000, +4.2000)**: cell (y=130, x=69) at depth **69** = again the
+maximum, fallback rank 0; **50,010 target points**, fused, **5,196 new** / 44,814
+matched, idempotent; `NEVER_OBSERVED` **142 -> 0**, max depth **69 -> None**;
+support 41,877 -> 43,001, complement 10,460 -> 9,336, shoreline 1,120 -> 1,000;
+`OBSERVED_TARGET_NO_DEPTH` **28 -> 28**. The selector then found no eligible cell
+and the loop stopped on **`NO_ELIGIBLE_EXTERIOR_NEVER_OBSERVED`**. Both looks
+landed on chart row **y=130** at different yaw - the remaining structure was a
+thin horizontal band, not a deep pocket. Neither look was empty, so the Reality
+Check 2b negative-evidence branch was **not exercised** here.
+
+Final state: map **146,996 -> 155,490** (+**8,494**, +5.78%), multi-look
+**67,496 -> 89,740**, support **41,342 -> 43,001**, complement
+**10,995 -> 9,336**, shoreline **1,287 -> 1,000**, exterior/internal components
+1/2 unchanged, **exterior `NEVER_OBSERVED` 290 -> 0**, max `NEVER_OBSERVED` depth
+**142 -> None**, and the **maximum depth of the whole exterior component fell
+142 -> 22**, so no deep pocket survives. Final refined census over the 527
+base-`UNOBSERVED` cells: `NEVER_OBSERVED` **0**, `OBSERVED_TARGET_NO_DEPTH`
+**28** (all internal), `OBSERVED_TARGET_WITH_DEPTH` 0,
+`OBSERVED_NONTARGET_ONLY` **423** (all exterior), `MIXED_OBSERVATION` 0,
+`NO_RANGE_REFERENCE` **76**. Inherited base states: `UNOBSERVED` 527,
+`TARGET_CONTINUATION` 0, `PHYSICAL_DEPTH_BREAK` 311, `AMBIGUOUS` 162 -> 1,000.
+
+**The residual, described and not fixed.** Three things remain and each is
+non-actionable for a different reason: `OBSERVED_TARGET_NO_DEPTH` **28 cells, all
+internal** - the emblem residue, unchanged through both iterations, still the
+same two components at **(+7.3000, -2.9000)** and **(+6.7903, -2.1484)**, the
+identical centroids 1c/1d/1e reported, excluded by construction and never
+touched; `OBSERVED_NONTARGET_ONLY` **423 cells, all exterior** - the object's own
+edge, imaged with background beyond, at shallow ordinary depth (min 0, median 9,
+max 22); and `NO_RANGE_REFERENCE` **76 cells**, all at distance **5.10 cells**
+(min = median = max) from the nearest raw support, strictly beyond the inherited
+disk radius `footprint_cells + 1 = 5` - the same deterministic artifact 1d
+measured, **left unadjusted** since widening it would be a new tolerance.
+
+Coherence, which is **not** accuracy (truth stayed closed; no 1f source mentions
+`evaluation_only`, `reality2b_eval` or a truth file). Both fixations were re-fused
+from their saved acquisitions at runner precision and reproduce the manifest
+exactly - target points 58,475 and 50,010, new 3,298 and 5,196, matched 55,177
+and 44,814, idempotent both - with the replayed cumulative **8,494** equalling the
+map gain. The replayed final map matches the saved one **exactly** in
+`support_count`, `provenance_mask` and `instance_id`; its `xyz_h` differs on
+18,563 of 155,490 rows by at most **121 nanometres**, **below one float32 ulp at
+2.1 m (238 nm)** and within 4 ulp everywhere - accumulation-order rounding, not a
+semantic difference. Purity holds: final ids exactly **{141}**, with the **39**
+and **78** non-target pixels excluded from the patches. Pre-existing surfels moved
+by median **0.0000 mm**, p99 **2.49 mm**, max **6.83 mm**, inside the frozen
+12 mm radius. Overlap agreement **94.4%** and **89.6%** of probe points associated
+within 12 mm. The 8,494 new surfels span [2.0659, 2.2035] m against an old
+envelope [2.0667, 2.2372]; **two** fall outside it by **0.73 mm** and **0.57 mm**
+below the old minimum - 0.5% of the cloth's 145.2 mm relief. No gross wrong-depth
+patch.
+
+Visual reading. `epistemic_initial.png` shows a thin horizontal slot and step cut
+into the support, outlined **red `NEVER_OBSERVED`**, rim **cyan
+`OBSERVED_NONTARGET_ONLY`**, lower edge **blue `PHYSICAL_DEPTH_BREAK`**, small
+**orange crescent** middle-right. `epistemic_final.png` is the picture of the
+fixed point: **all red is gone**, the support is a single solid quadrilateral
+whose entire boundary is cyan and blue, and **the orange crescent is still there,
+unchanged and in exactly the same place** - the only thing left inside the object
+is the one thing the rule was forbidden to chase. `probe_rgb_fix_15.png` shows
+textured cloth with the printed blue band and a sliver of the emblem (89.3%
+validity); `probe_rgb_fix_16.png` plainer cream weave with a grey band left
+(76.4%, consistent with less texture). A depth-coloured 3D view shows the
+horizontal gap replaced by a band blending with the panels on either side, the
+emblem ellipse still open.
+
+**No structural FAIL line anywhere, and no code fix was made**; nothing outside
+the seven 1f files was modified. The inherited `RuntimeWarning: invalid value
+encountered in cast` from `cyclopean1a_topology.py:117-118` appears again -
+**34** occurrences - and is recorded again as harmless: `_indices` filters on an
+**explicit** `isfinite` term, and a NaN-prefiltered rebuild raises **0** warnings
+with **bitwise identical** evidence arrays. The non-finite angle pairs at the two
+new looks, **7,022** and **15,448**, are exactly their invalid-pixel counts.
+
+What this establishes: **the repeated Cyclopean-1e rule terminates on its own
+condition** - unchanged, with no threshold, no tuned score and no FSG6f, it
+consumed the remaining eligible field in two looks and stopped because
+`EXTERIOR NEVER_OBSERVED` was **empty**, not because a guardrail fired; **the
+exclusion held for the whole loop**, with `OBSERVED_TARGET_NO_DEPTH` at 28 at
+every iteration; **the deep structure is gone**, max exterior depth 142 -> 22;
+and both looks were productive. What it does not establish: **this is one rule on
+one seed**, and a scientific stop shows only that this rule reached its own fixed
+point on this record; **it is not object completeness** - 527 shoreline cells
+remain base-`UNOBSERVED`, 423 imaged-with-background and 28 seen-but-unmeasurable;
+**it is not accuracy**, since truth stayed closed; **it says nothing about other
+seeds or scenes**; **the empty-look branch was never exercised**; and
+**`OBSERVED_TARGET_NO_DEPTH` remains exactly where 1d left it** - the loop's
+success is precisely a success at avoiding it. Stopped for Luiz/Chat.
