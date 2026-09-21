@@ -5402,3 +5402,89 @@ three-quarters of the visible target in six looks and terminating on budget
 rather than on frontier exhaustion, with a trajectory that is sensitive to the
 render seed alone**. Preserved exactly as acquired. Stopped for Luiz/Chat, who
 decide whether this is good enough and what the next practical step is.
+
+### 2026-09-21 - Reality Check 2, let the observer finish: authorized, prospective entry (written before acquisition)
+
+Per `docs/reality-check-2.md` and D-REALITY2 appended just above. **The literal
+continuation of the two saved Reality Check 1 records, not a new experiment.**
+Reality Check 1 stands preserved and unedited; nothing below reruns, relabels or
+reinterprets it.
+
+Provenance audited before anything was run. HEAD `e9ed914`, clean, on `main`;
+**`7c1bfc7` (the Reality Check 1 result) is an ancestor of HEAD**, confirmed by
+`git merge-base --is-ancestor`. `git diff --name-status HEAD~1 HEAD` is exactly
+eight files, all `A`: `docs/reality-check-2.md`,
+`docs/reality-check-2-checks.md`, `tools/reality2_{public,render_fix,run,eval,
+compare}.py` and `tools/dev/check_reality2.py`. `git diff HEAD~1 HEAD`
+restricted to every FSG1/FSG3/FSG6f source, `fsg_render.py`, `rig.py`,
+`bl_common.py` **and every Reality Check 1 source** is EMPTY, confirmed
+additionally by per-file sha256 against `7c1bfc7`: `fsg_stereo_supported`
+683ae91eaca7b6af, `fsg_stereo_hdr` 67e2ec4667bcc179, `fsg_stereo`
+faebf0f1b3acbfde, `fsg_evaluate` a5134b8d8537714d, `fsg_geometry`
+d9537d8ebc23b60c, `fsg3_surface_map` 1b9dbeb873105ec9, `fsg6f_public`
+c79f58c9b51f33d4, `fsg6f_frontier` d636c9405d719916, `fsg_render`
+681237fa8533b7cc, `reality1_public` d2b00211021ff65d, `reality1_run`
+c0d4f18a682fd9fe, `reality1_eval` 91720f42932b463c, `reality1_scene`
+b4392230292bb51c, `reality1_render_fix` bdc068ad931e1072, `check_reality1`
+b057b1d307aebfde - all SAME.
+
+Parent-state audit, **32 of 32 conditions hold on each record**: manifest
+present with exactly six unique gazes, `termination_reason` `max_fixations`,
+`truth_opened` false, `fixed_head`/`static_scene` true, policy
+`FSG6f-candidate-frontier-consensus-v1`, instrument
+`FSG1-HDR-SGBM-one-original-update-original-validity-v1`, `public_spec_sha256`
+equal to the current `reality1_public` digest
+baa71ce4b0ae8e36bc0ccf80addad1c0e0e02ec76d7bc8369c37e4258c528f22, a six-entry
+`policy_trace.json` whose final decision has `stop: false` with a
+`next_gaze_deg`, and `surface_map.npz` plus `maps/00..05`, `patches/00..05` and
+`acquisitions/00..05` all present.
+
+- **seed 2111** gazes (-6,-4) (-1,-9) (4,-9) (9,-9) (14,-4) (14,1), continuation
+  gaze **(14,6)**; sha256 `prediction_manifest.json` cd30b47ad26a5447,
+  `policy_trace.json` 2bc2172ff0a237ad, `surface_map.npz` 8a77e0530202ddad.
+- **seed 2179** gazes (-6,-4) (-1,1) (4,6) (9,11) (14,11) (14,6), continuation
+  gaze **(14,1)**; sha256 `prediction_manifest.json` ed8d5d827e0c32c2,
+  `policy_trace.json` 3da8322a35508dab, `surface_map.npz` 11520678e2725527.
+
+Each seed's next move is the other seed's already-visited region, which is worth
+noting before the data exists but decides nothing.
+
+Checks, all before acquisition. `py_compile` clean on all six new modules.
+`[reality2-scene] PASS` with the **same** fixture figures Reality Check 1
+recorded (depth_range_m 0.08711, target_triangles 120, low_panel_std 0.010764,
+feature_region_std 0.11710) - the scene is byte-identical, not merely similar.
+`[reality2-policy] PASS exact_parent_continuation=true frozen_fsg6f=true
+scientific_stop=no_frontier watchdog_total=24 quality_gated=false`,
+`[reality2-check] SUMMARY passed=7 failed=0`, and all seven negatives exit 1
+(`sixlimit`, `rerenderparent`, `scenechange`, `policycopy`, `truth`,
+`qualitygate`, `watchdoggate`). The current Reality Check 1 suite is still green
+(`passed=6 failed=0`, all six negatives exit 1) and so is FSG6f
+(`[fsg6f-check] passed=14 failed=0`).
+
+`reality2_public` digest dba8a00c7f140d14719c14289760af0c160c79770955cecfe27c308622b6362a;
+`WATCHDOG_TOTAL_FIXATIONS` 24 = 4 x the retired six-look interruption.
+
+Cost class: checks Interactive; the small continuation smoke and the two full
+continuations **Batch** - Reality Check 1 spent about 9 s of Blender per look, so
+a continuation that runs to the watchdog would add at most eighteen looks, and
+the evaluator's cost grows with total fixation count. If any single command
+exceeds five minutes it is reported as such, not split or shortened.
+
+Likely outcomes, in the order I expect them, none of which changes anything:
+(a) both seeds continue productively for several looks and then reach
+`no_frontier`, the result the check was designed to test for; (b) one or both
+run to the **24-fixation watchdog** still reporting `continue` - **an
+observation, explicitly not a FAIL**, since Reality Check 1 already showed FSG6f
+does not declare resolution on this fixture inside six looks; (c) later looks
+returning near-zero new-point fractions, as seed 2179's fifth look already did
+at 0.001 - descriptive only; (d) the two seeds converging to similar final
+coverage despite their divergent paths, or failing to - either way descriptive;
+(e) only then suspect orchestration, the parent loader or the renderer. **None
+of (a)-(d) authorizes tuning or rerendering.** I will not modify the scene,
+texture, policy, fusion, vergence, seeds, watchdog or any numerical constant in
+response to the smoke or to either continuation, will not rerender any Reality
+Check 1 view, will not rerender after a numerical disappointment, and will not
+use an alternate seed. I will fix only a demonstrable implementation defect,
+minimally, after diagnosis. The raw results are preserved even if ugly, and the
+report goes back to Luiz/Chat, who interpret whether simply letting the observer
+continue is good enough.

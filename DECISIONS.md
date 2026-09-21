@@ -1537,3 +1537,73 @@ trajectory sensitive to the render seed alone - are the same two Scene-1c
 surfaced, now isolated on a single object, which is evidence that they belong to
 the frozen FSG6f controller rather than to any scheduler. **Luiz/Chat decide
 whether this is good enough and what the next practical step is.**
+
+## D-REALITY2 - Reality Check 2: let the observer finish (2026-09-21)
+
+Reality Check 1 is **preserved exactly as acquired and is not edited, relabelled
+or rerun**; its `REALITY1_COMPLETE` observation stands, as do FSG6f
+(CLOSED/PASS), FSG7a, Scene-1a, Scene-1b and Scene-1c. No prior decision is
+edited by this block.
+
+Reality Check 1 ended both full records on the **inherited six-fixation
+experimental limit while frozen FSG6f still said `continue`** - `max_fixations`
+on both seeds, with a live `next_gaze_deg` still on the table. Reality Check 2
+asks the literal follow-up: **if those exact saved states are not interrupted at
+six looks, does the unchanged observer continue to useful new surface and
+eventually stop by its own `no_frontier` rule?**
+
+**One scientific change: the six-look interruption is removed. Nothing else in
+perception changes.** Recorded before acquisition:
+
+- **The two saved Reality Check 1 full records are the parent states** -
+  `previews/reality1/full-seed2111` and `previews/reality1/full-seed2179`, seeds
+  **2111** and **2179**, each already holding exactly six looks, termination
+  `max_fixations`, `truth_opened` false, fixed head and static scene true, and a
+  final policy decision with `stop: false` and a recorded `next_gaze_deg`
+  ((14,6) for 2111, (14,1) for 2179). Audited before anything was run: 32 of 32
+  parent conditions hold on each, and the runner pins them by sha256
+  (`prediction_manifest.json`, `policy_trace.json`, `surface_map.npz`) so a
+  parent that changes after continuation is a structural FAIL.
+- **The first six views are NOT rerendered.** Each continuation loads the exact
+  saved map, gaze history, completed binocular observation history and final
+  FSG6f `continue` decision, copies `maps/map_00..05.npz` byte-for-byte, and
+  resumes acquisition at the already-recorded `next_gaze_deg`. The renderer
+  refuses any step below the parent count, and the evaluator fails the record if
+  any parent acquisition directory reappears or any copied parent map differs
+  from its source by sha256. If a parent were missing or incompatibly changed,
+  the run stops - it is never recreated by rerendering.
+- **Scene, target geometry, texture and clutter, fixed head, static scene, the
+  FSG1 stereo instrument at 256 spp, the 2.10 m prescribed vergence, FSG3's 12 mm
+  fusion, oracle target segmentation and the FSG6f frontier/state/consensus/
+  corridor/ranking policy are all unchanged**, imported rather than copied.
+  Verified before acquisition: `reality2_run.py` imports `fsg6f_frontier as
+  policy`, does not import `reality1_scene`, and defines none of FSG6f's frontier
+  extraction, state classifier, consensus or ranking; `INSTRUMENT_ID`,
+  `FROZEN_POLICY_ID`, `OBJECT_ID`, `FIXTURE`, `SEEDS`, `SEED_GAZE_DEG`,
+  `VERGENCE_DISTANCE_M` and `FUSION` are measurably equal to `reality1_public`.
+- **Scientific stopping is exactly `no_frontier` from frozen FSG6f.** No
+  low-gain stop, no coverage target, no convergence heuristic and no operator
+  judgement may end a run.
+- **24 total fixations is an engineering watchdog only, not a quality gate.** It
+  exists solely to bound an accidental non-terminating run. Reaching it is
+  **reported descriptively and is not a scientific or integrity FAIL**; the
+  evaluator records `watchdog_reached` as an observation alongside
+  `terminated_by_no_frontier`.
+- **There is still NO numerical quality PASS threshold.** Coverage, gain after
+  look 6, point-to-surface error, overlap, measurement fraction, fixation count
+  and efficiency are all descriptive. The only automated FAIL condition remains
+  structural integrity: exact parent reuse without rerender, truth never opened,
+  map containing only instance 141, every newly fused patch replay-idempotent, no
+  repeated physical fixation, and FSG6f imported rather than copied.
+- **After the two continuations, stop and return the report to Luiz/Chat.** They
+  interpret whether simply letting the observer continue is good enough. Poor
+  geometry, low coverage, watchdog termination, an odd trajectory or zero-gain
+  views authorize **no** tuning: nothing about the scene, texture, policy,
+  fusion, vergence, seeds, watchdog or any numerical constant may change in
+  response, there is no rerender after a numerical disappointment and no
+  alternate seed. A demonstrable implementation defect may be repaired minimally
+  after diagnosis; scientific behaviour may not.
+
+The per-run evaluator reports `REALITY2_OBSERVATION_COMPLETE` and the two-run
+aggregate `REALITY2_COMPLETE` when structural integrity holds - **even if one or
+both reach the watchdog** - or `REALITY2_INTEGRITY_FAIL` otherwise.
