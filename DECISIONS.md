@@ -2328,3 +2328,121 @@ question this run hands forward is the one it deliberately refuses: **what shoul
 a controller do differently for boundary that was never seen versus boundary the
 instrument cannot measure** - the first is answerable by looking, the second is
 not. **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1E - Cyclopean-1e: epistemic gaze (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a, 1b, 1c and 1d** are preserved
+exactly as acquired and are **not edited, relabelled or rerun**; FSG6f remains
+CLOSED/PASS and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1d showed that the single word `UNOBSERVED` had been hiding different
+situations, and split seed 2111's remaining shoreline into distinct causes: the
+deep exterior slot was genuinely `NEVER_OBSERVED`, while the tiny internal emblem
+residue was `OBSERVED_TARGET_NO_DEPTH` - imaged once, and returned no depth the
+frozen instrument could produce. 1d deliberately refused to act on that. This
+block asks the one question that follows:
+
+> If the refined state is allowed to choose exactly one new fixation from
+> genuinely `NEVER_OBSERVED` exterior shoreline, does it aim a useful look while
+> **ignoring** the already-seen/no-depth residue?
+
+One action, not a loop. **The metric surfel map remains authoritative; the
+refined chart only chooses where to look.**
+
+Recorded for this step:
+
+- **The completed Cyclopean-1d seed-2111 record is the parent**, located by
+  schema rather than by remembered path, and it and every ancestor are **read
+  only**, with pinned hashes verified byte-identical afterwards.
+- **Seed 2111 only, and at most one added fixation** - zero is a legitimate
+  outcome if no eligible cell exists.
+- **The candidate entity is narrow and stated in advance**: a cell must lie on
+  the current shoreline, belong to an **`EXTERIOR`** complement component, and be
+  refined **`NEVER_OBSERVED`**. **`OBSERVED_TARGET_NO_DEPTH` is explicitly not a
+  candidate** - re-looking at a region the instrument already failed to measure
+  would be an identical blind repeat, and a deliberate negative (`nodepth`) fails
+  if it ever becomes eligible.
+- **The selection rule is the inherited depth field, with no new threshold or
+  tuned score**: among eligible exterior components take the one whose
+  `NEVER_OBSERVED` shoreline reaches the greatest inherited exterior border
+  distance, then the deepest such cell, ties by distance to the tied plateau
+  centroid and then raster order, with visited gazes skipped in that same
+  deterministic order. **The depth value and the gaze must be derived from the
+  record**, never restated from a previously measured number.
+- **Nothing in perception changes.** Fixed head, static scene, the seed-2111
+  acquisition history, the FSG1 stereo instrument, FSG3's 12 mm
+  association/hash, the inherited chart and footprint, Cyclopean-1b boundary
+  semantics, Cyclopean-1d refinement and the Reality Check 2b empty-look contract
+  are all frozen. A fixation below the inherited minimum stays a valid negative
+  observation and fuses nothing.
+- **There is NO numerical quality PASS threshold, and none may be added after
+  seeing results.** Target points, surfel gain, coverage, complement size and
+  depth reduction are all descriptive. Forbidden outright: a second epistemic
+  gaze, a repeated loop, a stopping-rule change, FSG6f import or modification,
+  evaluator truth, mesh, morphology tuning, normals, a texture threshold and any
+  new geometric tolerance.
+- **The only automated FAIL condition is structural**: parent and ancestry read
+  only and byte-identical afterwards; no parent fixation rerendered; at most one
+  added fixation; no evaluator truth opened; inherited scales reused; a fused
+  patch replay-idempotent with target-map purity preserved.
+- **A surprising but rule-obeying landing is not tuned away.** Only a
+  demonstrable implementation defect in the new Cyclopean-1e files may be
+  repaired, and **no check may be weakened to obtain green output**; any change
+  outside the seven 1e files requires explicit justification.
+
+**What this decision would resolve.** If the refined state can name one action
+directly - aiming at genuinely unseen boundary and leaving the unmeasurable
+residue alone - then refining the entity simplified the next action instead of
+requiring a new heuristic, and the open question becomes what a controller should
+do about the residue. If the refined state cannot pick a legal gaze, or picks the
+residue, then the refinement is descriptive only and the action problem stays
+where Cyclopean-1c left it.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1e.md` Results and `docs/log.md`).
+**CYCLOPEAN1E_COMPLETE**, `structural_fails: []` - exactly one added fixation, no
+parent rerender, parent byte-identical afterwards, no FAIL line anywhere.
+**Structural only; no PASS is inferred** from surfel gain, coverage or depth
+reduction. Cyclopean-1a/1b/1c/1d, the Reality Checks and FSG6f remain preserved
+and unedited. No prior decision is edited. **No code fix was made and nothing
+outside the seven Cyclopean-1e files was modified.**
+
+**The prewritten rule resolves on its first branch.** The selector derived
+everything from the record: **exactly one** eligible exterior component with
+**388** `NEVER_OBSERVED` shoreline cells spanning depths 9 to **168**, deepest
+cell **(y=62, x=127)** at depth **168** with 2 cells tied, gaze **(-0.2, -2.6)
+deg**, **not** a revisit, `revisit_fallback_rank` **0**, step `fix_14` - a legal
+unvisited gaze on the first try, with no threshold and no tuned score between the
+representation and the action.
+
+**And the exclusion held, measured rather than assumed.** All **28**
+`OBSERVED_TARGET_NO_DEPTH` cells carry `exterior_distance = -1` and sit in
+components **1 and 2, both `INTERNAL`**, so they fail the state test *and* the
+exterior test independently. After the look they are **unchanged at 28**, and
+both internal components are bitwise the same objects - 1 cell at
+(+7.3000, -2.9000) and 31 cells at (+6.7903, -2.1484), the identical centroids
+Cyclopean-1c and 1d reported. The experiment looked **past** the region it could
+not use.
+
+Measured. The fixation returned **54,623 target points** and fused **9,262 new
+surfels** (45,361 matched), map **137,734 -> 146,996** (+6.72%),
+replay-idempotent, ids **{141}**, reproduced bitwise independently of the runner.
+**`NEVER_OBSERVED` fell 388 -> 290** and its maximum penetration depth
+**168 -> 142**; complement **13,366 -> 10,995**, support **38,971 -> 41,342**,
+shoreline **1,384 -> 1,287**. Coherence without truth: new surfels **entirely
+inside** the old range envelope with zero outliers, pre-existing surfels moved by
+at most **5.99 mm**, **83.0%** of probe points associating within the frozen 12 mm
+radius, and the new patch sitting only **8.7 mm** from its neighbours' median
+range - a smoother join than Cyclopean-1c's.
+
+What would overturn or extend this. **No stopping rule changed and none is
+proposed**; FSG6f was never imported or consulted. **One fixation on one seed
+shows nothing about convergence** - the slot did **not** close, **290**
+`NEVER_OBSERVED` cells remain at depth **142**, and a second epistemic gaze was
+forbidden by construction, so whether this iterates to a fixed point is untested.
+**No quality claim is made**: 9,262 surfels is a count, evaluator truth stayed
+closed, and internal coherence is **not** accuracy. **Nothing was learned about
+what to do with `OBSERVED_TARGET_NO_DEPTH`** - the step deliberately walked around
+it. The question this hands forward is therefore unchanged in shape but now
+sharper: **a topology-driven action works where looking helps, so what action, if
+any, belongs to a region the instrument cannot measure from any viewpoint?**
+**Luiz/Chat decide what to ask next.**

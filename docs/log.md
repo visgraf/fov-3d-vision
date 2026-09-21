@@ -6463,3 +6463,137 @@ of six states never fired**, so the full vocabulary is unexercised. The obvious
 next question - what a controller should do differently for *never seen* versus
 *seen but unmeasurable* - is exactly what 1d refuses to answer. Stopped for
 Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1e, epistemic gaze: the refined state aimed one look and stepped around the one it could not use
+
+Per `docs/cyclopean1e.md`, `docs/cyclopean1e-checks.md` and D-CYCLOPEAN1E, run on
+the prospective package Luiz applied and committed as **`7d932d8`** (pre-1e parent
+`23b36d6`).
+
+**Measured outcome. `CYCLOPEAN1E_COMPLETE`, `structural_fails: []`.** Exactly one
+fixation added, no parent fixation rerendered, the Cyclopean-1d parent
+byte-identical afterwards. Structural only - **no surfel gain, coverage figure or
+depth change is a PASS threshold, and none is proposed.**
+
+Provenance. Clean tree; **exactly seven files, all `A`**; `git diff` against
+`23b36d6` over **49 frozen sources** - every FSG1/FSG3/FSG6f source, renderer,
+scene, rig, pin file, every Reality Check 1/2/2b source and **every Cyclopean-1a,
+1b, 1c and 1d source** - **empty (0 lines)**, all 49 sha256 SAME. Parent located
+**by schema**: exactly one `Cyclopean1d-observation-measurement-audit-v1` seed-2111
+`full` record, `previews/cyclopean1d/full-seed2111`, pinned
+`prediction_manifest.json` `4ce0c102f9952595...c33bbdf5`,
+`observation_measurement_report.json` `d4332b7b002a94fc...6148f7bd`,
+`epistemic_shoreline.png` `dfd3acb622c740b0...308ef827`, all identical after. The
+Cyclopean-1c ancestor is also unchanged.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host under `.venv/bin/python` 3.12.3. **Interactive at 33.2 s**
+including the single Blender launch.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim -
+`[cyclopean1e-gaze] PASS never_observed_only=true internal_excluded=true
+no_depth_excluded=true exterior_deepest=true revisit_fallback=true one_probe=true`,
+`[cyclopean1e-policy] PASS parent=cyclopean1d seed2111_only=true
+never_observed_only=true seen_no_depth_excluded=true one_fixation_max=true
+frozen_fsg6f=true quality_gated=false`, `[cyclopean1e-check] SUMMARY passed=6
+failed=0`; all six negatives exit 1 (`nodepth`, `internal`, `centroid`,
+`multiprobe`, `truth`, `policy`). Every prior suite green with its committed
+negative set still firing, **55 prior negatives, none weakened**: cyclopean1d 6/6
+(6/6), cyclopean1c 6/6 (6/6), cyclopean1b 6/6 (6/6), cyclopean1a 6/6 (6/6),
+reality2b 7/7 (10/10), reality1 6/6 (6/6), fsg6f 14/14 (15/15).
+
+Selection, reported **before** rendering and derived entirely from the record -
+neither the depth 168 nor any gaze was hard-coded. Chart **263 x 199**, grid
+**0.1 deg**, footprint **4 cells**, map **137,734** surfels, **14** observations,
+new step **`fix_14`**. The eligibility census reproduces the 1d record exactly and
+the manifest's `epistemic_before` matches the parent's published counts **field
+for field**, independently validating the rebuild: `NEVER_OBSERVED` 388 (all
+exterior), `OBSERVED_TARGET_NO_DEPTH` 28 (all internal),
+`OBSERVED_NONTARGET_ONLY` 398, `NO_RANGE_REFERENCE` 104, the other two zero.
+**Eligible exterior components: exactly one** (component 0, 388 `NEVER_OBSERVED`
+cells, depths 9 to **168**).
+
+**The already-seen residue is ineligible twice over, measured rather than
+assumed**: all 28 `OBSERVED_TARGET_NO_DEPTH` cells carry `exterior_distance = -1`
+(min and max both -1) and sit in components **1 and 2, both `INTERNAL`**, so they
+fail the state test *and* the exterior test independently;
+`observed_target_no_depth_eligible` is recorded `false`. Selected cell
+**(y=62, x=127)** at border distance **168** equal to the component maximum, **2**
+cells tied and the centroid-nearest taken, gaze **(-0.2, -2.6) deg**, inside the
+prior envelope, **not** a revisit, `revisit_fallback_rank` **0**.
+
+The fixation returned **54,623 target points** and was fused: **9,262 new
+surfels**, 45,361 matched, map **137,734 -> 146,996** (+6.72%), multi-look
+**53,412 -> 67,496**, ids **{141}**, `idempotent_replay` **true**. Verified
+independently of the runner: `map_before.npz` equals the 1c `surface_map.npz`
+bitwise, refusing the recomputed patch reproduces the saved map **bitwise** in
+xyz/support/provenance, and replay returns `duplicate_patch: true` with new 0,
+matched 0. The observation has **57,333 of 65,536** valid pixels (**87.5%**) and
+saw **{141: 54,623, 143: 2,710}**, the non-target pixels excluded from the patch.
+
+Epistemic change on the same inherited chart: support **38,971 -> 41,342**,
+complement **13,366 -> 10,995**, shoreline **1,384 -> 1,287**, exterior components
+1 -> 1, internal 2 -> 2, **exterior `NEVER_OBSERVED` 388 -> 290**, **max
+`NEVER_OBSERVED` depth 168 -> 142**. By state: `NEVER_OBSERVED` **388 -> 290
+(-98)**, **`OBSERVED_TARGET_NO_DEPTH` 28 -> 28 (unchanged)**,
+`OBSERVED_NONTARGET_ONLY` 398 -> 396, `NO_RANGE_REFERENCE` 104 -> 102,
+`OBSERVED_TARGET_WITH_DEPTH` and `MIXED_OBSERVATION` still 0; sum 918 -> 816.
+Inherited base states after: `UNOBSERVED` 816, `TARGET_CONTINUATION` 0,
+`PHYSICAL_DEPTH_BREAK` 310, `AMBIGUOUS` 161.
+
+**The action semantics came out as designed.** The gaze addressed genuinely unseen
+territory, and the known seen-but-unmeasured residue was **not** re-probed: both
+internal components are bitwise the same objects as before - 1 cell at
+**(+7.3000, -2.9000)** and 31 cells at **(+6.7903, -2.1484)**, the identical
+centroids 1c and 1d reported.
+
+Geometry coherence, which is **not** accuracy since evaluator truth stayed closed:
+the 9,262 new surfels lie **entirely inside the old range envelope**
+([2.0772, 2.2023] within [2.0667, 2.2372] m) with **zero** outside; fusing moved
+**pre-existing** surfels by median **0.0000 mm**, p99 **2.15 mm**, max **5.99 mm**,
+all inside the frozen 12 mm radius; **45,361 of 54,623** probe points (**83.0%**)
+associated within 12 mm, so the new look agreed with the map where they overlapped;
+and the new patch sits at essentially its neighbours' depth - median range
+**2.1293 m** against the old map's **2.1380 m**, only **8.7 mm** nearer, with 16
+seam cells at median **+15.4 mm** and max **36.7 mm**, none beyond 50 mm, against
+**145.2 mm** of cloth relief. For contrast, Cyclopean-1c's patch sat 28.6 mm
+*farther* than the old median; this one joins more smoothly. One statistic was
+computed and **discarded as uninformative** - "new surfels disagree by more than
+12 mm" is definitionally forced, since a point within 12 mm would have *matched*
+rather than become new.
+
+Visual reading. `epistemic_before.png` shows the inherited **L-shaped white slot**
+outlined in red `NEVER_OBSERVED`, cyan `OBSERVED_NONTARGET_ONLY` on the outer rim,
+blue `PHYSICAL_DEPTH_BREAK` along the bottom, and a small **orange crescent**
+middle-right. `epistemic_after.png` shows the **vertical arm of the slot filled**,
+leaving a thin horizontal red seam and a small step at the left - the complement
+narrowed but did not close - and **the orange crescent unchanged and still in
+place**. `probe_rgb.png` explains the 87.5% validity: fully textured cloth, cream
+weave with panel seams and the printed blue band, with a strip of a second object
+along the bottom. A depth-coloured 3D view shows the void replaced by a patch
+whose colour matches its neighbours rather than contrasting with them, the emblem
+ellipse still open.
+
+**No structural FAIL line anywhere, and no code fix was made**; nothing outside
+the seven 1e files was modified. The inherited `RuntimeWarning: invalid value
+encountered in cast` from `cyclopean1a_topology.py:117-118` appears again - **30**
+occurrences - and is recorded again as harmless: by inspection `_indices` filters
+on an **explicit** `isfinite` term, and by measurement a NaN-prefiltered rebuild
+of the post-probe evidence raises **0** warnings and yields **bitwise identical**
+`seen_target`, `seen_nontarget`, `target_range_m`, `nontarget_range_m`,
+`raw_support`, `support` and target range raster. The **8,203** non-finite angle
+pairs at `fix_14` are exactly its 8,203 invalid pixels.
+
+What this establishes: **a refined epistemic state can drive an action directly,
+with no new machinery between representation and gaze** - the literal read-out
+`NEVER_OBSERVED + EXTERIOR -> deepest inherited border distance -> one foveation`,
+no threshold, no tuned score, a legal unvisited gaze on the first try - and it
+**aimed at genuinely unseen territory and moved it** while **ignoring the residue
+it was designed to ignore**. What it does not establish: **no stopping rule
+changed and none is proposed**, FSG6f never imported; **one fixation on one seed
+shows nothing about convergence** - the slot did not close, 290 `NEVER_OBSERVED`
+cells remain at depth 142, and a second gaze was forbidden by construction; **no
+quality claim is made**, since 9,262 surfels is a count and with truth closed the
+correctness of the new surface is unmeasured; and **nothing was learned about what
+to do with `OBSERVED_TARGET_NO_DEPTH`** - the experiment stepped around it, so that
+question is exactly as open as 1d left it. Stopped for Luiz/Chat.
