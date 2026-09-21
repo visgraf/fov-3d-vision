@@ -6881,3 +6881,126 @@ matcher, interpolation, texture rescue or normal cue was attempted and none is
 proposed. **The intended next research stage is multiple objects, unchanged by
 this outcome** - it was the declared next step either way - progressing afterward
 toward the full cyclopean scene. Stopped for Luiz/Chat.
+
+### 2026-09-21 - MultiObject-1a, second-object seed: two entities coexist with zero cross-object contamination
+
+Per `docs/multiobject1a.md`, `docs/multiobject1a-checks.md` and D-MULTIOBJECT1A,
+run on the prospective package Luiz applied and committed as **`1db6b9a`**
+(pre-package parent `aa5ac98`).
+
+**Measured outcome. `MULTIOBJECT1A_COMPLETE`, `structural_fails: []`.** Object
+141 inherited read-only and byte-identical afterwards; object 143 seeded by
+exactly one prescribed foveation. Structural only - **no point count, footprint
+size, overlap figure or coverage number is a PASS gate.**
+
+Provenance. Clean tree; **exactly the seven expected files, all `A`**; `git diff`
+against `aa5ac98` over **64 frozen sources** - every FSG1/FSG3/FSG6f source,
+renderer, scene, rig, pin file, every Reality Check 1/2/2b source and **every
+Cyclopean-1a through 1g source** - **empty (0 lines)**, all 64 sha256 SAME.
+Parent located **by manifest** on schema/seed/profile/truth_opened: exactly one
+match, `previews/cyclopean1g/full-seed2111`; pinned `prediction_manifest.json`
+`8d4c7b4de820221f...ef92000a` and `surface_map.npz`
+`6ac98f6251b47337...f71e524a`, both identical after.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **Interactive at 11.9 s**.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. All six
+negatives are **genuine source-mutation controls**, each exiting **1** because
+its mutation was detected and each naming its detector - `sameid` by
+`two_declared_objects`, `multiprobe` by `one_second_object_seed`, `merge` by
+`separate_geometry`, `truth`/`autodiscover` by `no_truth_or_discovery`, `grow` by
+`growth_deferred` - and **none exited 2**, so no mutation escaped. Prior suites
+green with sets still firing, **73 prior negatives, none weakened**:
+cyclopean1g/1f/1e/1d/1c/1b/1a 6/6 (6/6 each), reality2b 7/7 (10/10), reality1 6/6
+(6/6), fsg6f 14/14 (15/15).
+
+**The seed came only from already-acquired evidence.** All **18** completed
+fixations in the Cyclopean-1g ancestry carried incidental id-143 samples -
+reality1 steps 0-5 (6,608/6,934/3,567/4,526/6,879/3,444), reality2b 6-12
+(1,854/784/695/670/756/757/988), cyclopean1c 13 (1,021), cyclopean1e 14 (2,710),
+cyclopean1f 15-16 (39/78), cyclopean1g 17 (1,285) - **43,595** points total.
+These quantize to **11,688** occupied 0.1-deg cells with spherical mean
+**(+2.4011, -0.6031) deg**; the nearest occupied cell is **[15, -79]**, giving
+the prescribed gaze **(+1.502902, -7.940374) deg** at dot-to-mean **0.991690**.
+
+**That cell is 7.392 deg from the mean, and the reason is recorded rather than
+glossed**: the mean direction of object 143's own evidence falls **inside object
+141's footprint and outside object 143's**, measured directly on the shared
+chart. Object 143's evidence wraps below and around the cloth rather than
+centring on it, so its angular centroid lands on the occluding object. The
+declared *nearest occupied cell* rule did exactly what it exists for - anchoring
+the seed in a direction that actually carries id-143 evidence. **Nothing was
+hand-picked or retuned after looking at the scene.**
+
+The one fixation `fix_18` gives a 256x256 observation **48,820/65,536** valid
+(**74.5%**) containing **three** instances among valid pixels - **141: 27,963,
+142: 15,513, 143: 5,344**. Object 143 contributed the **5,344** seed points.
+
+The two entities: **141** inherited `SURFEL_MAP`, **155,684** points, ids exactly
+**{141}**, file hash unchanged; **143** new `SEED_SURFEL_PATCH`, **5,344** points,
+ids exactly **{143}**. **The intersection of the two id sets is empty**, they live
+in separate files, and neither was fused into the other. Range: 141 median
+**2.1372 m**, 143 median **2.1684 m** (+31.2 mm) reaching **3.6143 m** - a
+surface receding behind and below the cloth.
+
+Shared 0.1-deg chart **263 x 215** at yaw0 -12.9, pitch0 -10.4: object 141
+**37,654** cells (376.54 deg2), object 143 **1,641** cells (16.41 deg2),
+**overlap 0**. **The zero overlap was checked, not assumed**, because the
+bounding boxes do intersect in pitch: over the **14** shared rows
+(**-8.30 to -7.00 deg**) 141 holds **1,189** cells and 143 holds **447** with
+**not one cell claimed by both**, disjoint in yaw in every shared row by a
+minimum of **19 to 45 cells (1.9 to 4.5 deg)**. They abut without
+interpenetrating.
+
+Visual reading, grounded on the saved instance mask rather than by eye.
+`second_object_seed_rgb.png`: cloth above (cream weave, printed blue band, a
+sliver of the red emblem top right), a light grey band diagonally across the
+middle, brown wood below. The **grey middle band is object 143**; the cloth is
+**141**; the wood is a **third object, id 142**. **The seed is visually centred on
+143** - the exact centre pixel (128,128) is instance **143**, the central 32x32
+window is **67.6%** id-143, and rows 128-159 are **96.1%** id-143. **Object 141
+does appear**, 31,144 pixels (47.5% of frame, 27,963 valid) in the upper region.
+Of **12,649** visible id-143 pixels, **5,344** (**42.2%**) carried valid depth -
+bright along the textured upper edge, patchy through the smoother middle.
+`scene_cyclopean_footprints.png` is the first two-object picture: 141's large
+quadrilateral in mid-grey with its panel seams and the black emblem ellipse 1g
+left unmeasured, and 143's thin sparse bright band below. The image reserves its
+brightest level for cells claimed by both and **no such pixel exists**.
+
+**A third object is present and was deliberately not instantiated.** The seed view
+holds **15,513** valid pixels of object 142 - more than 143's 5,344 - and it was
+not turned into an entity, because the contract declares exactly two ids in
+advance and defers automatic discovery. Recorded so the deferral is visible in
+the measurements, not only in the prose.
+
+**No structural FAIL line anywhere.** **One code fix, in a new MultiObject-1a file
+only, after diagnosis**: `multiobject1a_run.py:42` read the Cyclopean-1g
+diagnostic label as `m.get("measurement_outcome")` at the manifest top level, but
+1g records it **only inside `probe_result`** - there is no top-level copy, and
+1g's own comparator reads it as `pr.get("measurement_outcome")`. The top-level
+lookup returned `None` for **any** valid 1g record, so parent validation aborted
+before the run. The fix reads the field where it is written, matching the parent's
+own reader. **The check was corrected, not weakened**, and that was verified: the
+guard still rejects a parent whose `measurement_outcome` is removed, set to a
+bogus label, or whose `probe_result` is absent, and still rejects a flipped
+`truth_opened` or changed seed, while accepting the real record. No frozen source
+and no scientific parameter was touched.
+
+What this establishes: **two foreground object entities coexist in one fixed-head
+scene record without cross-object contamination** - 141 inherited read-only and
+byte-identical at 155,684 points and exactly {141}, 143 seeded into a separate
+patch of 5,344 points and exactly {143}, empty id intersection, separate files,
+and **zero** overlapping cells on the shared chart even where the bounding boxes
+cross; and **the seed was derived only from already-acquired evidence** by a
+deterministic rule. What it does not establish: **this is coexistence, not
+multi-object reconstruction** - 143 has one seed patch from one look and was not
+grown, with 42.2% of its visible pixels yielding depth and the rest recorded and
+unaddressed; **no scheduler, discovery or growth loop** was introduced and the
+third object in the same frame was left uninstantiated; **no accuracy claim** is
+made, since truth stayed closed; and **zero footprint overlap is a property of
+this configuration, not a demonstrated invariant** - these two objects happen to
+be angularly disjoint from this fixed head, and nothing here shows what the
+representation would do if they were not. **Next stage**: grow object 143
+independently while 141 remains stable; automatic next-object discovery stays
+deferred. Stopped for Luiz/Chat.

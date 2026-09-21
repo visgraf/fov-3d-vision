@@ -2680,3 +2680,115 @@ fixed-head stereo instrument and deferred**. **The intended next research stage
 is multiple objects** - declared before the run and unchanged by this outcome -
 progressing afterward toward the full cyclopean scene. **Luiz/Chat decide what to
 ask next.**
+
+## D-MULTIOBJECT1A - MultiObject-1a: second-object seed (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a through 1g** are preserved exactly
+as acquired and are **not edited, relabelled or rerun**; FSG6f remains CLOSED/PASS
+and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1g closed the single-object branch for object 141: attention reached
+its own fixed point in 1f, and 1g established that the surviving residue is a
+measurement limit rather than a placement one. Everything up to here has been one
+object. This block opens the next stage by adding **exactly one new difficulty -
+two foreground object entities in one fixed-head scene representation** - and
+nothing else.
+
+> Can the completed object-141 representation coexist with one newly seeded
+> object-143 entity in the same cyclopean scene record without cross-object
+> contamination?
+
+Recorded for this step:
+
+- **Object 141 is inherited read-only** from the completed Cyclopean-1g record,
+  located by manifest, with pinned hashes verified byte-identical afterwards.
+  It is never modified, regrown or re-fused.
+- **Object 143 is declared in advance.** This is **not** automatic object
+  discovery: the id is fixed by the experiment before execution, and no search
+  for a next object is performed.
+- **The seed direction comes only from already-acquired evidence.** Valid
+  head-frame samples labelled 143 are collected from completed prediction-side
+  observations, quantized on the inherited 0.1-degree full-profile grid; the
+  spherical mean of **occupied cells** is computed and the **occupied cell
+  nearest that mean** is chosen. Quantizing first prevents a repeatedly imaged
+  sliver from dominating on pixel count alone, and taking an occupied cell
+  guarantees the gaze points where id-143 evidence actually exists. **The gaze
+  may not be hand-picked or tuned after looking at the scene.**
+- **Exactly one new fixation maximum**, and **no growth of object 143**. One seed
+  patch, no loop.
+- **The two objects remain separate entities.** 141 is a `SURFEL_MAP`, 143 a
+  `SEED_SURFEL_PATCH`, in different files; **object 143 is never fused into
+  object 141**. Both are additionally registered as raw angular footprints on one
+  shared 0.1-degree chart purely for a first multi-object visualization.
+- **There is NO quality gate.** No target-point count, footprint size, overlap
+  figure, coverage or geometry number is a PASS threshold, and none may be added
+  after seeing results.
+- **Deliberately excluded**: object growth, automatic next-object discovery, a
+  multi-object scheduler, mesh or semantic relation inference, evaluator truth,
+  and any FSG6f or Cyclopean attention loop.
+- **The only automated FAIL condition is structural**: parent read only and
+  byte-identical; at most one added fixation; two distinct declared ids; each
+  entity pure in its own id; no evaluator truth opened.
+- **If the declared second object has no prior valid evidence, or the one
+  prescribed seed yields no useful patch, the run stops and reports that
+  observation.** No rescue fixation, no scene scan, no contract change.
+
+**What this decision would resolve.** If the two entities coexist structurally
+with no id contamination and no merged geometry, the representation can carry
+more than one object and the next experiment may grow object 143 independently.
+If the seed cannot be derived from prior evidence, or the entities contaminate
+each other, then multi-object representation needs redesign before any growth
+question is asked.
+
+Outcome 2026-09-21 (evidence: `docs/multiobject1a.md` Results and `docs/log.md`).
+**MULTIOBJECT1A_COMPLETE**, `structural_fails: []`. Object 141 inherited
+read-only and byte-identical afterwards; object 143 seeded by exactly one
+prescribed foveation; no FAIL line anywhere. **Structural only; no PASS is
+inferred** from point counts, footprint areas or overlap. Cyclopean-1a..1g, the
+Reality Checks and FSG6f remain preserved and unedited. No prior decision is
+edited.
+
+**The prewritten rule resolves on its first branch.** Object 141 remains
+**155,684** points with ids exactly **{141}** and an unchanged file hash; object
+143 is a separate **5,344**-point patch with ids exactly **{143}**; **the
+intersection of the two id sets is empty** and neither was fused into the other.
+On the shared 0.1-degree chart 141 occupies **37,654** cells and 143 **1,641**,
+with **zero** overlapping cells - and that was **checked rather than assumed**,
+since their bounding boxes do intersect in pitch: across the **14** shared rows
+141 holds 1,189 cells and 143 holds 447 with **not one claimed by both**,
+disjoint in yaw by **19 to 45 cells** in every shared row.
+
+**The seed was derived, not chosen.** All **18** completed fixations carried
+incidental id-143 evidence, **43,595** points in total, quantizing to **11,688**
+occupied cells with spherical mean **(+2.4011, -0.6031) deg**; the nearest
+occupied cell gave the gaze **(+1.502902, -7.940374) deg**. **That cell is 7.392
+degrees from the mean, and the reason is itself a first multi-object
+observation**: the mean direction of object 143's own evidence falls **inside
+object 141's footprint and outside object 143's**, because 143 wraps below and
+around the cloth rather than centring on it. The *nearest occupied cell* rule did
+exactly what it exists for.
+
+**One code fix, in a new MultiObject-1a file only, after diagnosis.**
+`multiobject1a_run.py` read the Cyclopean-1g diagnostic label at the manifest top
+level, where 1g does not write it - 1g stores it inside `probe_result`, which is
+where 1g's own comparator reads it - so validation aborted for **any** valid
+parent. The lookup was corrected to match the parent's own reader. **The check
+was corrected, not weakened**, and this was verified: it still rejects a parent
+with the label removed, set to a bogus value, or with `probe_result` absent, and
+still rejects a flipped `truth_opened` or changed seed. No frozen source and no
+scientific parameter was touched.
+
+What would overturn or extend this. **This is coexistence, not multi-object
+reconstruction.** Object 143 has **one** seed patch from **one** look and was not
+grown; **42.2%** of its visible pixels yielded depth and the rest are recorded
+and unaddressed. **A third object, id 142, was visible in the very same frame
+with 15,513 valid pixels - more than 143 itself - and was deliberately left
+uninstantiated**, because discovery is deferred; that deferral is now visible in
+the measurements rather than only in prose. **No accuracy claim is made**, since
+evaluator truth stayed closed. And **zero footprint overlap is a property of this
+configuration, not a demonstrated invariant**: these two objects happen to be
+angularly disjoint from this fixed head, and nothing here shows what the
+representation would do if they were not - which is the first thing that will
+matter once a third object or a nearer one enters. **Next stage: grow object 143
+independently while object 141 remains stable; automatic next-object discovery
+stays deferred. Luiz/Chat decide what to ask next.**

@@ -39,7 +39,9 @@ def _validate_parent(parent: Path) -> dict:
         raise AssertionError("wrong seed or truth integrity broken")
     if not m.get("fixed_head") or not m.get("static_scene"):
         raise AssertionError("fixed-head/static-scene invariant broken")
-    if m.get("measurement_outcome") not in ("DEPTH_RECOVERED", "DEPTH_STILL_ABSENT"):
+    # Cyclopean-1g records the diagnostic label inside probe_result, which is
+    # where its own comparator reads it; there is no top-level copy.
+    if m.get("probe_result", {}).get("measurement_outcome") not in ("DEPTH_RECOVERED", "DEPTH_STILL_ABSENT"):
         raise AssertionError("Cyclopean-1g did not complete its declared one-look diagnostic")
     return m
 
