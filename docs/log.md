@@ -6142,3 +6142,167 @@ completeness claim is made** and `no_frontier` is not being called wrong;
 vocabulary is really a three-state vocabulary on this fixture; and whether a deep
 unobserved arc should ever become a fixation is exactly the question **1b
 deliberately does not answer**. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1c, one deep-bay probe: the chart aims a fixation, and pays for it
+
+Per `docs/cyclopean1c.md`, `docs/cyclopean1c-checks.md` and D-CYCLOPEAN1C, run on
+the prospective package Luiz applied and committed as **`ca9517b`**. One cosmetic
+note so the log matches the repository: that commit's *message* reads "Add
+Cyclopean-1b spherical shoreline audit" while its *content* is the seven-file
+Cyclopean-1c package; git is forward-only here, so the message stands as
+committed.
+
+**Measured outcome. `CYCLOPEAN1C_COMPLETE`, `structural_fails: []`.** Exactly one
+new fixation, no parent fixation rerendered, the Cyclopean-1b parent
+byte-identical afterwards. Structural only - **no numerical quality gate exists
+here and no PASS is inferred** from target points, map growth or bay reduction.
+
+Provenance. Clean tree at `ca9517b`; **exactly seven files, all `A`**; `git diff`
+against the Cyclopean-1b result commit `695dbd9` over **38 frozen sources** -
+every FSG1/FSG3/FSG6f source, renderer, scene, rig, pin file, every Reality Check
+1/2/2b source and **every Cyclopean-1a and Cyclopean-1b source** - **empty (0
+lines)**, all 38 sha256 SAME. The parent was located **by manifest**: exactly two
+`Cyclopean1b-boundary-audit-v1` records exist and **exactly one** is seed 2111, at
+`previews/cyclopean1b/full-seed2111`. Its three pinned files hash identically
+before and after - `prediction_manifest.json` `fc2c52ed3ad1e736...6bf48671`,
+`boundary_report.json` `678985846eeee681...ac3b823e`, `shoreline.png`
+`6544ba1a74c1b9ae...8cd1fdee`. Ancestry was followed rather than assumed: 1b ->
+Cyclopean-1a `full-seed2111` (added_fixations 0, no probe) -> Reality Check 2b
+`full-seed2111` (13 fixations). The map extended is the Cyclopean-1a
+`surface_map.npz`, `c780d4345e6f74d3...9da1f6e1`, **117,567 surfels**, still that
+exact hash after the run.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host analysis under `.venv/bin/python` 3.12.3. Whole increment
+**Interactive at 25.6 s** including the single Blender launch.
+
+Checks. `py_compile` clean on all five modules; the three prescribed lines
+verbatim - `[cyclopean1c-bay] PASS exterior_deepest=true physical_excluded=true
+revisit_fallback=true one_probe=true`, `[cyclopean1c-policy] PASS
+parent=cyclopean1b seed2111_only=true one_fixation_max=true frozen_fsg6f=true
+no_mesh=true quality_gated=false`, `[cyclopean1c-check] SUMMARY passed=6
+failed=0`; all six negatives exit 1 (`internal`, `physical`, `centroid`,
+`multiprobe`, `truth`, `policy`). Prior suites green with negative sets still
+firing: **cyclopean1b 6/6 (6/6)**, **cyclopean1a 6/6 (6/6)**, **reality2b 7/7
+(10/10)**, **reality1 6/6 (6/6)**, **fsg6f 14/14 (15/15)**.
+
+Selection, reported **before** rendering and derived entirely from the record -
+neither the 209-cell depth nor any gaze was hard-coded. The inherited chart
+rebuilt from the Cyclopean-1a `map_before.npz` is **263 x 199**, grid **0.1 deg**,
+footprint **4 cells / 0.322236 deg**, and it reproduces the saved Cyclopean-1b
+report exactly (shoreline **1,514**, **1** component, **213** arcs, max exterior
+depth **209**). Eligible exterior components with `UNOBSERVED` shoreline:
+**exactly one** (component 0, 18,116 cells, **1,059** unobserved shoreline cells
+reaching depth **209**). Deepest complement cell in it: **(y=109, x=209)** at
+depth **209**, equal to the component maximum, with **3** cells tied at that
+depth and the centroid-nearest one taken. Gaze **(8.0, 2.1) deg**, inside the
+parent envelope (yaw [-16, 14], pitch [-9, 11]), **not** a revisit of any of the
+13 parent gazes, so `revisit_fallback_rank` **0** - the declared fallback was
+never exercised. New step **`fix_13`**.
+
+The probe. One Blender launch, one fixation, `added_fixations: 1`,
+`parent_fixations_rerendered: 0`. It returned **52,873 target points** - far over
+the inherited `<100` limit - and was fused: **20,167 new surfels**, 32,706
+matched, map **117,567 -> 137,734** (a **17.15%** gain on a map `no_frontier` had
+already declared finished), multi-look **48,350 -> 53,412**, max support count
+4 -> 5, instance ids exactly **{141}**, `idempotent_replay` **true**. Verified
+independently of the runner: recomputing the patch and refusing it onto
+`map_before.npz` reproduces the saved `surface_map.npz` **bitwise** in xyz,
+support and provenance, and replaying it onto the result gives
+`duplicate_patch: true` with **new 0, matched 0** and the map bitwise unchanged.
+The observation has **53,894 of 65,536** valid pixels (82.2%) and saw two
+instances, **{141: 52,873, 143: 1,021}**, the 1,021 non-target pixels excluded
+from the patch so purity holds by construction.
+
+What it did to the spherical structure, both audits on the **same inherited
+chart**: raw support 28,032 -> 32,735, support **34,221 -> 38,971**, complement
+**18,116 -> 13,366**, shoreline 1,514 -> 1,384, arcs 213 -> 222, exterior
+components 1 -> 1, **internal components 0 -> 2**, max exterior border distance
+**209 -> 168**. Shoreline cells by state: `UNOBSERVED` **1,059 -> 918**,
+`AMBIGUOUS` 152 -> 152, `PHYSICAL_DEPTH_BREAK` 303 -> 314; `TARGET_CONTINUATION`
+remains **0**, as in Cyclopean-1b. The deepest unobserved arc went from arc 18
+(**615** cells, centroid (-1.078, +2.015), span 20.5 x 8.9 deg, depth [5, **209**])
+to arc 19 (**454** cells, centroid (-4.245, +2.372), span 13.9 x 8.7 deg, depth
+[5, **168**]). The complement depth field moved with it: median **16 -> 9**, p95
+**196 -> 141**, max **209 -> 168**; cells deeper than 100 fell **6,795 -> 2,013**
+and cells deeper than 168 fell **2,918 -> 0**. No threshold is attached to any of
+these numbers.
+
+**One structural change was not a reduction, and it is the interesting one.** The
+record gained **two internal components where it had none**: **31 cells / 0.3100
+deg2** at **(+6.7903, -2.1484)** and **1 cell / 0.0100 deg2** at **(+7.3000,
+-2.9000)**, both with entirely `UNOBSERVED` shoreline. Filling a bay from one
+viewpoint converted part of what had been open water into enclosed lakes. That is
+a cost of the action, not a defect.
+
+**The residue is an instrument limit, not a sampling gap.** The 31-cell hole was
+traced back into the probe image rather than guessed at: its centroid maps to
+pixel **(228, 111)** of `fix_13`, whose neighbourhood is **10.4% valid against
+82.2% frame-wide**, with local 5x5 luminance std **0.00117 against a frame median
+of 0.00992** (8.5x less textured) and mean RGB **[1.094, 0.263, 0.184]** against
+the frame's [0.629, 0.504, 0.414]. It is the saturated, nearly untextured
+red-orange emblem printed on the cloth, where the frozen SGBM instrument yields no
+valid disparity; frame-wide, invalid pixels have median local texture **0.00356**
+against **0.01073** for valid ones. So what the probe left behind there is **not
+unsampled territory but a region the stereo instrument cannot reconstruct**. This
+run gives no evidence either way about another viewpoint, and none was tried.
+
+The 3D map stays coherent. The 20,167 new surfels lie **entirely inside the old
+range envelope** ([2.0815, 2.2134] m within [2.0667, 2.2372] m) with **zero**
+points outside it - nothing at table or wall depth. Fusing the probe moved the
+**pre-existing** surfels by median **0.0000 mm**, p99 **1.72 mm**, max **5.94
+mm**, all well inside the frozen 12 mm radius, so the new look did not drag the
+existing surface. **32,706 of 52,873** probe points (**61.9%**) associated with
+existing surfels within that radius, so where the new look overlapped known
+surface it agreed. The filled patch does sit at the far end of the cloth's depth
+range (new median range **2.1623 m** against the old map's **2.1337 m**) and abuts
+a nearer region, giving a visible seam step (median **+22 mm**, max **41 mm** over
+15 seam cells); the cloth already shows panel-to-panel steps of that size across
+its whole 170 mm of relief, so this reads as its own fold structure rather than a
+misplaced slab. One statistic was computed and then **discarded as
+uninformative** - "new surfels disagree with old cells by more than 12 mm" is
+definitionally forced, since a point within 12 mm would have *matched* instead of
+becoming new - and is recorded only so it is not mistaken for evidence later.
+
+Visual reading, descriptive. `shoreline_before.png` is the Cyclopean-1b picture: a
+white channel enters from the **left edge** and opens into a wide rectangular
+basin in the middle right. `shoreline_after.png` shows the **basin filled**, with
+a narrow L-shaped slot remaining along the left - the former entrance channel,
+still reaching the chart border, which is why there is still exactly one exterior
+component and a depth of 168 - plus one small red crescent, the 31-cell internal
+hole. The bay became **much smaller and much shallower, stayed exterior-connected,
+and fragmented** by shedding two internal lakes. `probe_rgb.png` explains the
+yield: fully textured cloth - printed blue band, cream weave, the red-orange
+emblem near the bottom - with a narrow strip of a second object at the right edge,
+the 1,021 non-target pixels. A depth-coloured before/after view of the surfel map
+shows the same event in 3D: the rectangular void is replaced by a coherent
+textured patch at the far end of the cloth's depth range, carrying a small
+elliptical gap where the emblem is.
+
+**No structural FAIL line was produced anywhere, and no code fix was made**; no
+source file was modified. The inherited `RuntimeWarning: invalid value encountered
+in cast` from `cyclopean1a_topology.py:117-118` appears again - **2** occurrences
+in the 1c rasterization path - and is recorded again as harmless, proved the same
+two ways as in Cyclopean-1b: by inspection `_indices` builds `good` with an
+**explicit** `np.isfinite(yaw) & np.isfinite(pitch)` term so the cast's output for
+a non-finite input is never used, and by measurement a NaN-prefiltered rebuild
+raises **0** warnings and yields **bitwise identical** evidence and support
+arrays. The 11,642 non-finite angle pairs at `fix_13` are exactly its 11,642
+invalid pixels, all correctly excluded. It changes no Cyclopean-1c number, so the
+parent scientific source was correctly left alone.
+
+What this one probe establishes: **a boundary structure read off the cyclopean
+chart was enough to aim one useful fixation** - the deepest bay cell, chosen with
+no threshold, no tuned score and no FSG6f involvement, returned 52,873 target
+points and 20,167 new surfels with replay idempotence and target purity intact -
+and **the bay is measurably reduced**, 209 -> 168 deep and 18,116 -> 13,366
+complement cells. What it does not establish: **no stopping rule changed and none
+is proposed**, FSG6f was never consulted; **nothing says one probe is enough or
+that more would converge**, since a single action on a single seed cannot show
+that and a second probe was forbidden by construction; **no quality claim is
+made**, because 20,167 surfels is a count and no evaluator truth was opened, so
+the correctness of the new surface is unmeasured here; and **the residue is not a
+gap this method can close**, which means bay depth alone would keep proposing
+looks at a spot the instrument cannot resolve. That last point is the sharpest
+thing this run says about using topology to drive stopping, and it is a caution,
+not a result. Stopped for Luiz/Chat.

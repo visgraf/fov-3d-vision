@@ -2077,3 +2077,127 @@ after seeing it**. The open question is unchanged in shape but now better posed:
 **whether a deep unresolved arc should ever become a fixation**, and if so
 whether that belongs in FSG6f's frontier rule or beside it. **Luiz/Chat decide
 what to ask next.**
+
+## D-CYCLOPEAN1C - Cyclopean-1c: one deep-bay probe (2026-09-21)
+
+Reality Checks 1, 2 and 2b, **Cyclopean-1a and Cyclopean-1b** are preserved
+exactly as acquired and are **not edited, relabelled or rerun**; FSG6f remains
+CLOSED/PASS and unmodified. No prior decision is edited by this block.
+
+Cyclopean-1b established that seed 2111's conspicuous missing region is a deep
+**exterior-connected bay** whose shoreline is dominantly `UNOBSERVED`, and that
+the chart can say so without any new machinery. It deliberately stopped there:
+describing a bay is not acting on one. Cyclopean-1c asks the one small action
+question that follows:
+
+> If we foveate **once** at the deepest cell of that unresolved bay, does the
+> existing stereo/fusion pipeline acquire useful target surface and reduce the
+> bay, **without changing FSG6f or the stopping policy**?
+
+This is one action, not a controller loop. **The metric surfel map remains
+authoritative; the chart only chooses where to look.**
+
+Recorded before acquisition:
+
+- **The completed Cyclopean-1b seed-2111 audit is the parent**, located by
+  manifest and read only, and its Cyclopean-1a and Reality Check 2b ancestry is
+  read only as well. The map extended is the Cyclopean-1a `surface_map.npz`. All
+  parent hashes are pinned before the probe and **re-verified byte-identical
+  after it**.
+- **Seed 2179 is deliberately not run.** Its principal internal hole was already
+  probed in Cyclopean-1a; repeating that is not the question.
+- **Nothing in perception changes.** Fixed head, static scene, the seed-2111
+  acquisition history, the FSG1 stereo instrument, FSG3's 12 mm
+  association/hash, FSG6f, Reality Check empty-look semantics, the Cyclopean-1a
+  chart scale and footprint and the Cyclopean-1b boundary semantics are all
+  frozen. **No new geometric tolerance is introduced.**
+- **The bay rule is topological and threshold-free.** An eligible bay is an
+  `EXTERIOR` complement component with at least one `UNOBSERVED` shoreline cell;
+  among eligible components the one whose unobserved shoreline reaches the
+  greatest inherited border distance is chosen, ties by more unobserved cells
+  then smaller id. **There is no threshold saying how deep is deep enough**, and
+  an exterior shoreline made entirely physical by observed deep non-target
+  evidence yields **no** probe at all.
+- **The probe is the deepest complement cell of that component**, ties resolved
+  by nearness to the maximum-depth plateau's raster centroid, and a gaze already
+  visited walks the same deterministic ordering to the first unvisited cell.
+  **The deepest-cell rule and the gaze must be derived from the record**, never
+  restated from a previously measured number.
+- **Exactly one physical fixation, and only for seed 2111.** Inherited Reality
+  Check 2b semantics apply unchanged: enough target points and the patch is
+  fused at the frozen scale; empty or nearly empty and it is retained as negative
+  evidence fusing nothing. A fused patch must be **replay-idempotent** and
+  preserve **target-map purity**.
+- **The before and after audits are rebuilt on the same inherited chart**, so the
+  structural change is directly comparable rather than re-derived.
+- **There is NO numerical quality PASS threshold, and none may be added after
+  seeing results.** Target points, map growth, complement size, component counts
+  and penetration depth are all descriptive. Forbidden outright: a second probe,
+  a repeated bay loop, a stopping-rule change, FSG6f ranking modification,
+  evaluator truth, mesh reconstruction, hole filling, morphology tuning,
+  minimum-arc pruning, a normal cue, a new depth threshold and any coverage or
+  reconstruction-quality gate.
+- **The only automated FAIL condition is structural**: parents read only and
+  byte-identical afterwards; no parent fixation rerendered; at most one added
+  fixation; no evaluator truth opened; inherited chart, footprint and fusion
+  scale reused; fused patch idempotent with target purity preserved.
+- **If the one probe lands somewhere surprising but obeys the declared rule, the
+  selector is not tuned afterwards.** A messy or disappointing result is
+  preserved. A demonstrable implementation defect **in the new Cyclopean-1c files
+  only** may be repaired minimally after diagnosis; the inherited NaN-cast
+  warning is explicitly **not** authorization to modify a Cyclopean-1a source,
+  and if it ever demonstrably changed a 1c result the run stops for Luiz/Chat.
+
+**What this decision would resolve.** If one chart-chosen foveation at the
+deepest unresolved bay cell returns real target surface and measurably reduces
+the bay, then the cyclopean layer can not only describe what `no_frontier` left
+but aim at it, and the open question becomes whether that should inform stopping.
+If it returns nothing, lands illegally, or leaves the structure unchanged, then
+the representation describes but cannot act, and topology stays a diagnostic.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1c.md` Results and `docs/log.md`).
+**CYCLOPEAN1C_COMPLETE**, `structural_fails: []` - exactly one added fixation, no
+parent fixation rerendered, the Cyclopean-1b parent byte-identical afterwards, no
+FAIL line anywhere. **Structural only; no PASS is inferred** from target points,
+map growth or bay reduction. Cyclopean-1a/1b, the Reality Checks and FSG6f remain
+preserved and unedited. No prior decision is edited. **No code fix was made and
+no source file was modified.**
+
+**The prewritten rule resolves on its first branch, with a cost the branch did
+not anticipate.** The selector derived everything from the record - one eligible
+exterior component (18,116 cells, **1,059** unobserved shoreline cells reaching
+depth **209**), deepest cell **(y=109, x=209)** at depth 209 with 3 cells tied,
+gaze **(8.0, 2.1) deg**, **no revisit fallback needed**, step `fix_13`. That one
+look returned **52,873 target points** and fused **20,167 new surfels** -
+a **17.15%** gain on a map `no_frontier` had already declared finished -
+replay-idempotent, ids **{141}**, map **117,567 -> 137,734**. **The bay is
+measurably reduced**: max penetration depth **209 -> 168**, complement
+**18,116 -> 13,366**, unobserved shoreline **1,059 -> 918**, cells deeper than
+168 down to **zero**.
+
+**But one probe did not finish the job, and it created structure of its own.**
+The bay stayed **exterior-connected** through its narrow entrance channel, and
+the record gained **two internal components where it had none** - 31 cells at
+(+6.7903, -2.1484) and 1 cell at (+7.3000, -2.9000). Filling a bay from a single
+viewpoint converts part of open water into enclosed lakes.
+
+**And the residue is an instrument limit, not a sampling gap.** The 31-cell hole
+was traced into the probe image: its centroid maps to pixel (228, 111), whose
+neighbourhood is **10.4% valid against 82.2% frame-wide**, with local texture
+**0.00117 against a frame median of 0.00992** and mean RGB [1.094, 0.263, 0.184].
+It is the saturated, nearly untextured emblem printed on the cloth, where the
+frozen SGBM instrument yields no disparity. **Bay depth alone would keep
+proposing looks at a spot the instrument cannot resolve.**
+
+What would overturn or extend this. **No stopping rule changed and none is
+proposed**; FSG6f was never consulted. **Nothing here shows one probe is enough
+or that more would converge** - a single action on a single seed cannot, and a
+second probe was forbidden by construction. **No quality claim is made**: 20,167
+surfels is a count, no evaluator truth was opened, so the correctness of the new
+surface is unmeasured. The 3D map is coherent by the checks available - new
+surfels entirely inside the old range envelope, pre-existing surfels moved by at
+most **5.94 mm**, and **61.9%** of probe points associating with existing surfels
+within the frozen 12 mm radius - but coherent is not accurate. The sharpest
+question this run raises is not whether topology can aim a look, which it did,
+but **what a topology-driven controller should do when the thing it can see is
+something the instrument cannot measure**. **Luiz/Chat decide what to ask next.**
