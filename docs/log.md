@@ -5488,3 +5488,87 @@ use an alternate seed. I will fix only a demonstrable implementation defect,
 minimally, after diagnosis. The raw results are preserved even if ugly, and the
 report goes back to Luiz/Chat, who interpret whether simply letting the observer
 continue is good enough.
+
+**Measured outcome, appended after the run (2026-09-21).**
+**`REALITY2_INTEGRITY_FAIL`** under the prospective rule, **because the two full
+continuation records do not exist** - not because anything failed an integrity
+check. **No structural FAIL line was produced anywhere.** The diagnostic smoke
+raised a RUNTIME EXCEPTION, which by the authorization rule blocks full
+acquisition, so `previews/reality2/full-seed2111` and
+`previews/reality2/full-seed2179` were never created and `reality2_compare.py`
+was never run.
+
+Everything upstream of acquisition passed. `py_compile` clean on all six new
+modules. `[reality2-scene] PASS` with figures **identical** to Reality Check 1's
+(depth_range_m 0.08711, target_triangles 120, low_panel_std 0.010764,
+feature_region_std 0.11710) - the same fixture, not a similar one.
+`[reality2-policy] PASS exact_parent_continuation=true frozen_fsg6f=true
+scientific_stop=no_frontier watchdog_total=24 quality_gated=false`,
+`[reality2-check] SUMMARY passed=7 failed=0`, all seven negatives exit 1
+(`sixlimit`, `rerenderparent`, `scenechange`, `policycopy`, `truth`,
+`qualitygate`, `watchdoggate`). Reality Check 1 still green (`passed=6 failed=0`,
+six negatives exit 1) and FSG6f still green (`passed=14 failed=0`). Both parents
+audited at **32 of 32 conditions** and untouched afterwards.
+
+**The continuation mechanism itself worked.** The six parent maps were copied
+byte-for-byte (verified), acquisition resumed at the recorded `(14,6)` without
+rerendering a single Reality Check 1 view, and **seven further looks were
+acquired, fused and replayed successfully**. Measured post-hoc, read-only, from
+the saved maps: coverage **0.5276 at the Reality Check 1 stop -> 0.7904 seven
+looks later, +26.3 points**, map 22,080 -> 33,775 points, 12,282 multi-look
+surfels, approximate surface median/P95 16.701 / 46.167 mm (`small` profile,
+against Reality Check 1's own smoke at 17.597 / 46.199 mm), map pure in {141},
+all thirteen gazes unique, every fused patch replay-idempotent. Per-look
+coverage: (+14,+6) +0.0166, (+14,+11) **+0.0012**, (+9,+11) +0.0600, (+4,+11)
++0.0671, (-1,+11) +0.0737, (-6,+11) +0.0442, (-11,+11) **+0.0000**. So removing
+the six-look interruption is **not** futile on this fixture - that much is
+answered.
+
+**Then, at step 13, the frozen policy selected `(-16, +6)`.** The target spans
+yaw **[-12.54, +12.93]**, so that gaze sits **3.5 degrees beyond its left edge**
+and the foveal crop contains **zero** target pixels (`oracle_target_px` 0,
+`support_on_target` 0, `valid_on_target` 0, against 2,495-6,255 points on each of
+the seven preceding looks). The inherited guard `if len(p.xyz_h) < 100` -
+**present verbatim in `reality1_run.py` and unchanged in `reality2_run.py`** -
+aborted the run with `ValueError: Reality Check 2 fixation has too few target
+points`.
+
+Diagnosed before anything was changed, three read-only checks. (1) **The parent
+state is reconstructed bit-exactly**: for parent steps 0 and 5 the calibration
+loaded from `calibration.json` is key-for-key identical to what
+`hdr.read_observation` returns live, and `instance_L`, `raw_support_L`,
+`instance_R`, `raw_support_R` all reproduce exactly from the saved patches - the
+loader is faithful. (2) **The decision replays deterministically offline**:
+feeding frozen `fsg6f_frontier.choose_next` the saved `map_12.npz` (33,775
+points), the thirteen-gaze history and the thirteen-entry observation history
+returns `stop: False, next_gaze_deg: [-16.0, 6.0]`, with no renderer involved.
+(3) **It is the specified ranking doing exactly what it specifies**: three
+candidates, all consensus-allowed and all corridor-allowed - `(-16,+6)` area
+**128.93 deg²**, score 29.85, OPEN 77, BOUNDARY 21, corridor fraction **0.327**;
+`(-11,+6)` area 80.94, score 38.69, OPEN 95, BOUNDARY 0, corridor 0.898;
+`(-6,+6)` area 32.94, score 24.84, OPEN 72, BOUNDARY 0, corridor 1.000. FSG6f's
+frozen key is `(-area, -score, |dyaw|+|dpitch|, yaw, pitch)`, so **the largest
+predicted new area wins outright** despite having the lowest corridor fraction,
+the lowest frontier score and the only non-zero resolved-boundary count; the
+strict OPEN-majority rule passes it because 77 > 0 + 21.
+
+**No code fix was made and no source file was modified.** This is frozen-policy
+behaviour, not an implementation defect: deciding what an off-object look should
+mean in a continue-until-`no_frontier` regime - abort, skip, stop, or fuse
+nothing and carry on - is a change to the experiment's stopping semantics, which
+D-REALITY2 and the authorization explicitly reserve to Luiz/Chat. Nothing was
+rerendered, no alternate seed was used, and the scene, texture, policy, fusion,
+vergence, seeds, watchdog and every numerical constant are untouched. The
+blocked smoke is preserved at `previews/reality2/smoke-seed2111/` with its eight
+acquisitions, seven new maps and render logs.
+
+What this establishes: the exact-continuation machinery is sound and **letting
+the observer keep looking does produce substantial useful new surface** - seven
+more looks, +26.3 coverage points, geometry and purity intact. **Whether frozen
+FSG6f ever reaches `no_frontier` on this fixture remains unknown**, because
+before it could stop it chose a look entirely off the target. The record now
+holds **two independent demonstrations that FSG6f's area-first ranking can walk
+off a fixture** - FSG6c's `max()` case at three looks, and this one at thirteen -
+which is evidence about the object controller, not about the scheduler or the
+scene. Stopped for Luiz/Chat, who decide what an off-object look means here and
+whether simply letting the observer continue is good enough.

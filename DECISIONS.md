@@ -1607,3 +1607,55 @@ perception changes.** Recorded before acquisition:
 The per-run evaluator reports `REALITY2_OBSERVATION_COMPLETE` and the two-run
 aggregate `REALITY2_COMPLETE` when structural integrity holds - **even if one or
 both reach the watchdog** - or `REALITY2_INTEGRITY_FAIL` otherwise.
+
+Outcome 2026-09-21 (evidence: `docs/reality-check-2.md` Results and
+`docs/log.md`). **REALITY2_INTEGRITY_FAIL** - **solely because the two full
+continuation records do not exist.** No structural integrity check failed
+anywhere and no FAIL line was produced. The diagnostic smoke raised a runtime
+exception, which by the authorization rule recorded above blocks full
+acquisition, so neither full continuation was run and no comparison was
+produced. Reality Check 1 remains preserved and unedited; FSG6f remains
+CLOSED/PASS and unmodified; FSG7a, Scene-1a, Scene-1b and Scene-1c remain
+preserved records. No prior decision is edited.
+
+Everything upstream passed: `[reality2-check] passed=7 failed=0`, all seven
+negatives exit 1, `[reality1-check] passed=6 failed=0` with all six negatives
+exiting 1, `[fsg6f-check] passed=14 failed=0`, the diff over every FSG1/FSG3/
+FSG6f and Reality Check 1 source empty against `7c1bfc7`, and **32 of 32
+parent conditions holding on each saved record**, unchanged afterwards.
+
+**The exact-continuation machinery works.** Six parent maps copied byte-for-byte,
+resumption at the recorded `(14,6)` with no Reality Check 1 view rerendered, and
+seven further looks acquired, fused and replayed successfully: coverage
+**0.5276 -> 0.7904 (+26.3 points)**, 22,080 -> 33,775 map points, 12,282
+multi-look surfels, median/P95 16.701 / 46.167 mm on `small`, map pure in {141},
+thirteen unique gazes, every patch idempotent. **Removing the six-look
+interruption is not futile on this fixture** - that part of the question is
+answered affirmatively and descriptively.
+
+**What blocked it**: at step 13 frozen FSG6f selected `(-16, +6)`, **3.5 degrees
+beyond the target's left edge** (target yaw span [-12.54, +12.93]), giving zero
+target pixels, and the guard `if len(p.xyz_h) < 100` - **verbatim inherited from
+`reality1_run.py`** - aborted the run. Diagnosed read-only and three ways: the
+parent state reconstructs bit-exactly; the decision replays deterministically
+offline from the saved map and history alone; and it is the specified ranking
+behaving as specified - `(-16,+6)` won on predicted new area **128.93 deg²**
+despite the lowest corridor fraction (0.327 against 0.898 and 1.000), the lowest
+frontier score and the only non-zero resolved-boundary count, because FSG6f's
+frozen key is `(-area, -score, |dyaw|+|dpitch|, yaw, pitch)` and strict
+OPEN-majority passes 77 > 0 + 21.
+
+**No code fix was made and no source file was modified.** Choosing what an
+off-object look means in a continue-until-`no_frontier` regime is a change to the
+experiment's stopping semantics, which this decision explicitly reserves.
+
+What would overturn or extend this: the blocking event is `small`-profile
+evidence at one seed, so it does not establish that the `full` continuations
+would abort at the same step, or at all - that is exactly what was not run. What
+it does establish is that **whether frozen FSG6f ever reaches `no_frontier` on
+this fixture is still unknown**, and that the record now holds **two independent
+demonstrations that FSG6f's area-first ranking can walk off a fixture** - FSG6c's
+`max()` case at three looks and this one at thirteen. That is evidence about the
+object controller, not about the scheduler or the scene. **Luiz/Chat decide what
+an off-object look means here and whether letting the observer simply continue is
+good enough.**
