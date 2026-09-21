@@ -66,4 +66,5 @@ def render_seed(seed: int, yaw_deg: float, pitch_deg: float, eye_id: int) -> int
     # Physical-view deterministic seed, independent of step number.
     iy = int(round((float(yaw_deg) + 30.0) * 10.0))
     ip = int(round((float(pitch_deg) + 25.0) * 10.0))
-    return 1_000_000 * int(seed) + 1000 * iy + 2 * ip + eye_id
+    # Cycles' RNG seed is a signed 32-bit int; fold into the non-negative int32 range.
+    return (1_000_000 * int(seed) + 1000 * iy + 2 * ip + eye_id) & 0x7FFF_FFFF

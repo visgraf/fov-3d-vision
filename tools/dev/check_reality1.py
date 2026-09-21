@@ -1,14 +1,16 @@
 """Pure checks for Reality Check 1.  Every negative must exit 1."""
 from __future__ import annotations
-import argparse,inspect,json,re
+import argparse,inspect,json,re,sys
 from pathlib import Path
 import numpy as np
-import reality1_public as public
-import reality1_scene as scene
-import fsg6f_public as frozen
 
 ROOT=Path(__file__).resolve().parents[2]
 TOOLS=ROOT/"tools"
+if str(TOOLS) not in sys.path: sys.path.insert(0,str(TOOLS))
+
+import reality1_public as public
+import reality1_scene as scene
+import fsg6f_public as frozen
 
 
 def check_positive()->dict:
@@ -29,6 +31,17 @@ def check_positive()->dict:
         raise AssertionError("reality check no longer declares descriptive quality")
     if "final_truth_coverage_min" in ev or "map_surface_median_max_m" in ev:
         raise AssertionError("old calibration quality gates leaked into the reality check")
+    int32_max=2**31-1; seen=set()
+    for sd in public.SEEDS:
+        for y in (-25.0,0.0,25.0):
+            for q in (-20.0,0.0,20.0):
+                for e in (0,1):
+                    v=public.render_seed(sd,y,q,e)
+                    if not 0<=v<=int32_max:
+                        raise AssertionError(f"render seed {v} outside the Cycles signed-32-bit range")
+                    seen.add(v)
+    if len(seen)!=len(public.SEEDS)*3*3*2:
+        raise AssertionError("render seeds collide")
     return s
 
 

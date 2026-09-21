@@ -5203,3 +5203,202 @@ is now the frozen FSG6f controller's post-seed behaviour on this fixture family 
 why its first autonomous choice is seed-sensitive at object 203's seed, and why
 five controls exhaust six looks without resolving the frontier despite reaching
 ~1.0 coverage. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Reality Check 1, good enough on an ordinary static scene?: authorized, prospective entry (written before acquisition)
+
+Per `docs/reality-check-1.md` and D-REALITY1 appended just above. **An
+observational practical test, not another prospective metric benchmark.**
+Commands, written before running them:
+
+    .venv/bin/python -m py_compile tools/reality1_{public,scene,render_fix,run,eval,compare}.py tools/dev/check_reality1.py
+    .venv/bin/python tools/dev/check_reality1.py
+    for n in flat uniformrich policycopy truth qualitygate budgetbump; do .venv/bin/python tools/dev/check_reality1.py --negative "$n"; done
+    (current FSG6f check suite and its negative set)
+    .venv/bin/python tools/reality1_run.py  --out previews/reality1/smoke-seed2111 --profile small --seed 2111 --device OPTIX
+    .venv/bin/python tools/reality1_eval.py previews/reality1/smoke-seed2111 --out previews/reality1/smoke-seed2111-eval
+    (then full seed 2111 and full seed 2179, each exactly once, then reality1_compare.py --root previews/reality1)
+
+Recorded before any data exists:
+- **fixed head / static scene retained** - no head motion, FSG7a stays deferred;
+- **frozen FSG1 stereo, FSG3 12 mm fusion and FSG6f object policy retained**,
+  imported not copied;
+- **the only experimental change is the less calibration-like scene/texture** -
+  a shallow hanging cloth/poster-like target ~0.90 x 0.64 m at ~2.1 m, depth
+  varying non-periodically by ~8 cm, 120 rendered triangles rather than a plane
+  or constant-radius cylinder, with deliberately MIXED texture (broad
+  low-contrast region, modest printed band/emblem, subtle fabric variation, small
+  repetitive weave) plus table, wall and two unrelated side props;
+- **seeds 2111/2179 and seed gaze (-6,-4) are fixed before data**;
+- **there is intentionally NO numerical quality PASS threshold**;
+- **after the two full runs I stop and return the report to Luiz/Chat.**
+
+**Integrity audit, done before writing this entry.** HEAD `46d9699` on clean
+`main`. `git diff --name-status HEAD~1 HEAD` shows exactly **nine files, all
+additions**: the seven `reality1_*` tools plus `docs/reality-check-1.md` and
+`docs/reality-check-1-checks.md`. `git diff HEAD~1` over the FSG1 stereo modules
+(`fsg_stereo_supported`, `fsg_stereo_hdr`, `fsg_stereo`, `fsg_evaluate`,
+`fsg_geometry`, `fsg_scene`, `fsg_validation_render`), `fsg3_surface_map.py`,
+**every FSG6f module**, `rig.py`, `bl_common.py` and `requirements-fsg.txt` is
+EMPTY, confirmed additionally by per-file sha256: `fsg_stereo_supported`
+683ae91eaca7b6af, `fsg_stereo_hdr` 67e2ec4667bcc179, `fsg_stereo`
+faebf0f1b3acbfde, `fsg_evaluate` a5134b8d8537714d, `fsg_geometry`
+d9537d8ebc23b60c, `fsg3_surface_map` 1b9dbeb873105ec9, `fsg6f_public`
+c79f58c9b51f33d4, `fsg6f_frontier` d636c9405d719916 - all identical to the
+pre-install parent `ed851ef`.
+
+`reality1_run.py` imports `fsg6f_frontier as policy` and calls
+`policy.choose_next(...)`; it does **not** import `reality1_scene`, opens no
+`evaluation_only` asset, and contains no copy of FSG6f's `extract_frontier`,
+`classify_frontier_state`, `candidate_state_consensus`, corridor helpers or
+candidate ranking. Contract: OBJECT_ID 141, backgrounds (142,143,144,145),
+FIXTURE `tabletop_cloth`, SEEDS (2111,2179), SEED_GAZE_DEG (-6,-4),
+MAX_FIXATIONS 6, VERGENCE 2.10, FUSION {0.012,0.012} - `FUSION`,
+`MAX_FIXATIONS` and `INSTRUMENT_ID` all measurably equal to `fsg6f_public`.
+
+Status-token note for the record: `reality1_eval.py` emits
+`REALITY1_OBSERVATION_COMPLETE` per run (the token named in
+`docs/reality-check-1.md`), and `reality1_compare.py` emits `REALITY1_COMPLETE`
+for the two-run aggregate. Same decision rule at both levels - structural
+integrity only.
+
+Cost class: checks Interactive; smoke Interactive/Batch; the two full runs Batch
+(FSG6f-scale single-object runs have been roughly 1-2 min each).
+
+Likely outcomes, in the order I expect them, none of which changes anything:
+(a) coverage well below the ~99% seen on the calibration-like cylinders, because
+the broad low-contrast region gives the FSG1 matcher little to lock onto -
+descriptive only; (b) the two seeds diverging in trajectory or termination, as
+Scene-1c's object 203 did on a seed change - descriptive only; (c) a surface
+median inflated by the non-periodic 8 cm depth variation relative to whatever
+analytic reference the evaluator uses; (d) termination at `max_fixations` rather
+than `no_frontier`, as five of Scene-1c's twelve controls did; (e) only then
+suspect orchestration or the renderer. **None of (a)-(d) authorizes tuning or
+rerendering.** I will not modify the scene, texture, seed, budget, policy,
+vergence, fusion or any numerical constant in response to the smoke or either
+full run, will not rerender after a numerical miss, and will not use an alternate
+seed. I will fix only a demonstrable implementation defect, minimally, after
+diagnosis. The raw result is preserved even if ugly.
+
+**Measured outcome, appended after the run (2026-09-21).**
+**`REALITY1_COMPLETE`.** Both full records are structurally valid;
+`[reality1-compare] REALITY1_COMPLETE` with `integrity_fails: []` and
+`quality_gated: false`. No FAIL line was produced anywhere in either run.
+Each seed acquired **once** at `full`, 1,258,291,200 primary camera samples
+each (2,516,582,400 total), Blender 5.2.1 LTS / Cycles / OPTIX on the RTX 4090,
+host scripts under `.venv/bin/python` 3.12.3.
+
+Checks first. `[reality1-scene] PASS depth_range_m 0.08711, target_triangles
+120, low_panel_std 0.010764 vs feature_region_std 0.11710` - the target really
+is non-planar, really is 120 triangles, and its texture really is mixed by an
+order of magnitude in local contrast. `[reality1-policy] PASS frozen_fsg6f=true
+quality_gated=false fixed_head=true static_scene=true`, `[reality1-check]
+SUMMARY passed=6 failed=0`, all six negatives exit 1 for their own reasons, all
+twenty-four prior suites green.
+
+Smoke (seed 2111, `small`, once): `REALITY1_OBSERVATION_COMPLETE`, fails `[]`,
+coverage 0.2565 -> 0.5276, median 17.597 mm / P95 46.199 mm, measurement
+fraction min 0.8589, worst overlap median 5.96 mm, 5,609 multi-look surfels,
+`max_fixations`. Its six gazes are identical to the full seed-2111 run's, so on
+this seed the trajectory is profile-independent. Nothing was changed in response
+to it.
+
+Full seed **2111**: 6 fixations, `max_fixations`, gazes (-6,-4) (-1,-9) (4,-9)
+(9,-9) (14,-4) (14,1); coverage 0.2603 -> **0.5345** (+0.2742) along
+0.2603/0.3273/0.4000/0.4267/0.4764/0.5345; approximate surface median **6.188
+mm**, P95 19.812 mm; measurement fraction min 0.8516 median 0.8740; worst
+overlap median 3.025 mm P95 8.534 mm; 78,656 map points, 21,927 multi-look
+surfels; 78.6 s run + 62.3 s eval.
+
+Full seed **2179**: 6 fixations, `max_fixations`, gazes (-6,-4) (-1,1) (4,6)
+(9,11) (14,11) (14,6); coverage 0.2604 -> **0.7329** (+0.4725) along
+0.2604/0.5141/0.6745/0.7034/0.7034/0.7329; median **5.720 mm**, P95 18.106 mm;
+measurement fraction min 0.8400 median 0.8750; worst overlap median 2.897 mm
+P95 8.670 mm; 113,874 map points, 27,660 multi-look surfels; 84.0 s run + 94.0 s
+eval.
+
+Re-verified independently of the evaluator on both records: `truth_opened`
+False, `fixed_head`/`static_scene` True, final map instance ids exactly {141},
+every fused patch `idempotent_replay` True, 6 of 6 gazes unique, policy
+`FSG6f-candidate-frontier-consensus-v1`, instrument
+`FSG1-HDR-SGBM-one-original-update-original-validity-v1`, budget 6 and fusion
+{0.012, 0.012} unchanged, and both manifests carrying the same
+`public_spec_sha256` baa71ce4b0ae8e36bc0ccf80addad1c0e0e02ec76d7bc8369c37e4258c528f22.
+
+Descriptive, gated by nothing. **Neither seed terminated `no_frontier`**; both
+exhausted the six looks still reporting `continue` - the same mode five of
+Scene-1c's twelve controls showed. **The two seeds diverge completely after the
+prescribed seed fixation**: from the identical (-6,-4) start, 2111's first
+autonomous move is (1,-1) and 2179's is (1,+1), and they never reconverge,
+ending **19.8 coverage points apart** with nothing differing between the runs
+but the Monte-Carlo render seed - the same seed sensitivity Scene-1c's object
+203 showed, now on a single-object fixture. **Seed 2179's fifth fixation was
+nearly wasted**: at (14,11) the target fills only the view's lower-left corner,
+6,128 points, new-point fraction 0.001, coverage unchanged 0.7034 -> 0.7034.
+**Measurement fraction never reached calibration-like values** (min
+0.8400-0.8516, median 0.8740-0.8750), consistent with the deliberately broad
+low-contrast panel. **Overlap consistency is millimetric** - worst per-fusion
+overlap medians 2.897-3.025 mm across every fusion of both runs, better than on
+the calibration fixtures. **The point-to-surface medians 5.72 and 6.19 mm sit
+inside the 4.3-6.6 mm band every earlier FSG6/Scene increment produced**: the
+non-periodic 8.4 cm target did not inflate them.
+
+Visual reading, part of the report and not a criterion. `fix_00` is almost
+featureless - cream cloth with faint fabric banding against a grey wall, exactly
+the low-contrast region the fixture was built to contain; later looks bring in
+the printed blue band, the red-orange emblem, the tabletop and a side prop. Both
+runs build the map as six roughly rectangular foveal patches tiled edge to edge
+with real overlap, not as scattered fragments: 2111 traces an **L** (a band
+across the lower half, then a column up the right edge, leaving the upper-left
+unvisited), 2179 a **diagonal staircase** from lower-left to upper-right. Sliced
+into +/-12 mm horizontal bands against the exported truth mesh, the
+reconstructed points **follow the true non-periodic undulation closely wherever
+points exist**, a few millimetres of scatter about the curve and no band where
+the cloud departs from the surface; the central 98% of reconstructed depths
+(2.083-2.158 m and 2.083-2.167 m) coincides with the true span 2.083-2.166 m,
+with a thin few-centimetre outlier tail beyond. Depth-coloured, 2179's map shows
+coherent large-scale shape - a near region across the top, a far valley through
+the middle - that reads as the cloth's fold, not as noise. Patch seams are
+faintly visible; the measured disagreement across them is 2.4-3.0 mm. In plain
+terms: **recognisable as the hanging cloth, coherent rather than fragmented, in
+the right place at the right depth, with no gross wrong-depth region; its
+visible deficiency is incompleteness - half to three-quarters of the visible
+surface in six looks, the rest simply never visited.** Whether that is good
+enough is Luiz/Chat's decision and is deliberately not encoded anywhere in this
+record.
+
+Three code fixes, all demonstrable implementation defects, each diagnosed before
+being changed; no scientific or numerical behaviour, constant, fixture,
+threshold or gate was touched. (1) `tools/dev/check_reality1.py` imported three
+`tools/` modules without putting `tools/` on `sys.path` and never imported
+`sys`, so the check crashed with `ModuleNotFoundError: No module named
+'reality1_public'` - and **the six negatives were exiting 1 only because of that
+crash**, false passes rather than controls; fixed with the `sys.path.insert`
+every sibling check already has, after which `passed=6 failed=0` and each
+negative fails for its own stated reason. (2) `tools/reality1_public.py`
+`render_seed` returned `1_000_000 * seed + ...`, which under schedule seed
+**2179** is at minimum 2,179,000,420 - above Blender's signed-32-bit Cycles seed
+limit 2,147,483,647 - so **every** lattice gaze under 2179 raised `ValueError:
+CyclesRenderSettings.seed value not in 'int' range` and seed 2179 crashed 2.5 s
+into fixation 0 before rendering anything; fixed by folding into the
+non-negative int32 range with `& 0x7FFF_FFFF`, verified to be **the identity
+over the whole of seed 2111's domain** (max 2,111,550,421), so the
+already-acquired seed-2111 record and the `public_spec_sha256` are unchanged.
+Every previous experiment's schedule seeds were <= 1901 and never reached the
+limit; 2179 is the first. (3) `tools/dev/check_reality1.py` gained the check
+that would have caught (2) before acquisition, per "every tool ships a check
+that can fail": every scheduled render seed must lie in [0, 2^31-1] with no
+collisions - verified fail-capable, since restoring the pre-fix formula makes it
+raise `render seed 2179050100 outside the Cycles signed-32-bit range`. The
+crashed attempt is preserved at
+`previews/reality1/full-seed2179-crashed-int32seed/` with its Blender log.
+Nothing was rerendered after a numerical result, no alternate seed was used, and
+the scene, texture, seeds, budget, policy, vergence and fusion are untouched.
+
+What this establishes: on a deliberately less calibration-like static scene the
+frozen FSG6f mechanism is **structurally sound and metrically sane** - pure
+maps, idempotent fusion, no revisits, millimetric inter-look agreement, and a
+recognisable surface at the right depth - while **completing only half to
+three-quarters of the visible target in six looks and terminating on budget
+rather than on frontier exhaustion, with a trajectory that is sensitive to the
+render seed alone**. Preserved exactly as acquired. Stopped for Luiz/Chat, who
+decide whether this is good enough and what the next practical step is.

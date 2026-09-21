@@ -1454,3 +1454,86 @@ its first autonomous choice is seed-sensitive at object 203's seed, and why five
 controls exhaust six looks without resolving the frontier despite reaching ~1.0
 coverage. That is an object-controller question, not a scheduler or composition
 question.
+
+## D-REALITY1 - Reality Check 1: is the frozen mechanism already good enough on a less calibration-like scene? (2026-09-21)
+FSG6f remains **CLOSED/PASS** and is the frozen object policy. FSG7a, Scene-1a, Scene-1b and Scene-1c remain preserved records and are **not edited**. After the failed Stage-II Scene-1a/1b/1c sequence the immediate question is no longer whether another scheduler can be invented; Scene-1c's certification showed eleven of twelve actors were not solvable inside six looks, so the open question moved onto the object controller itself. Reality Check 1 asks the pragmatic version of that: **does the frozen FSG6f mechanism produce a recognisable, metrically sane active reconstruction of one moderately irregular, mixed-texture target in a small cluttered static scene?**
+
+**This is an observational practical test, not another prospective metric benchmark.** Recorded before acquisition:
+
+- **Fixed head and static scene are retained.** No head motion; the FSG7a moving-head branch stays deferred.
+- **The frozen FSG1 stereo instrument, FSG3 12 mm fusion and FSG6f object policy are retained**, imported rather than copied. Verified before acquisition: `reality1_run.py` imports `fsg6f_frontier as policy` and calls `policy.choose_next(...)`; it does **not** import `reality1_scene`, opens no `evaluation_only` asset, and defines none of FSG6f's frontier extraction, state classifier, consensus, corridor or ranking. `FUSION`, `MAX_FIXATIONS` (6) and `INSTRUMENT_ID` are measurably equal to `fsg6f_public`.
+- **The only experimental change is the less calibration-like scene and texture.** The target is a shallow hanging cloth/poster-like surface about 0.90 m x 0.64 m at the validated ~2.1 m range, depth varying non-periodically by about 8 cm, represented by 120 rendered triangles rather than a plane or constant-radius cylinder. Its texture is deliberately **mixed rather than uniformly rich** - a broad low-contrast region, a modest printed band/emblem, subtle fabric variation and a small repetitive weave region - and the surrounding scene adds a table, wall and two unrelated side props. The target is not deliberately occluded; the scene stays opaque and diffuse, because Reality Check 1 changes as little as possible at once. Specularity, strong shadows, thin structure and adversarial materials are later reality checks if this one is promising.
+- **Seeds 2111 and 2179 and the prescribed seed gaze (-6,-4) are fixed before any data exists.** Both runs hand control entirely to the unchanged FSG6f policy after that seed, for at most six physical fixations.
+- **There is intentionally NO numerical quality PASS threshold.** No coverage, error, overlap, measurement-fraction or termination gate decides the outcome. Those are reported descriptively only.
+
+**The only automated FAIL condition is structural integrity**: prediction never imports or opens evaluator truth; the map contains only the target instance 141; every fused patch replays idempotently; no physical fixation repeats; FSG6f is imported rather than copied; and the six-look budget and 12 mm fusion rule are unchanged. The per-run evaluator reports `REALITY1_OBSERVATION_COMPLETE` and the two-run aggregate reports `REALITY1_COMPLETE` when those hold, or `REALITY1_INTEGRITY_FAIL` otherwise.
+
+**Numerical quality may be poor and that does not authorize tuning or rerendering.** Poor coverage, poor error, low measurement fraction, odd termination or seed sensitivity are precisely what this check exists to expose. Nothing about the scene, texture, seed, budget, policy, vergence, fusion or any numerical constant may be changed in response to the smoke or to either full run, and there is no rerender after a numerical miss and no alternate seed. A demonstrable implementation defect may be repaired minimally after diagnosis; scientific or numerical behaviour may not.
+
+**After the two full runs, stop and return the report to Luiz/Chat.** They decide whether the behaviour is good enough to justify the next practical step. The visual reading of the RGB sequence, growth image and PLY is part of that report but is explicitly not upgraded into a formal PASS criterion.
+
+Outcome 2026-09-21 (evidence: `docs/reality-check-1.md` Results and
+`docs/log.md`). **REALITY1_COMPLETE** - both full records have structural
+integrity; `integrity_fails` is empty in both per-run evaluations and in the
+aggregate, and no FAIL line was produced anywhere. Per the rule recorded above
+this is an **observation, not a PASS or a FAIL**: nothing here closes or reopens
+anything. FSG6f remains CLOSED/PASS and unmodified; FSG7a, Scene-1a, Scene-1b
+and Scene-1c remain preserved records, unedited and unrelabelled. No prior
+decision is edited.
+
+`[reality1-check] passed=6 failed=0`; all six negatives exit 1 for their own
+stated reasons; all twenty-four prior suites green. `[reality1-scene] PASS`
+confirms the fixture is what was promised - depth range 0.08711 m, 120
+triangles, low-contrast panel std 0.010764 against feature-region std 0.11710.
+Both prediction manifests carry the same `public_spec_sha256`
+baa71ce4b0ae8e36bc0ccf80addad1c0e0e02ec76d7bc8369c37e4258c528f22, and the
+independently re-verified structural conditions hold on both: truth never
+opened, fixed head, static scene, map instance ids exactly {141}, every fused
+patch idempotent, 6 of 6 gazes unique, policy and instrument the frozen ones,
+budget 6 and fusion {0.012, 0.012} unchanged.
+
+Measured, each seed acquired once at `full` (1,258,291,200 primary camera
+samples each). Seed **2111**: 6 looks, `max_fixations`, coverage 0.2603 ->
+**0.5345**, surface median **6.188 mm** / P95 19.812 mm, measurement fraction
+min 0.8516, worst overlap median 3.025 mm, 21,927 multi-look surfels. Seed
+**2179**: 6 looks, `max_fixations`, coverage 0.2604 -> **0.7329**, median
+**5.720 mm** / P95 18.106 mm, measurement fraction min 0.8400, worst overlap
+median 2.897 mm, 27,660 multi-look surfels.
+
+Descriptive and deliberately ungated: **neither seed terminated `no_frontier`**;
+**the two seeds diverge completely after the prescribed seed fixation** - first
+autonomous moves (1,-1) versus (1,+1) from an identical start, never
+reconverging, ending 19.8 coverage points apart with nothing differing but the
+Monte-Carlo render seed; seed 2179's fifth look returned a new-point fraction of
+0.001 and zero coverage gain; measurement fraction stayed at 0.84-0.88 rather
+than the calibration-like values. The surface medians nonetheless sit inside the
+4.3-6.6 mm band every earlier FSG6/Scene increment produced. Visually the map is
+**recognisable as the hanging cloth, coherent rather than fragmented, at the
+right depth (central 98% of reconstructed depths 2.083-2.167 m against a true
+span of 2.083-2.166 m), with no gross wrong-depth region**; its visible
+deficiency is incompleteness, not misplacement. That reading is reported, not
+promoted to a criterion.
+
+Three code fixes, all demonstrable implementation defects diagnosed before being
+changed, none touching scientific or numerical behaviour: the check module's
+missing `sys.path` entry, which had been making all six negatives crash-pass
+rather than control; `render_seed` overflowing Blender's signed-32-bit Cycles
+seed for **every** gaze under schedule seed 2179 (2,179,000,420 minimum against
+a 2,147,483,647 limit), fixed by folding into int32 range, which is the identity
+over the whole of seed 2111's domain and leaves the already-acquired 2111 record
+and this spec's digest unchanged; and the range/collision check that would have
+caught it before acquisition, verified fail-capable. The crashed attempt is
+preserved at `previews/reality1/full-seed2179-crashed-int32seed/`. No scene,
+texture, seed, budget, policy, vergence, fusion or numerical constant was
+changed; nothing was rerendered after a numerical result; no alternate seed was
+used.
+
+What would overturn or extend this: it is an observation on **one** fixture
+family with oracle segmentation, a fixed head and a static scene, so it does not
+generalise to specular, shadowed, thin or adversarial material, to occlusion, to
+object discovery, or to more than six looks. The two open behaviours it
+documents - termination on budget rather than on frontier exhaustion, and a
+trajectory sensitive to the render seed alone - are the same two Scene-1c
+surfaced, now isolated on a single object, which is evidence that they belong to
+the frozen FSG6f controller rather than to any scheduler. **Luiz/Chat decide
+whether this is good enough and what the next practical step is.**
