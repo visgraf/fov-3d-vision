@@ -1786,3 +1786,112 @@ family with oracle segmentation, a fixed head and a static scene, so it says
 nothing about specular, shadowed, thin or adversarial material, occlusion, object
 discovery, or a target whose interior is not enclosed by its own perimeter.
 **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1A - Cyclopean-1a: spherical topology hole probe (2026-09-21)
+
+Reality Checks 1, 2 and 2b are **preserved exactly as acquired and are not
+edited, relabelled or rerun**; FSG6f remains CLOSED/PASS and unmodified, and
+FSG7a, Scene-1a, Scene-1b and Scene-1c remain preserved records. No prior
+decision is edited by this block.
+
+Reality Check 2b closed its own question - the observer continues past six
+looks, learns from empty looks, and terminates by `no_frontier` - and exposed the
+next missing abstraction in doing so: **`no_frontier` can leave an enclosed
+unsampled region.** Seed 2111 ended with a large ring-like interior gap and seed
+2179 with a much smaller one. Cyclopean-1a asks the smallest next question:
+
+> Can the persistent head/cyclopean spherical domain expose such internal
+> sampling holes, distinguish them from an already-observed physical depth break,
+> and place one foveation inside the largest unresolved hole without changing
+> FSG6f?
+
+This is the first concrete use of the cyclopean sphere as a 2-D perceptual
+organization layer over the metric surfel scene. **The metric surfel map remains
+authoritative; the chart is bookkeeping only.**
+
+Recorded before acquisition:
+
+- **The two completed Reality Check 2b full records are the parents**, located
+  by manifest rather than by assumed path: `previews/reality2b/full-seed2111`
+  (13 fixations, empty step 12) and `previews/reality2b/full-seed2179` (16
+  fixations, empty steps 14, 15). Both audited before anything was run - schema
+  `RealityCheck2b-prediction-v1`, profile `full`, termination **`no_frontier`**,
+  `truth_opened` false, `fixed_head`/`static_scene` true, frozen FSG6f policy and
+  FSG1 instrument, every map present - 23 of 23 and 26 of 26 conditions holding.
+  Their manifest, policy-trace and final-map sha256 are pinned in the log entry
+  below. **No parent view is ever regenerated**; if a parent were missing or
+  changed, the run stops rather than recreating it.
+- **Nothing in perception changes.** Fixed head, static scene, the Reality Check
+  2b scene, texture and seeds, the FSG1 stereo instrument, FSG3's 12 mm
+  association/hash, the FSG6f source and ranking, and Reality Check 2b's
+  empty-look semantics are all frozen. Verified before acquisition: the installed
+  package adds exactly seven files, all `A`, and `git diff` over every
+  FSG1/FSG3/FSG6f, renderer, rig, pin and Reality Check 1/2/2b source against
+  `077850d` is empty.
+- **No new metric tolerance is introduced.** The angular raster reuses D9's
+  already-declared evaluation scale `2*s0` (0.2 deg small, 0.1 deg full), and a
+  surfel's angular footprint is derived from the frozen FSG3 radius as
+  `alpha = atan(0.012 / median_range)`. Grid scale, the 12 mm footprint and the
+  depth-break rule are fixed before data and may not be changed after it.
+- **An internal hole is topological**: a connected component of the complement
+  of rasterized target support that does **not** touch the padded chart border.
+  The exterior component is therefore not a hole - a square-ring tabletop is the
+  canonical counterexample the rule must respect.
+- **A hole counts as an already-resolved physical depth break** when completed
+  prediction-side observations inside it are non-target-majority **and** their
+  reconstructed range differs from the nearby target-boundary range by more than
+  the frozen 12 mm association radius. This is explicitly only a first geometric
+  cue; surface-normal continuity is recorded as a future extension and is **not**
+  added here. An unobserved or ambiguous hole may be probed, because an
+  empty/non-target result is itself useful perceptual evidence.
+- **One probe only, per parent record.** The largest remaining hole is selected
+  by angular area, its spherical centroid is foveated **once** at 0.1-degree
+  physical-view quantization, and target stereo is fused only if the inherited
+  Reality Check 2b `<100`-point rule says it is a target measurement; otherwise
+  it is retained as negative evidence and fuses nothing. **There is no loop of
+  topology probes.** Integration with the active stopping rule is a later
+  decision, not this one.
+- **A record with no unresolved internal hole is still a valid observational
+  result** and renders nothing. That is an outcome, not a failure.
+- **There is NO numerical quality PASS threshold, and none may be added after
+  seeing results.** Hole count, hole area, selected gaze, target points found,
+  map growth and hole-area change are all descriptive. **A PASS may not be
+  inferred from coverage or from hole reduction.** No evaluator truth, mesh
+  reconstruction, hole filling, ICP, new stereo matcher, new frontier ranking or
+  completeness percentage is permitted.
+- **The only automated FAIL condition is structural**: the saved parent is read
+  only and no parent view rerendered; no evaluator truth opened by the topology
+  or probe path; topology built only from persistent surfels plus completed
+  prediction-side stereo/instance observations; no mesh or hole filling; FSG6f
+  neither modified nor copied; at most one new physical fixation per record; an
+  empty probe retained as negative evidence fusing nothing; and a fused probe
+  replay-idempotent with target-map purity preserved.
+- **After the two probes, stop and return the report to Luiz/Chat.** A
+  disappointing result authorizes no tuning: no grid-scale change, no footprint
+  change, no depth-break-rule change, no scene or seed substitution, no FSG6f
+  edit, no second probe and no post-hoc gate. A demonstrable implementation
+  defect **in the new Cyclopean-1a files only** may be repaired minimally after
+  diagnosis.
+
+Diagnosis order fixed in advance, so that a surprising raster result cannot be
+rationalised after the fact: if the local support raster produces small
+discretization holes, **all holes and the largest are reported before any raster
+rule is touched**; a parent path that differs from the example is resolved by
+manifest, never by substituting data; a shape/schema mismatch when recomputing
+observation evidence is diagnosed against saved `compute_once` output before any
+code change; a selected centroid outside the allowed gaze domain or revisiting a
+prior gaze is **reported and stopped on**, not patched with an invented action
+rule; and a probe returning fewer than 100 target points is **valid Reality Check
+2b negative evidence** - not an exception, and not a reason for another probe.
+
+The aggregate reports `CYCLOPEAN1A_COMPLETE` when both parent records are
+processed faithfully and any new probe is serialized with pure target geometry
+and idempotent fusion, or `CYCLOPEAN1A_INTEGRITY_FAIL` otherwise.
+
+**What this decision would resolve.** If the chart exposes the interior gaps that
+Reality Check 2b left, separates them from genuine depth breaks, and places a
+legal foveation inside the largest one, then the cyclopean sphere is a usable
+perceptual organization layer and the next question is whether to let it inform
+stopping. If it exposes nothing, or only discretization noise, or selects an
+illegal gaze, then the representation is not yet carrying the structure that
+`no_frontier` is missing, and the gap stays inside FSG6f's frontier rule.

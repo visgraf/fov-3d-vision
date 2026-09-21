@@ -5772,3 +5772,97 @@ large interior hole remains on seed 2111, so the open question moves from "can
 the observer continue?" to **"why does the frontier rule consider an enclosed
 interior hole resolved?"** - which is about FSG6f's frontier/consensus rule, not
 the scheduler, the scene or the stopping semantics. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1a, spherical topology hole probe: authorized, prospective entry (written before acquisition)
+
+Per `docs/cyclopean1a.md`, `docs/cyclopean1a-checks.md` and D-CYCLOPEAN1A
+appended just above. **One probe per parent record, no loop, no FSG6f change.**
+Reality Checks 1, 2 and 2b stand preserved and unedited.
+
+Provenance audited before anything was run. `git status --short` empty; HEAD
+**`e7a33a3`** ("Add Cyclopean-1a spherical hole probe") on `main`.
+`git diff --name-status HEAD~1 HEAD` is exactly seven files, all `A`:
+`tools/cyclopean1a_{public,topology,probe,compare}.py`,
+`tools/dev/check_cyclopean1a.py`, `docs/cyclopean1a.md`,
+`docs/cyclopean1a-checks.md`.
+
+`git diff HEAD~1 HEAD` restricted to every FSG1/FSG3/FSG6f source, the renderer,
+`fsg_scene.py`, `fsg_validation_render.py`, `rig.py`, `bl_common.py`,
+`requirements-fsg.txt` **and every Reality Check 1, 2 and 2b source** is EMPTY,
+confirmed additionally by per-file sha256 against `077850d` - all SAME:
+`fsg_stereo_supported` 683ae91eaca7b6af, `fsg_stereo_hdr` 67e2ec4667bcc179,
+`fsg_stereo` faebf0f1b3acbfde, `fsg_evaluate` a5134b8d8537714d, `fsg_geometry`
+d9537d8ebc23b60c, `fsg3_surface_map` 1b9dbeb873105ec9, `fsg6f_public`
+c79f58c9b51f33d4, `fsg6f_frontier` d636c9405d719916, `fsg6f_run`
+f2d4bdd54b8d395f, `fsg_render` 681237fa8533b7cc, `fsg_scene` 1f410577c1103e01,
+`fsg_validation_render` f18883e1e2764dd7, `rig` dff43ec0cd9d5047, `bl_common`
+aa7a56e8cd4988cb, `reality1_public` d2b00211021ff65d, `reality1_scene`
+b4392230292bb51c, `reality1_render_fix` bdc068ad931e1072, `reality2_public`
+c7e7bd44d1a28de3, `reality2_render_fix` 9f1433d189fbcbb5, `reality2b_public`
+dfe1ca243c4c1543, `reality2b_run` 137bef448d5f1c42, `reality2b_eval`
+ee6d09abb33e24b7, `check_reality2b` 09d69165706764b2.
+
+**Parents located by manifest, not by assumed path.** A scan of every
+`prediction_manifest.json` under `previews/` found exactly three
+`RealityCheck2b-prediction-v1` records - `full-seed2111` (13 fixations),
+`smoke-seed2111` (`small`, 14), `full-seed2179` (16) - and exactly one `full`
+record per seed. Both selected parents pass every condition (23/23 and 26/26):
+schema, profile `full`, termination **`no_frontier`**, `truth_opened` false,
+`fixed_head`/`static_scene` true, frozen FSG6f policy and FSG1 instrument,
+`surface_map.npz`, `policy_trace.json` and every `maps/map_NN.npz` present.
+
+Hashes pinned before the probe runs:
+
+- **seed 2111**, `previews/reality2b/full-seed2111`, 13 fixations, empty step
+  [12], final gaze (-16,+6): manifest
+  `45a8c524f50a2ea4ec6a10aa731a3d6d141b8a3fb12f99e40957d863616e404f`, trace
+  `abb7b3b292b837c6c511899e1e48e081d990368794917630ef5935a28ae52013`,
+  `surface_map.npz` = `maps/map_12.npz` =
+  `c780d4345e6f74d3f47b1c35a1f019c1fab70b44c5e0552d36e033a09da1f6e1`.
+- **seed 2179**, `previews/reality2b/full-seed2179`, 16 fixations, empty steps
+  [14, 15], final gaze (-16,+1): manifest
+  `0113296bec076f83285c757b102143d06f02df5fe4f1c71b0fc6c57e450fb533`, trace
+  `c01103be845391ab7d4f8e42b917007bb761d04bc6139af32f7c87de41be2550`,
+  `surface_map.npz` = `maps/map_15.npz` =
+  `1db5c6a87b9dd1f6d973d39d9707afa38ac94e2d8ba1d4e2f3ca4216efccb24a`.
+
+Checks, all before acquisition. `py_compile` clean on all five new modules.
+`[cyclopean1a-topology] PASS sampling_hole=true physical_hole_resolved=true
+exterior_not_hole=true`, `[cyclopean1a-policy] PASS cyclopean_domain=true
+topology=true physical_hole_depth_break=true one_probe_max=true no_mesh=true
+quality_gated=false`, `[cyclopean1a-check] SUMMARY passed=6 failed=0`, and **all
+six deliberate negatives exit 1** for their own named reasons: `fillhole`,
+`physicalclose`, `exteriorhole`, `truth`, `mesh`, `multiprobe`. Prior suites
+green with their negative sets still firing: `[reality2b-check] passed=7
+failed=0` with **10/10** negatives exit 1, `[reality1-check] passed=6 failed=0`
+with 6/6, `[fsg6f-check] passed=14 failed=0` with **15/15**.
+
+The synthetic controls are topological rather than scene-specific, which is the
+point: an annulus with an unobserved centre is an unresolved sampling hole and
+produces a probe; the same annulus with non-target depth at 2.8 m behind a 2.0 m
+target boundary is resolved as a physical depth break and produces none; and a
+notch connected to the exterior raster boundary is not an internal hole at all.
+
+Cost class: checks Interactive; each probe **Batch** but small - at most **one**
+new fixation per record, against Reality Check 2b's ~9 s of Blender per look,
+plus the chart build over ~118k and ~138k surfels.
+
+Likely outcomes, in the order I expect them, none of which changes anything:
+(a) seed 2111's large ring-like interior gap is exposed as one dominant internal
+hole, is not explained as a depth break, and receives a legal centroid foveation
+- the result this probe exists to test for; (b) seed 2179's much smaller gap
+either yields a small hole or none at all, and **a record with no unresolved
+internal hole renders nothing and is still a valid observation**; (c) the raster
+produces additional small discretization holes alongside the real one - **all
+holes and the largest will be reported before any raster rule is touched**;
+(d) the probe returns fewer than 100 target points, which is **valid Reality
+Check 2b negative evidence**, not an exception and not grounds for a second
+probe; (e) only then suspect the evidence reconstruction, the chart, or parent
+provenance. **None of (a)-(d) authorizes tuning.** I will not change grid scale,
+the 12 mm support footprint, the depth-break rule, the scene or seeds, FSG6f, or
+the one-probe limit, and I will not add a numerical quality gate after seeing
+results. If the selected centroid falls outside the allowed gaze domain or
+revisits a prior gaze I will **stop and report** rather than invent another
+action rule. I will fix only a demonstrable implementation defect in the new
+Cyclopean-1a files, minimally, after diagnosis. All outcomes are preserved,
+including a probe that finds nothing, and the report goes back to Luiz/Chat.
