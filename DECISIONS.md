@@ -1942,3 +1942,138 @@ by construction. Seed 2111 is the pointed case: an open bay left behind by
 bay is not a hole by the stated rule. If that matters, the next question is about
 the boundary between `no_frontier` and chart topology, not about either alone.
 **Luiz/Chat decide what to ask next.**
+
+## D-CYCLOPEAN1B - Cyclopean-1b: spherical shoreline audit (2026-09-21)
+
+Reality Checks 1, 2 and 2b and **Cyclopean-1a** are preserved exactly as acquired
+and are **not edited, relabelled or rerun**; FSG6f remains CLOSED/PASS and
+unmodified. No prior decision is edited by this block.
+
+Cyclopean-1a answered its own question and, in doing so, corrected one of its
+parent's descriptions: seed 2111's conspicuous missing region is not an enclosed
+lake but a **bay**, connected to the exterior through a left-side channel. That
+left a specific hole in the vocabulary. An internal hole is nameable and
+probeable; **a bay is neither, because by the stated rule it is not a hole at
+all** - yet it is exactly the kind of thing `no_frontier` leaves behind.
+Cyclopean-1b asks the smallest next question:
+
+> Can the same fixed-head cyclopean domain describe the *shoreline* of the
+> sampled object, distinguish internal from exterior-connected complement, and
+> say which boundary arcs are observed physical depth breaks versus continuation,
+> unobserved or ambiguous - **without taking another fixation**?
+
+This is an audit, not a controller extension. **The metric surfel map remains
+authoritative; the chart is bookkeeping only.**
+
+Recorded for this step:
+
+- **The two completed Cyclopean-1a full records are the parents**, located by
+  manifest rather than by assumed path, and are **read only**. Schema
+  `Cyclopean1a-probe-v1`, profile `full`, `truth_opened` false,
+  `fixed_head`/`static_scene` true, `parent_fixations_rerendered` 0,
+  `added_fixations` in {0, 1}. Their manifest, `map_before` and `surface_map`
+  sha256 are pinned before the audit and **re-verified byte-identical after it**.
+- **Nothing is acquired.** No Blender process, no fixation, no fusion, no write
+  into any parent. This is the first increment in the series whose entire cost is
+  host-side analysis, and therefore the first with no prospective
+  before-acquisition record to make - there is nothing irreversible to precede.
+- **No new geometric tolerance is introduced.** The audit reuses the exact
+  Cyclopean-1a chart - D9's `2*s0` grid and the support footprint derived from
+  the frozen FSG3 12 mm association radius - and asserts the reconstruction
+  against the parent manifest rather than recomputing a fresh scale.
+- **A shoreline cell** is a complement cell 8-adjacent to current target support,
+  and it **retains the identity of its complement component**: `INTERNAL` when
+  that component does not touch the padded border, `EXTERIOR` when it does.
+  **Border-touching means only topologically exterior. It does not mean the
+  object has been observed to end there** - that conflation is the specific error
+  this step exists to prevent, and a deliberate negative (`exteriorresolved`)
+  fails if it is ever made.
+- **Four boundary states, from completed prediction-side evidence only**:
+  `UNOBSERVED` (no evidence), `TARGET_CONTINUATION` (target-only),
+  `PHYSICAL_DEPTH_BREAK` (non-target-only whose range differs from the nearby
+  target boundary by more than the frozen 12 mm radius), `AMBIGUOUS` (everything
+  else observed). Adjacent same-state cells of the same component form an arc,
+  with **no minimum arc length, no smoothing and no tuned morphology**.
+- **Exterior penetration depth** - the 8-connected shortest complement-path
+  distance from the padded border - is reported for exterior complement only, and
+  is **purely descriptive**. It exists so that a deep bay can be *described*
+  without inventing a threshold that declares it important.
+- **There is NO numerical quality PASS threshold, and none may be added after
+  seeing results.** Arc counts, shoreline length, component sizes and penetration
+  depth are all descriptive. **No completeness percentage, no probe selection, no
+  ranking rule and no stopping-policy change.** Forbidden outright: evaluator
+  truth, mesh reconstruction, hole filling, boundary smoothing, a minimum-arc
+  filter and any new acquisition.
+- **The only automated FAIL condition is structural**: both parents read only and
+  byte-identical afterwards; no acquisition launched; no evaluator truth opened;
+  the inherited chart and footprint reused unchanged; internal and exterior
+  complement kept distinct; and each output serialized with its parent hashes.
+- **If the real shoreline is fragmented or visually messy, it is reported, not
+  tuned.** A disappointing picture authorizes no morphology change after the
+  fact. A demonstrable implementation defect **in the new Cyclopean-1b files
+  only** may be repaired minimally after diagnosis; the inherited NaN-cast
+  warning is explicitly **not** authorization to modify a Cyclopean-1a source,
+  and if it ever demonstrably changed a 1b result the run stops for Luiz/Chat.
+
+The aggregate reports `CYCLOPEAN1B_COMPLETE` when both parents are audited
+read-only and both manifests satisfy the integrity fields, or
+`CYCLOPEAN1B_INTEGRITY_FAIL` otherwise.
+
+**What this decision would resolve.** If the chart can name a bay as an
+unresolved boundary arc and separate it from boundary the observer has actually
+seen past, then the cyclopean layer carries the structure `no_frontier` is
+missing, and the open question becomes whether that structure should inform
+stopping. If every arc looks alike, or exterior-connected boundary cannot be told
+from a resolved physical edge, then the representation is still only a hole
+detector and the gap stays inside FSG6f's frontier rule.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1b.md` Results and `docs/log.md`).
+**CYCLOPEAN1B_COMPLETE**, `structural_fails: []` - both parents audited read-only
+and byte-identical afterwards, no Blender process, no fixation, no FAIL line
+anywhere. **Structural only; no PASS is inferred** from arc counts, shoreline
+length or penetration depth. Cyclopean-1a, the Reality Checks and FSG6f remain
+preserved and unedited. No prior decision is edited. **No code fix was made and
+no source file was modified.**
+
+**The prewritten rule resolves on its first branch.** The chart named the bay
+without being asked to look for one. Seed 2111's bay is a **single connected
+`UNOBSERVED` arc of 615 cells - 40.6% of the entire shoreline** - centroid
+(-1.078, +2.015), span 20.5 x 8.9 deg, with exterior penetration depth
+**[5, 132, 209] cells (up to 20.9 deg)** while the **second**-deepest of 213
+exterior arcs reaches only **22**: a **9.5x** separation that no threshold
+produced. **A bay is therefore describable even though it is not a hole** -
+exactly the case Cyclopean-1a could not catch. Lakes and bays stay distinct: seed
+2179's 35-cell residue from the 1a probe survives as the lone `INTERNAL` arc
+(33 cells at (+6.852, -2.136)) while its staircase notch stays `EXTERIOR` at
+depth 45.
+
+**And the depth-break cue, which D-CYCLOPEAN1A recorded as never exercised in the
+field, is exercised here.** `PHYSICAL_DEPTH_BREAK` arcs carry range gaps of
+median 0.0315 / 0.0365 m up to **1.59** and **1.74** m (the room behind the
+table), while every `AMBIGUOUS` arc with a defined gap sits **below** the frozen
+radius at max 0.0118 / 0.0114 m: the inherited FSG3 12 mm scale, never chosen for
+this purpose, **falls in the empty interval between two measured populations**.
+The states separate spatially too, unforced - 63.0% and 68.2% of physical
+shoreline cells lie below pitch -6.0 deg against 3.5% and 3.2% of unobserved
+cells.
+
+**Two of the four states did not occur, and that is recorded rather than
+repaired.** `AMBIGUOUS` is entirely the sub-12 mm tail - zero cells carry both
+kinds of evidence. `TARGET_CONTINUATION` is **0 arcs on both records and is
+structurally unreachable**: **100.00%** of the 28,835 and 34,880 target-evidence
+cells fall inside the dilated support, so none can ever be a shoreline cell,
+because a fused target observation becomes a surfel whose 12 mm footprint covers
+the cell it projected to. The four-state vocabulary is really a **three-state**
+vocabulary on this fixture. Making the fourth occur would require changing the
+inherited footprint or raster rule, which this block forbids.
+
+What would overturn or extend this. The audit is **descriptive and changes no
+policy**: no probe was selected, no gaze proposed, no stopping rule touched, and
+**no completeness claim is made** - 40.6% describes the shoreline, not the
+object, and `no_frontier` is not being called wrong. The shoreline is genuinely
+**fragmented** (213 and 195 arcs, median arc 2 and 1 cells) because a minimum-arc
+filter is forbidden; that is a measured property, and **nothing was smoothed
+after seeing it**. The open question is unchanged in shape but now better posed:
+**whether a deep unresolved arc should ever become a fixation**, and if so
+whether that belongs in FSG6f's frontier rule or beside it. **Luiz/Chat decide
+what to ask next.**

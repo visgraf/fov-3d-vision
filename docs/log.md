@@ -5981,3 +5981,164 @@ whether topology should inform stopping - Cyclopean-1a is one probe by
 construction, and seed 2111 shows that an open bay left behind by `no_frontier`
 is not something this chart alone would catch, because an open bay is not a hole
 by the stated rule. Stopped for Luiz/Chat.
+
+### 2026-09-21 - Cyclopean-1b, spherical shoreline audit: read-only, no acquisition
+
+Per `docs/cyclopean1b.md`, `docs/cyclopean1b-checks.md` and D-CYCLOPEAN1B, run
+on the prospective package Luiz applied and committed as **`5e01401`** ("Add
+Cyclopean-1b spherical shoreline audit") on `main`. **No prospective
+before-acquisition entry was required for this step because nothing is
+acquired**: Cyclopean-1b launches no Blender process, adds no fixation, fuses
+nothing and writes into no parent. The whole increment is host-side analysis of
+records that already exist, and both parents are byte-identical afterwards.
+
+**Measured outcome. `CYCLOPEAN1B_COMPLETE`, `structural_fails: []`.** Structural
+only - **no numerical quality gate exists here and no PASS is inferred** from arc
+counts, shoreline length or penetration depth.
+
+Provenance first. Working tree clean at `5e01401`; the package adds **exactly
+seven files, all `A`**; `git diff` against the Cyclopean-1a result commit
+`f7f3b05` over **33 frozen sources** - every FSG1/FSG3/FSG6f source, the
+renderer, scene, rig, pin file, every Reality Check 1/2/2b source and **every
+Cyclopean-1a source** - is **empty (0 lines)**, all 33 sha256 SAME. Both parents
+were located **by manifest**: a scan of every `prediction_manifest.json` found
+**exactly two** `Cyclopean1a-probe-v1` records, exactly one `full` per seed, so
+nothing had to be disambiguated. The three pinned files per parent hash
+identically before and after both audits - 2111 manifest
+`aed7700ecfe0de3a...a24b52f4`, `map_before`/`surface_map` both
+`c780d4345e6f74d3...9da1f6e1`; 2179 manifest `d87ae3efa0762dca...a126fcb3`,
+`map_before` `1db5c6a87b9dd1f6...efccb24a`, `surface_map`
+`1604fce3c7b527cb...c851c18e`. That seed 2111's two maps share one sha256
+independently reconfirms Cyclopean-1a's "no probe, map bitwise unchanged".
+
+Nothing was acquired, and this was verified rather than asserted: the
+Cyclopean-1b sources contain no reference to `subprocess`, `blender`, `bpy` or a
+render fix; `pgrep blender` found no process; each audit is Interactive at
+**2.3 s** and **2.9 s** wall; and no `acquisition/` directory, `.ply` or
+`render.log` exists anywhere under `previews/cyclopean1b/`.
+
+Checks. `py_compile` clean on all five modules; the three prescribed lines
+verbatim - `[cyclopean1b-boundary] PASS exterior_bay=true internal_distinct=true
+continuation=true physical_depth_break=true`, `[cyclopean1b-policy] PASS
+parent=cyclopean1a read_only=true acquisition=false boundary_arcs=true
+no_mesh=true quality_gated=false`, `[cyclopean1b-check] SUMMARY passed=6
+failed=0`; all six negatives exit 1 (`holeonly`, `exteriorresolved`,
+`depthblind`, `truth`, `mesh`, `acquire`). Prior suites green with negative sets
+still firing: **cyclopean1a 6/6 (6/6)**, **reality2b 7/7 (10/10)**, **reality1
+6/6 (6/6)**, **fsg6f 14/14 (15/15)**. Both charts were rebuilt from
+`map_before.npz` and asserted against the parent manifest: grid **0.1 deg**,
+footprint **4 cells** (0.322236 and 0.322291 deg). No new tolerance, no raster
+rule touched.
+
+**Seed 2111** - chart 263 x 199, 117,567 map points, raw support 28,032, support
+34,221, complement 18,116, shoreline **1,514** cells. Complement is **one
+EXTERIOR component, zero INTERNAL**, and all **213** arcs are exterior:
+UNOBSERVED 46, TARGET_CONTINUATION **0**, PHYSICAL_DEPTH_BREAK 81, AMBIGUOUS 86;
+by cell 1,059 / 0 / 303 / 152. **The bay is arc 18**, a single connected
+`UNOBSERVED` arc of **615 cells - 40.6% of the whole shoreline** - centroid
+**(-1.078, +2.015)**, span **20.5 x 8.9 deg**, zero target and zero non-target
+evidence, exterior penetration depth **[5, median 132, max 209] cells**, i.e. up
+to **20.9 deg** of complement path from the padded border. Across all 213
+exterior arcs the per-arc maximum depth is **min 0, median 8, mean 10.4, max
+209**, and the **second**-deepest arc reaches only **22** - the bay is **9.5x**
+deeper than anything else in the record, with **546** of 1,514 shoreline cells
+deeper than 22 cells and **383** deeper than 100. No threshold produced this
+separation; the depth was reported and the bay separated itself.
+
+**Seed 2179** - chart 263 x 192, 141,184 map points, raw 33,752, support 38,608,
+complement 11,888, shoreline **989**. **Two** components: EXTERIOR 11,853 cells
+(shoreline 956, max depth 45) and **INTERNAL 35 cells** (shoreline 33). Of 195
+arcs, 194 exterior and 1 internal: UNOBSERVED 33 (32 + 1), TARGET_CONTINUATION
+**0**, PHYSICAL_DEPTH_BREAK 61, AMBIGUOUS 101; by cell 494 / 0 / 336 / 159. The
+**residual internal hole** left by the one Cyclopean-1a probe survives as a
+single `INTERNAL` / `UNOBSERVED` arc - **arc 194, 33 cells, centroid (+6.852,
+-2.136), span 1.5 x 0.4 deg**, zero evidence of either kind, distances **null**
+because an internal component is unreachable from the border by construction -
+and its centroid matches the 35-cell / 0.3498 deg2 residue Cyclopean-1a reported
+at (+6.85, -2.13). The deepest exterior arc is also `UNOBSERVED` - arc 18, 215
+cells at (-6.971, +5.908), span 11.4 x 9.5 deg, depth [1, 28, **45**] - but at
+4.5 deg it is a shallow staircase notch, not a deep basin. Exterior per-arc
+depth: min 0, median 8, mean 8.6, max 45; 138 of 989 cells deeper than 22.
+
+**The physical-depth-break cue, which Cyclopean-1a could not exercise, is
+exercised here on real data - and the frozen 12 mm scale separates the two
+observed populations without overlap.** `PHYSICAL_DEPTH_BREAK` arc range gaps run
+min **0.0121** / median 0.0315 / max **1.5882** m on 2111 and min **0.0132** /
+median 0.0365 / max **1.7380** m on 2179; every `AMBIGUOUS` arc with a defined
+gap is **below** the radius - max **0.0118** and **0.0114** m. The inherited FSG3
+association radius, never chosen for this purpose, falls in the empty interval
+between the two populations, and the metre-scale gaps are the room behind the
+table. The two states also separate spatially with no rule saying they should:
+cell-weighted centroid pitch of `PHYSICAL_DEPTH_BREAK` is **-3.864** and
+**-5.396 deg** against **+3.634** and **+5.566** for `UNOBSERVED`, and **63.0%**
+and **68.2%** of physical shoreline cells lie below pitch -6.0 deg against
+**3.5%** and **3.2%** of unobserved cells. The observer has seen past the lower
+edge of the cloth onto the table and the room, and has simply never looked above
+and to the left.
+
+Two of the four states did not occur, and both were diagnosed rather than
+patched. `AMBIGUOUS` is entirely the **sub-12 mm tail, not a mixture**: measured
+over every shoreline cell, **zero** carry both target and non-target evidence,
+and the 152 and 159 ambiguous cells are non-target-only, split **65 + 87** and
+**76 + 83** between an undefined gap (no local target reference within the
+inherited radius) and a defined gap not larger than 12 mm. `TARGET_CONTINUATION`
+is **0 arcs on both records and is structurally unreachable, not a defect**: of
+the 28,835 and 34,880 chart cells carrying target evidence, **100.00%** fall
+inside the dilated support and **zero** outside it, so no target-evidence cell
+can ever be a shoreline cell - a fused target observation becomes a surfel whose
+12 mm footprint dilation covers the very cell it projected to. Making that state
+occur would require altering the inherited footprint or raster rule, which this
+step forbids, so **nothing was changed**.
+
+Aggregate: `[cyclopean1b-compare] CYCLOPEAN1B_COMPLETE` with
+`"max_exterior_border_distance_cells": 209` (2111) and `45` (2179) and
+`"structural_fails": []`.
+
+Visual reading, descriptive. `full-seed2111/shoreline.png` makes the bay legible
+**without any post-hoc smoothing**: a white complement channel enters from the
+**left edge**, runs horizontally between an upper slab and a lower-left slab and
+opens into a wide rectangular basin in the middle right, all one continuous white
+region reaching the chart border - a bay. Its entire perimeter is red
+`UNOBSERVED`, and there is **no** salmon interior tint anywhere because there is
+no internal component. Blue `PHYSICAL_DEPTH_BREAK` appears only along the
+lower-right outer edge with small purple `AMBIGUOUS` fragments beside it.
+`full-seed2179/shoreline.png` shows a nearly solid support with a stepped
+staircase notch cut from the upper left and one small red crescent in the middle
+right - the residual internal hole - with a long continuous blue run along the
+lower edge and red above and left. The shoreline is genuinely **fragmented**:
+213 and 195 arcs for 1,514 and 989 cells, **median arc 2 and 1 cells** against
+maxima of 615 and 215. That is a direct consequence of forbidding a minimum-arc
+filter and any morphology tuning, it is reported as measured, and **nothing was
+smoothed after seeing it**.
+
+**No structural FAIL line was produced anywhere, and no code fix was made**; no
+source file was modified. The inherited `RuntimeWarning: invalid value
+encountered in cast` from `cyclopean1a_topology.py:117-118` appears again - **26**
+and **34** occurrences - and is recorded again as harmless, now with a stronger
+argument than in Cyclopean-1a. By inspection, `_indices` builds its `good` mask
+with an **explicit** `np.isfinite(yaw) & np.isfinite(pitch)` term, so the value
+the cast produced for a non-finite input is never relied on; by measurement,
+rebuilding the complete Cyclopean-1b evidence with a NaN-prefiltered `_indices`
+raises **0** warnings and yields **bitwise identical** `seen_target`,
+`seen_nontarget`, `target_range_m`, `nontarget_range_m`, `raw_support`, `support`
+and target range raster on **both** seeds. It changes no Cyclopean-1b number, so
+the parent scientific source was correctly left alone. One further detail was
+checked rather than assumed: `_exterior_distance` leaves unreachable complement
+cells at the sentinel **-1**, which is exactly the internal component; that
+sentinel **never reaches the report**, verified directly against both JSON files
+- `border_distance_cells_*` is `null` for every internal arc and non-negative for
+all 213 + 194 exterior arcs.
+
+What this establishes: **the existing representation already carries boundary
+semantics, and no new machinery was needed to read them out.** It represents seed
+2111's bay as a single unmistakable `UNOBSERVED` arc that is 40.6% of the
+shoreline and 9.5 times deeper than any other arc, so **a bay is describable even
+though it is not a hole** - precisely the case Cyclopean-1a could not catch. It
+keeps lakes and bays distinct, and it distinguishes unresolved boundary from
+observed physical boundary on real data. What it does not establish: **no policy
+changed** - no probe selected, no gaze proposed, no stopping rule touched; **no
+completeness claim is made** and `no_frontier` is not being called wrong;
+`TARGET_CONTINUATION` has **no field evidence at all**, so the four-state
+vocabulary is really a three-state vocabulary on this fixture; and whether a deep
+unobserved arc should ever become a fixation is exactly the question **1b
+deliberately does not answer**. Stopped for Luiz/Chat.
