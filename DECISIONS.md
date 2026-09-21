@@ -1895,3 +1895,50 @@ perceptual organization layer and the next question is whether to let it inform
 stopping. If it exposes nothing, or only discretization noise, or selects an
 illegal gaze, then the representation is not yet carrying the structure that
 `no_frontier` is missing, and the gap stays inside FSG6f's frontier rule.
+
+Outcome 2026-09-21 (evidence: `docs/cyclopean1a.md` Results and `docs/log.md`).
+**CYCLOPEAN1A_COMPLETE**, `structural_fails: []` - both parent records processed
+faithfully, no parent view rerendered, no FAIL line anywhere. **Structural only;
+no PASS is inferred from coverage or hole reduction.** Reality Checks 1, 2 and 2b
+remain preserved and unedited; FSG6f remains CLOSED/PASS and unmodified. No prior
+decision is edited. **No code fix was made and no source file was modified.**
+
+**The prewritten rule resolves on its first branch, partially.** This block
+recorded that if the chart exposes the interior gaps Reality Check 2b left,
+separates them from genuine depth breaks, and places a legal foveation inside the
+largest one, the cyclopean sphere is a usable perceptual organization layer. It
+exposed and probed one such hole; it did **not** get the chance to separate a
+depth break, because none arose.
+
+Measured. Both charts: grid **0.1 deg**, footprint **4 cells** from the frozen
+12 mm radius at the measured median range (0.322236 and 0.322291 deg), closing
+gaps below **0.8 deg**; nothing tuned. **Seed 2111** - 117,567 surfels, complement
+in **exactly one border-touching component**, therefore **zero internal holes, no
+probe**, map bitwise unchanged, nothing rendered. **Seed 2179** - 138,010
+surfels, **one internal hole of 772 cells / 7.7165 deg2** at (+6.2780, -1.5873),
+state `UNOBSERVED_HOLE` with zero observed cells of either kind inside; centroid
+snapped to **(6.3, -1.6)**, inside the domain and not a revisit; one fixation
+returned **58,721 target points**, fused **3,174 new surfels**, replay-idempotent,
+map 138,010 -> 141,184, multi-look 57,571 -> 70,136, instance ids {141}; selected
+hole 7.7165 -> **0.3498 deg2**, no threshold attached.
+
+**A Reality Check 2b description is corrected, and the numbers are not.** Seed
+2111's gap was described there, from an (x,y) surfel scatter, as an enclosed
+interior hole. The chart shows it is **open to the exterior** through a channel on
+the left - a bay, not a lake. Every Reality Check 2b measurement stands; only that
+topological characterisation was wrong, and catching it is what this layer is for.
+
+What would overturn or extend this. **The physical-depth-break cue was never
+exercised in the field**: the only hole found was unobserved, so the range-gap
+test returned `None` and decided nothing. It passes its synthetic control
+(`physicalclose`) and nothing more can be claimed for it from this run. The
+discretization evidence is strong in the other direction - 330 and 410 internal
+raw-complement components, the largest spurious one 0.4168 deg2, all removed by
+the inherited footprint while seed 2179's genuine 13.88 deg2 component survived -
+so the frozen 12 mm footprint is doing its job and needs no change. **This does
+not settle whether topology should inform stopping**; Cyclopean-1a is one probe
+by construction. Seed 2111 is the pointed case: an open bay left behind by
+`no_frontier` is **not** something this chart alone would catch, because an open
+bay is not a hole by the stated rule. If that matters, the next question is about
+the boundary between `no_frontier` and chart topology, not about either alone.
+**Luiz/Chat decide what to ask next.**

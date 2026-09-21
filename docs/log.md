@@ -5866,3 +5866,118 @@ revisits a prior gaze I will **stop and report** rather than invent another
 action rule. I will fix only a demonstrable implementation defect in the new
 Cyclopean-1a files, minimally, after diagnosis. All outcomes are preserved,
 including a probe that finds nothing, and the report goes back to Luiz/Chat.
+
+**Measured outcome, appended after the run (2026-09-21).**
+**`CYCLOPEAN1A_COMPLETE`, `structural_fails: []`.** Both parent records were
+processed faithfully, no parent view was rerendered, and **no FAIL line was
+produced anywhere**. That is a structural statement only - **no PASS is inferred
+from coverage or from hole reduction**.
+
+Checks first, all before acquisition. `py_compile` clean on all five new modules.
+`[cyclopean1a-topology] PASS sampling_hole=true physical_hole_resolved=true
+exterior_not_hole=true`, `[cyclopean1a-policy] PASS cyclopean_domain=true
+topology=true physical_hole_depth_break=true one_probe_max=true no_mesh=true
+quality_gated=false`, `[cyclopean1a-check] SUMMARY passed=6 failed=0`, all six
+negatives exit 1 (`fillhole`, `physicalclose`, `exteriorhole`, `truth`, `mesh`,
+`multiprobe`). Prior suites green with negative sets still firing: reality2b 7/7
+(**10/10** negatives), reality1 6/6 (6/6), fsg6f 14/14 (**15/15**). Both parents
+were located **by manifest** - a scan of every `prediction_manifest.json` found
+exactly three `RealityCheck2b-prediction-v1` records and exactly one `full` per
+seed - and pass 23/23 and 26/26 conditions; their manifest/trace/map hashes were
+pinned before the probes and **re-verified unchanged afterwards**.
+
+Both charts use grid **0.1 deg** and a footprint of **4 cells** from the frozen
+12 mm FSG3 radius at the measured median range (`atan(0.012/2.1337) = 0.322236`
+deg and `0.322291` deg), closing gaps narrower than **0.8 deg**. Nothing was
+tuned and no new metric tolerance entered.
+
+**Seed 2111**: 117,567 surfels, chart 263 x 199, raw occupied 28,032, support
+34,221 (65.4%), complement 18,116 cells in **exactly one component, which touches
+the padded border**. By the stated rule the exterior is not a hole, so **zero
+internal holes, no probe candidate, no probe**. `added_fixations: 0`,
+`parent_fixations_rerendered: 0`, map **bitwise unchanged** at 117,567 points and
+48,350 multi-look surfels, no acquisition directory created, nothing rendered.
+Per the contract this is a valid observational result.
+
+**This corrects a reading in the Reality Check 2b report.** There the seed-2111
+gap was described, from an (x,y) scatter of surfels, as "a large unvisited
+rectangular hole in the middle of the cloth". The cyclopean chart shows it is
+**not enclosed**: the unsampled region runs continuously from the interior out
+through a channel on the **left** of the chart to the exterior. It is a bay, not
+a lake. The Reality Check 2b numbers are unaffected; only that topological
+characterisation was wrong, and exposing it is exactly what this representation
+was built to do.
+
+**Seed 2179**: 138,010 surfels, chart 263 x 192, raw 32,906, support 37,873
+(75.0%), complement 12,623 cells in **two components** - one border-touching of
+11,851 cells and **one internal hole of 772 cells / 7.7165 deg2** at centroid
+(+6.2780, -1.5873), state **`UNOBSERVED_HOLE`**. Inside it
+`target_observed_cells = 0` and `nontarget_observed_cells = 0`, so the
+physical-depth-break test could not fire: boundary target range 2.1361 m, no
+interior non-target range, `range_gap_m` `None`, `probe_candidate: true`. The
+centroid snapped to **(6.3, -1.6)** on the 0.1-deg physical-view lattice, inside
+the allowed domain and **not** a revisit of any of the sixteen parent gazes, so
+no fallback rule was invoked. One fixation `fix_16` was rendered. It returned
+**58,721 target points** - far over the inherited `<100` limit - so it counted as
+a target measurement and was fused: **3,174 new surfels**, 55,547 matched,
+**`idempotent_replay: true`**, map **138,010 -> 141,184** points, multi-look
+surfels **57,571 -> 70,136**, instance ids exactly **{141}**. The selected hole
+went from 7.7165 to **0.3498 deg2** (35 cells, centroid (+6.85, -2.13), still
+`UNOBSERVED_HOLE`). That number measures what the one probe did; **no threshold
+is attached to it.**
+
+Discretization holes, reported in full **before** any raster rule was touched, as
+the authorization required. Against the **undilated** raw support: seed 2111 has
+331 complement components, **330 internal**, largest 42 cells / **0.4168 deg2**
+at (+8.25, +7.03), then 29/0.2898, 24/0.2383, 22/0.2197, 20/0.1993; seed 2179 has
+411 components, **410 internal**, largest 1,389 cells / **13.8825 deg2** at
+(+6.23, -1.47) - the real hole - with the next largest only 36 cells / **0.3572
+deg2**. The frozen 12 mm footprint removes every component below ~0.5 deg2 while
+leaving the genuine one standing. **No raster rule was changed**; this is
+evidence the inherited footprint already does its job.
+
+Structure re-verified independently of the tooling on both records: `map_before`
+equals the saved parent map exactly, both parents' manifest/trace/map sha256 are
+unchanged after the probes, `truth_opened` False, fixed head and static scene
+True, `parent_fixations_rerendered` 0, `added_fixations` 0 and 1 (never more),
+final instance ids {141}, the one fused probe replay-idempotent, and seed 2111's
+map bitwise identical before and after. Both manifests carry
+`public_spec_sha256 76c32103a04e500eb81d35ff69514a5fef6a6483bbce3870282fc8a713da44a1`.
+
+Visual reading, descriptive. `full-seed2111/cyclopean_before.png` shows one
+continuous unsampled area reaching the left chart edge, with no enclosed red
+region because there is no internal hole; nothing else was rendered for that
+seed. `full-seed2179/cyclopean_before.png` shows one compact red rectangle well
+inside the grey support with its centroid marked, and `cyclopean_after.png` shows
+it replaced by a thin red crescent along what was its lower edge.
+`probe_rgb.png` explains the yield: the gaze landed on fully textured cloth - the
+printed blue band and the red-orange emblem, no wall, table or prop in frame -
+and 58,721 target points is the largest single-look count anywhere in this
+series, precisely because no earlier fixation had ever pointed there.
+
+**No code fix was made and no source file was modified.** One diagnosed and
+deliberately unfixed observation is recorded because it is visible in the
+console: both probes emit `RuntimeWarning: invalid value encountered in cast`
+from `cyclopean1a_topology.py:117-118`, where `_indices` casts yaw/pitch to
+`int64` before filtering. Measured, not assumed: each saved observation's
+rectified grid carries **43,689 non-finite cells of 65,536** (ordinary stereo
+holes); on this platform every NaN/inf casts to `INT64_MIN`, which fails the
+subsequent `x >= 0` test, and a direct test confirms **zero** non-finite entries
+are admitted. The warning changes no reported number, so it is a robustness and
+noise issue rather than a demonstrable defect, and under the authorization it was
+reported rather than edited.
+
+What the representation actually exposed, and nothing more: (1) **it
+discriminates** - same fixture, same grid, same frozen footprint, yet zero
+internal holes on one record and exactly one on the other, and the one it found
+is the one a human would point at; (2) **it overturned a description taken from
+looking at a point cloud** - seed 2111's gap is topologically open to the
+exterior; (3) **the physical-depth-break cue was never exercised** - the only
+hole found was `UNOBSERVED_HOLE` with zero observed cells of either kind inside,
+so the range-gap test returned `None` and was never the reason for anything. The
+cue passes its synthetic control but **this run provides no field evidence about
+it**; that is a gap in the evidence, not a result. What this does not settle is
+whether topology should inform stopping - Cyclopean-1a is one probe by
+construction, and seed 2111 shows that an open bay left behind by `no_frontier`
+is not something this chart alone would catch, because an open bay is not a hole
+by the stated rule. Stopped for Luiz/Chat.
