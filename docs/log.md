@@ -7004,3 +7004,125 @@ be angularly disjoint from this fixed head, and nothing here shows what the
 representation would do if they were not. **Next stage**: grow object 143
 independently while 141 remains stable; automatic next-object discovery stays
 deferred. Stopped for Luiz/Chat.
+
+### 2026-09-21 - MultiObject-1b, independent object-143 growth: BLOCKED by the frozen Reality-2 renderer's global step ceiling
+
+Per `docs/multiobject1b.md`, `docs/multiobject1b-checks.md` and the prospective
+package Luiz applied and committed as **`2236998`** (pre-package parent
+`267c579`).
+
+**Measured outcome. `MULTIOBJECT1B_BLOCKED` - the experiment did not complete and
+no completion is claimed.** Five object-143 growth fixations executed faithfully,
+then the run raised `RuntimeError: MultiObject-1b Blender fixation 24 failed`
+because the **frozen** `reality2_render_fix.py` rejected global step 24 with
+`ValueError: Reality Check 2 renders continuation steps only`. **Object 141 and
+the MultiObject-1a parent are byte-identical afterwards, including through the
+crash.**
+
+**The blocking condition, measured.** `reality2_render_fix.py` admits a fixation
+only when `PARENT_FIXATIONS <= step < WATCHDOG_TOTAL_FIXATIONS`, and
+`reality2_public` fixes `PARENT_FIXATIONS = 6` and
+`WATCHDOG_TOTAL_FIXATIONS = 4*6 = 24`: **global indices 6..23 and nothing else**.
+The programme has already spent global steps **0-18** - Reality1 0-5, RC2b 6-12,
+Cyclopean-1c 13, 1e 14, 1f 15-16, 1g 17, MultiObject-1a 18. MultiObject-1b
+renders at `global_step = 18 + len(gazes)`, so only steps **19-23, exactly five**,
+are renderable, while its own `OBJECT2_WATCHDOG_FIXATIONS = 24` counts
+**object-143** fixations including the seed. The maximum object-143 fixation
+count physically reachable is **1 + 5 = 6 against a watchdog of 24**: the
+object-scoped watchdog **can never be reached**. The two counters are different
+quantities - a global acquisition index versus an object-scoped budget - and
+nothing in the 1b package reconciles them.
+
+**The scientific stop was far away when the ceiling was hit**, measured rather
+than assumed: replaying the frozen policy read-only against the saved state at the
+blocked step gives `stop=False`, `reason='continue'`,
+`next_gaze_deg=[-23.4970979736, 17.0596257012]`, with **1,193 open frontier
+voxels of 1,264** (54 map-resolved, 17 boundary-resolved), 4 candidates before
+consensus and 0 rejected. **The truncation was entirely the renderer's global
+ceiling, not anything scientific.**
+
+**Not repaired here, because every remedy is a decision rather than a defect
+repair**: widening the frozen renderer's range is forbidden; renumbering 1b's
+renders into an object-scoped space would change the acquisition-record naming
+convention the whole ancestry relies on; and lowering the watchdog to 6 would tune
+a policy constant to fit the tooling and dress a renderer limit as a scientific
+budget. **None was taken - no frozen source, policy constant, fusion radius,
+threshold, scene or matcher was modified.** Under CLAUDE.md, code stops and says
+so.
+
+Provenance. Clean tree; **exactly the seven expected files, all `A`**; `git diff`
+against `267c579` over **69 frozen sources** - every FSG1/FSG3/FSG6f source,
+renderer, scene, rig, pin file, every Reality Check 1/2/2b source, every
+Cyclopean-1a..1g source and **every MultiObject-1a source** - **empty (0 lines)**,
+all 69 SAME. Parent located **by manifest**: exactly one
+`MultiObject1a-second-object-seed-v1` seed-2111 `full` record. Pinned and
+**byte-identical after the failed run**: 1a manifest
+`30acca954af1914d...98cb1a4e`, 1a seed patch `e7e40c16a185a2f9...5f8a7d8c`, 1a
+scene graph `79817b6d2647f45b...890a2376`, and the object-141 source
+`6ac98f6251b47337...f71e524a`.
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **44.2 s** to the failure, five Blender
+launches completed and the sixth refused.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. All six negatives
+are **genuine source-mutation controls**, each exiting 1 with its detector named
+(`object1grow`->`object141_read_only`, `crossfuse`->`object143_only_growth`,
+`copypolicy`->`frozen_fsg6f_adapter`, `priorhistory`->`seed_scoped_history`,
+`emptyabort`->`empty_look_is_evidence`,
+`autodiscover`->`no_discovery_or_quality_gate`), **none exiting 2**. **No
+regression**: 11 prior suites green, **79 prior negatives** still firing.
+
+**Partial measurements from the truncated run**, recorded because they are
+informative and not because they complete anything. Gazes and growth, on the
+frozen 5-degree lattice: `fix_18` seed (+1.5029,-7.9404) 5,344 pts; `fix_19`
+(-3.4971,-2.9404) 4,076 pts +2,413 surfels -> 7,757; `fix_20` (-8.4971,-2.9404)
+5,033 +3,634 -> 11,391; `fix_21` (-13.4971,+2.0596) 1,547 +1,419 -> 12,810;
+`fix_22` (-18.4971,+7.0596) 1,197 +1,132 -> 13,942; `fix_23`
+(-23.4971,+12.0596) 1,721 +1,647 -> **15,589**. Object 143 grew **5,344 ->
+15,589** surfels (**+191.7%**); **no empty looks**, so the Reality-2b
+negative-evidence branch was not exercised; all six gazes distinct; **final
+instance-id purity exactly `{143}` at every saved map** from `map_18` to
+`map_23`, never admitting 141, 142 or 144; seed surfels moved by at most **6.32
+mm** (median 0.0000, p99 4.85), inside the frozen 12 mm radius; final multi-look
+surfels 1,312, max support 3. Shared 0.1-deg chart: 141 **37,601** cells, 143
+**6,478** (up from the seed's 1,670), **overlap 0**; 143 now spans yaw
+**[-30.72,+6.88]**, pitch **[-9.80,+17.90]** against 141's **[-12.42,+12.68]** x
+**[-8.30,+10.40]**.
+
+Visual reading. The crash preceded `object_143_growth.png`, the final PLY and the
+scene footprint image, so only the per-fixation previews exist. Across
+`rgb/fix_18..23.png` the fovea starts on the seed view - cloth above, object
+143's grey band across the middle, brown wood below - then walks left and up
+across a **large, smooth, largely untextured grey surface**; by `fix_22` and
+`fix_23` object 141 has left the frame entirely and the view is nearly featureless
+grey with one flat blue panel. The stereo yield shows it: valid pixels collapse
+**52,622 -> 35,666 -> 13,928 -> 1,449 -> 1,721**. **Object 143 looks coherent
+rather than merely larger** - one continuous surface, orderly saccades,
+well-behaved fusion - but the frontier is marching onto texture-free area of
+exactly the kind Cyclopean-1g documented for the emblem, at much larger scale.
+Objects **144** (`fix_21` 1,410 px, `fix_22` 252 px) and **142** were visible and
+correctly **not instantiated**; discovery remains deferred. **Internal coherence
+is not evaluator accuracy** - no truth was opened.
+
+Structural failures: the blocking `RuntimeError` above. No manifest was written,
+so `multiobject1b_compare.py` had no record to aggregate and was not run. No
+integrity failure: parent, ancestry and object-141 source byte-identical, purity
+held at every step, no evaluator truth opened. **Code fixes: none; no file was
+modified.**
+
+What this establishes, within five looks: **the transfer mechanism itself works**
+- the frozen FSG6f controller, reached only through a pure label adapter, drove
+object 143 from its seed through five orderly 5-degree saccades and 191.7% surfel
+growth with exact `{143}` purity, seed surfels undisturbed, and object 141
+byte-identical throughout. What it does not establish: **the experiment did not
+run to its own stop**, so it shows nothing about termination, convergence or the
+object's extent - the policy was still returning `continue` with 1,193 open
+frontier voxels; **no empty look occurred**, so that path is untested here; **no
+accuracy claim**; **zero footprint overlap is still not an invariant**. And it
+surfaced a structural fact the contract had not accounted for: **the frozen
+Reality-2 renderer caps the whole programme at 24 global fixations, 19 already
+spent, leaving at most 5 renders under this acquisition path.** That ceiling, not
+object 143, stopped this run. **Resolving it is a design decision for Luiz/Chat;
+no D-MULTIOBJECT1B outcome is recorded because none was reached.** Stopped for
+Luiz/Chat.
