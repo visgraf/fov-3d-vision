@@ -7567,3 +7567,107 @@ The Results section was restored verbatim from `e5336fb` with a dated
 reproduction note appended. **No scientific semantics, chart resolution, 12 mm
 radius, epistemic state definition or scene-progress disposition was touched, and
 no tool source was modified.** Stopped for Luiz/Chat.
+
+### 2026-09-22 - MultiObject-2a, next-object selection: object 142 wins on valid-depth support, 14.2x clear, chosen from memory with no new look
+
+Per `docs/multiobject2a.md`, `docs/multiobject2a-checks.md` and the prospective
+package Luiz applied and committed as **`16fadac`** (parent result `fa65de8`, a
+bookkeeping descendant of the MultiObject-1c result `e5336fb`).
+
+**Measured outcome. `MULTIOBJECT2A_COMPLETE`, `structural_fails: []`.**
+Read-only - **no Blender process, no acquisition, no fusion, no object
+instantiated** - with all **57** pinned inputs byte-identical afterwards.
+**Selected next object: id 142**, with **151,133** accumulated valid-depth
+samples.
+
+Provenance. Clean tree; **exactly seven files, all `A`**; `git diff` over **67
+frozen sources** - every FSG1/FSG3/FSG6f source, scene, rig, pin file, every
+Reality Check 1/2/2b source, `scene_render_fix.py`, every Cyclopean-1a..1g source
+and every MultiObject-1a/1b/1b2/1c source - **empty (0 lines)** against both
+`fa65de8` and `e5336fb`, all 67 SAME. Parent located **by manifest** with **all
+eight required conditions holding** (schema
+`MultiObject1c-object143-epistemic-audit-v1`, seed 2111, truth_opened false,
+acquisitions_added 0, growth_iterations_added 0, both objects read-only,
+`summary.scene_disposition = MOVE_TO_NEXT_OBJECT`, structural_fails []).
+
+Read-only integrity: 57 inputs pinned and re-hashed - the three 1c files
+(`3ad6c63e761f0411`, `7d3c7a2a29fa1ac2`, `88b85071cb133a81`), the five 1b2 scene
+files (`74d5cc0f58a2c590`, `5df35f372460399`, `bbc4b856a07d2be5`,
+`5ef4982532f8bde2`, `c17589df1aa18b4c`), the object-141 source
+`6ac98f6251b47337...f71e524a`, and **all 24 calibration/observation pairs for
+global steps 18-41** - **all byte-identical**. No Blender process; no
+`subprocess`/`blender`/`bpy`/fusion call in any 2a source; exactly two host
+artifacts with no acquisition dir, `.exr`, `.ply`, `.npz` or render log. Manifest
+records `acquisitions_added: 0`, `fusion_iterations_added: 0`,
+`growth_iterations_added: 0`, `new_object_instantiated: false`,
+`objects_141_143_read_only: true`, `truth_opened: false`,
+`quality_gate_used: false`, `semantic_ranking_used: false`. Objects unchanged:
+141 still 155,684 points {141}, 143 still 42,988 points {143}. Host
+`.venv/bin/python` 3.12.3, **Interactive at 3.8 s**.
+
+Checks. `py_compile` clean; the selector self-test and three prescribed lines
+verbatim. All six negatives are **genuine source-mutation controls**, each
+exiting 1 with a distinct detector and none exiting 2
+(`acquire`->`read_only_no_acquisition`,
+`instantiated`->`uninstantiated_candidates_only`,
+`visibleonly`->`valid_depth_support_only`,
+`threshold`->`deterministic_argmax_no_threshold`,
+`handpick`->`selection_not_handpicked`, `grow`->`seed_deferred_no_scheduler`).
+**No regression**: 14 prior suites green, **98 prior negatives** firing.
+
+Evidence scope: the **24** saved scene-history observations at global steps
+**18-41** - the same history 1c audited - with instantiated ids **{141, 143}**
+excluded. **Three uninstantiated candidates carry valid-depth evidence**:
+
+- **142**: **151,133** valid-depth / 203,851 visible = **74.1%** recovered, over
+  5 steps (18, 38, 39, 40, 41) - per step 15,513 / 19,555 / 41,752 / 38,724 /
+  35,589;
+- **145**: 10,667 / 144,994 = **7.4%**, over 5 steps (34-38);
+- **144**: 1,662 / 35,038 = **4.7%**, over 2 steps (21, 22).
+
+Visible counts are diagnostics only and contribute nothing to the ordering.
+
+Selection: `NEXT_OBJECT_SELECTED`, **id 142**, 151,133 samples, tie-break
+`largest_valid_depth_support_then_smaller_object_id`. **Verified independently of
+the tooling**: recomputing support directly from the 24 raw observations -
+re-running `compute_once` and counting `(instance_id == oid) & valid` - reproduces
+**142 / 151,133** exactly, with recomputed ordering **[142, 145, 144]** matching
+the record. **No tie at the top**; margin over the runner-up is **140,466 samples,
+a factor of 14.2**, so the smaller-id tie-break was not exercised. Next stage:
+one prescribed seed fixation for object 142; nothing was seeded here.
+
+**What the valid-depth rule actually changed, recorded precisely because it is
+easy to over-claim.** On this record, ranking by **raw visibility** would have
+given the **same winner** - by visible samples the order is also 142 (203,851) >
+145 (144,994) > 144 (35,038). What the rule changed is the **margin and the
+interpretation**: by visibility 142 leads 145 by only **1.4x**; by valid-depth
+support it leads by **14.2x**. The rule correctly demotes 145, which is nearly as
+visible as 142 but yields depth on only **7.4%** of its pixels - the same
+low-texture starvation documented for object 143 (1.4-2.5%) - while 142 recovers
+**74.1%**. So the rule is **vindicated in margin and in what it reveals, not in
+outcome, on this particular record**; a record where a highly visible but
+unmeasurable object outranked a well-measured one would separate the two rules by
+winner as well, and this one does not.
+
+**No structural FAIL line and no code fix**; no file was modified by the run.
+
+What this establishes: **the scene can now make a next-object decision from
+memory alone** - from the 24-observation history, with no new fixation and no
+change to either existing object, a candidate set of three uninstantiated ids was
+formed and **object 142** selected as the deterministic argmax of accumulated
+valid-depth support, reproduced exactly by independent recomputation; the
+decision is fully determined by the declared rule with **no threshold, semantic
+preference, saliency, learned ranking, hand-picked id or scheduler**; and
+**support is valid depth, not visibility**, which substantively separates a
+74.1%-recoverable object from a 7.4%-recoverable one. What it does not establish:
+**this is not a claim that 142 is globally most important or semantically
+salient** - it means only that among already-observed uninstantiated ids in the
+saved history it currently has the largest accumulated valid-depth support; **no
+accuracy claim**, truth stayed closed; **no threshold is implied** - 151,133 and
+14.2x are measurements; **the candidate set is not the scene's object set**, only
+ids that appeared *with valid depth* in those 24 observations, so an object never
+looked at or never measured would not appear at all; **nothing is seeded** -
+object 142 has no map, patch or persistent entity and whether a prescribed seed
+will yield useful surface is untested; and **object 143 remains retained for
+revisit** under 1c's disposition, so moving on is not abandoning it. Stopped for
+Luiz/Chat.
