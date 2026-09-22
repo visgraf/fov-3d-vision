@@ -8680,3 +8680,129 @@ explained; **no accuracy claim**, truth stayed closed; **no object completeness*
 seen-but-unmeasured, more than before**; **no claim the unmeasured residue is
 reducible**; and **no scheduler, revisit policy or automatic loop**. **Next:
 interpret this single handoff outcome before any second action.** Stopped.
+
+### 2026-09-22 - MultiObject-3f, frontier reactivation audit: the 3e reactivation was driven by moving attention, not by the fused geometry - map-only change is exactly zero, attention-only reproduces the decision exactly
+
+Package `b5ee437` (seven files, all `A`); parent result `c4584ac`. Host-side only:
+`.venv/bin/python` 3.12.3, **no Blender, no Cycles, no GPU**, `pgrep blender` 0
+before and after, **2.9 s**. `MULTIOBJECT3F_COMPLETE`, `structural_fails: []`, no
+FAIL line anywhere; `tools/multiobject3f_compare.py` exited 0. Both required exact
+replays passed: `pre_policy_replayed_exactly` **true**,
+`post_policy_replayed_exactly` **true**; `reactivation_status
+LOCAL_POLICY_REACTIVATION_REPRODUCED`.
+
+**The answer is not a single cause, but the causes are very unequal and the
+counterfactuals separate them cleanly.**
+
+**2x2 decomposition, same frozen `extract_frontier` in every cell:**
+`PRE_MAP_PRE_GAZE` **72**, `PRE_MAP_POST_GAZE` **429**, `POST_MAP_PRE_GAZE`
+**72**, `POST_MAP_POST_GAZE` **488**. **Moving the gaze alone, with no fused
+geometry at all, gives 429; updating the map alone, under the old gaze, leaves it
+at exactly 72 - zero change.** Gaze alone accounts for **357 of the 416 increase
+(85.8%)**; the map-only effect is **exactly 0**; the **interaction is 59
+(14.2%)**.
+
+**Policy counterfactuals, neither executed.** `ATTENTION_ONLY_PRE_FUSION_MAP`
+(handoff gaze + updated history + **pre-fusion map**): `continue`, frontier 429,
+OPEN 354, **4 candidates**, next gaze **(+18.700, -10.500) - identical to the
+actual decision**. `GEOMETRY_ONLY_OLD_ATTENTION_CONTEXT` (**post-fusion map** +
+old gaze + old history): `no_frontier`, frontier 72, OPEN 30, **0 candidates**,
+next gaze null - bit-for-bit the pre-handoff outcome. **The fused geometry was
+neither necessary nor sufficient.**
+
+Map-voxel change on the frozen 0.025 m grid (occupied counts reproduce the saved
+`frontier_voxel_count` exactly): **1,368 -> 1,467**; persistent 1,359, **added
+108**, removed 9; the handoff patch occupies 256 voxels and **107 of the 108
+added voxels are directly in it**. Map points 6,426 -> 6,721 (+295) from a
+2,085-point patch - a real but small **+7.9%** geometric change.
+
+**Frontier lineage, matched only by the frozen integer source-voxel key, no
+tolerance**: persistent **24**, appeared **464**, disappeared **48**. **The
+persistent frontier is bitwise stationary and bitwise unchanged in state** -
+`persistent_state_changed_count` **0** (OPEN->OPEN 16, MAP_RESOLVED->MAP_RESOLVED
+1, BOUNDARY_RESOLVED->BOUNDARY_RESOLVED 7, zero off-diagonal), source and target
+shift **exactly 0.0 m**, max angular target shift **1.21e-06 deg**.
+**Appeared-source cause partition: `EXPOSED_BY_POST_GAZE_ON_PRE_MAP` 359
+(77.4%), `FRONTIER_FROM_NEW_MAP_VOXEL` 93 (20.0%),
+`CREATED_BY_MAP_UPDATE_ON_PREEXISTING_VOXEL` 12 (2.6%)** - **more than three
+quarters of the appeared frontier already existed on the pre-map and had simply
+never been in view.** Appeared states OPEN 375 / MAPR 23 / BNDR 66; disappeared
+OPEN 14 / BNDR 34. Appeared-source nearest patch distance min 0.0 / median 0.0216
+/ max 0.174 m; target min 0.0035 / median 0.0934 / max 0.219 m.
+
+**Candidate-gate ledger, eight frozen lattice directions.** Before: 0 reaching
+before-consensus, 0 admissible; first blockers **`ALREADY_VISITED` 3,
+`CONTINUATION_CORRIDOR` 4, `MINIMUM_OPEN_SUPPORT` 1**, and **every unvisited
+direction had corridor fraction exactly 0.000**. After: **4 reaching
+before-consensus, 4 admissible**, 0 consensus-rejected; first blockers
+`POLICY_BOUNDS` 3, `CONTINUATION_CORRIDOR` 1. The four newly admissible are
+**(-1,-1), (-1,0), (-1,1), (0,1)** with OPEN support **104 / 119 / 107 / 79** and
+corridor fractions **0.396 / 0.961 / 1.000 / 0.729**.
+
+**The decisive gate is the projected binocular continuation corridor, which is
+computed from the current gaze** - an attention-frame quantity, which is why
+moving the window rather than adding surfels is what opened it. Two further
+purely attentional effects are visible: because the 5-deg lattice is **relative
+to the current gaze**, three directions left `ALREADY_VISITED` and three others
+moved outside `POLICY_BOUNDS` at yaw +28.700. Neither has anything to do with the
+fused geometry.
+
+**Support-origin decomposition for the four reactivated directions** (OPEN 409
+total): **`EXPOSED_BY_POST_GAZE_ON_PRE_MAP` 299 (73.1%)**,
+`FRONTIER_FROM_NEW_MAP_VOXEL` **82 (20.0%)**,
+`CREATED_BY_MAP_UPDATE_ON_PREEXISTING_VOXEL` 11 (2.7%), `PERSISTENT` 17 (4.2%).
+Per direction the exposed share is 74.0 / 75.6 / 74.8 / 65.8%. **The mechanism is
+inspectable, not inferred from totals.**
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`c4584ac` - 301 files** - compared; the diff is **empty, 0 lines**, all **301
+sha256 SAME**. Parent by manifest with **all six 3e gates** (one fixation, one
+returned decision, `LOCAL_POLICY_REACTIVATED`, action not executed, no auto loop,
+no structural fails) and the **3c genuine pre-handoff `no_frontier` stop** (13 of
+24) on the **same object id 145**.
+
+**All 46 pinned inputs byte-identical** - 10 MultiObject-3e artifacts, 4
+MultiObject-3c artifacts, 4 object geometry sources, all 26 saved history files,
+and the **single handoff calibration/observation pair**. Objects 141/142/143/145
+unchanged. `acquisitions_added` 0, `fusion_iterations_added` 0,
+`growth_iterations_added` 0, `watchdog_changed` false,
+`returned_local_action_executed` false, `new_threshold_added` false, truth closed,
+no schedulers.
+
+Checks: `py_compile` clean, progress self-test passes, the four prescribed lines
+verbatim, `SUMMARY passed=10 failed=0`. **All ten negatives are genuine
+source-mutation controls** with exactly the documented detectors, **none exiting
+2**; the **exit-2 escape branch was verified live**. **27/27 prior suites green,
+178/178 prior negatives firing, none weakened**; the **Cyclopean-1f caveat stands
+and 1f was not edited**. Outputs: report, `frontier_reactivation.npz` (72 and 488
+rows of source voxel keys, source/target geometry and state codes),
+`frontier_reactivation_details.json`, manifest.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first
+time.
+
+What this establishes: **the 3e reactivation was driven primarily by moving the
+attention window, not by the fused geometry** - **attention is sufficient** (the
+pre-fusion map with the new gaze/history reproduces the decision *exactly*,
+4 candidates and the same next gaze), **geometry is not sufficient** (the
+post-fusion map under the old gaze/history reproduces the `no_frontier` stop
+exactly, and yields zero additional frontier entries), the magnitudes are unequal
+but both non-zero (85.8% gaze, 0% map-alone, 14.2% interaction; 73.1% of
+reactivating OPEN support merely exposed, 20.0% genuinely new geometry), the
+**decisive gate is identified** as the gaze-projected continuation corridor, and
+the **persistent frontier did not move or change state at all**. **This refines,
+and partly deflates, the 3e headline**: the handoff's value was real but
+**attentional** - the cyclopean field supplied the *look*, and the look is what
+restarted the controller; the 295 fused surfels were a by-product, not the cause.
+What it does not establish: **one handoff, one object, one seed, one gaze** -
+nothing shows the decomposition holds elsewhere; **not a claim that the fused
+geometry is useless** - it supplied 20% of the reactivating OPEN support and 14.2%
+of the frontier increase, and a map has value beyond restarting a controller; **no
+claim about executing the returned action**, which was not executed by design;
+**not a defect claim against FSG6f** - gaze-local frontier extraction is the
+controller's documented design and **nothing was tuned, extended or replaced**;
+**no accuracy claim**, truth stayed closed; **no general statement about the
+corridor gate** - that it read 0.000 in every unvisited direction before is a
+measurement at one gaze, not a characterisation of the rule; and **no scheduler,
+second action or automatic loop**. **Next: interpret this audit before any second
+action.** Stopped.
