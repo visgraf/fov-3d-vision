@@ -9463,3 +9463,98 @@ completeness claim** - truth stayed closed, and every currently known id being
 instantiated implies nothing about how many objects the scene contains. **Next:
 FullScene-1e - return to scene inventory and recompute the known-uninstantiated
 candidate set from the updated field-test history.** Stopped.
+
+### 2026-09-22 - FullScene-REAL-1: the whole scene, end to end, on the live procedural fixture
+
+Ran the first deliberately end-to-end benchmark of the frozen system over every
+object in the established fixture, on branch `fullscene-real-1` only. Record
+`previews/fullscene-real1/full-seed2111`, seed 2111, profile `full`, OPTIX,
+Blender 5.2.1 LTS. `[fullscene-real1] COMPLETE`, `structural_fails: []`,
+comparator `FULLSCENE_REAL1_COMPLETE` exit 0. **66 fixations, 66 Blender
+launches, 805.0 s wall, 555.1 s of it rendering.**
+
+The blocker repair held: REAL-1 took **`--fixture tabletop_cloth`** and **no
+`.blend` path was accepted, claimed or hashed**. Provenance is the fixture name
+plus scene-spec digest `3ec18097...` and sidecar hash `06c81abb...`; all 66
+acquisitions carry `fixture: tabletop_cloth` from the renderer's own record.
+
+The quarantined oracle enumerated **5 positive ids dynamically** (141 `rc1_cloth`,
+142 `rc1_table`, 143 `rc1_wall`, 144 `rc1_book_left`, 145 `rc1_box_right`), each
+row carrying **only** `object_id/seed_yaw_deg/seed_pitch_deg/label`. Beyond the
+declared whitelist, the barrier was checked structurally: the **transitive import
+closure of the observer process reaches 52 repository modules and zero
+evaluator-side modules**.
+
+Every object was attempted exactly once, steps **0..65 unique and contiguous**.
+141 and 142 hit the **24-fixation watchdog** (151,446 and 359,051 surfels) -
+**an engineering guardrail, `scientific_stop_reached: false`, retained for
+revisit, not completed**. 144 and 145 reached the policy's own `no_frontier`
+stop in 10 and 7 fixations. Empty looks behaved as inherited (144 at 51-52, 145
+at 61-63): fuse nothing, retain, continue.
+
+**Object 143 was never instantiated, and the cause is the scaffold, not the
+system.** Its seed direction is its own centre, and its own centre is occluded
+by 141. Measured before the run and reproduced by it: at gaze (0,0) the frame
+recovered depth on **94.0% of pixels** - stereo worked normally - but **zero
+belonged to 143**. Meanwhile 143 is the **largest object in the reference at
+41,453 px, 38% of all occupied reference pixels**. Recorded rather than
+repaired: a visible-direction rule would be a new policy the contract does not
+define.
+
+Both `no_frontier` objects took **exactly one bounded handoff and one returned
+local action, neither recursive**. The outcomes differ instructively: 144's
+exterior `NEVER_OBSERVED` went **6 -> 0** and its status improved to
+`ATTENTION_COMPLETE_MEASUREMENT_PARTIAL`; 145's went **86 -> 61** and its status
+did not change. **One bounded action fully discharges a small attention debt and
+only partly discharges a larger one** - nothing scales the action count to the
+debt. That is boundedness measured, not a threshold.
+
+Observer sealed at 18:59:49 with `evaluator_truth_opened: false`; first
+evaluator product 18:59:57 - **the seal precedes truth by 8 s**, and the
+post-seal reference tool refuses both a missing seal and a non-truth-closed seal
+(live, exit 1). 520,148 surfels exported, plus sparse 2048x1024 depth/instance
+panoramas occupying 41,599 of 2,097,152 pixels. Because surfels carry acquired
+left-eye RGB, an **acquisition mosaic** was genuinely constructible from images
+the observer took, exported with `observer_rgb_reconstruction_claimed: false`.
+
+Against truth: **purity 1.0000 and contamination 0.0000 on all four
+instantiated objects** - the coverage preview contains **no red and no yellow
+pixel at all**. Coverage 0.9388 / 0.5898 / 0.0000 / 0.2611 / 0.1912; depth
+median 9.54 / 26.02 / - / 43.87 / 29.40 mm, p95 21.15 / 196.19 / - / 82.87 /
+83.82 mm.
+
+The holes have **three different mechanisms, and we did not force one**. Object
+141 misses 6.12% in 97 components: the 89-px emblem hole has **median 5x5
+reference contrast 0.000** (nothing to match); the 313 scattered pixels have
+**8.319**, far *above* the covered median of 1.298 (edge regime); and the
+largest 409-px hole sits at **1.170 against 1.298 - essentially the same
+contrast as the surface that was recovered, so contrast does not explain it**,
+and the mechanism is left open. 142 misses across **400 components**
+(distributed, watchdog mid-coverage) while 144/145 miss in **5 components each
+with one dominant** - contiguous unvisited territory, i.e. attention debt. 142's
+depth error is range-driven: 15.19 mm median under 2 m rising to 154.78 mm at
+3-4 m.
+
+Integrity: checker 13/13 rc 0; **all twelve mutations exit 1**, unknown exits 2;
+two live seal negatives exit 1; **every checker in the repo - 53/53 suites
+green, 331/331 prior negatives firing, none weakened**; **329 baseline sources
+at `651a6cb` byte-identical, 0 diff lines**, only the three REAL-1 modules and
+the REAL-1 checker changed. `main` `15eedee` and `fullscene-calibration-1`
+`651a6cb` untouched.
+
+What this establishes: the frozen system runs end to end over a whole scene with
+truthful provenance, attempts every enumerated object once, keeps evaluator
+truth sealed until the observer is frozen, and produces **perfectly pure
+per-object geometry** with 10-44 mm median depth agreement where it produces
+anything. What it does **not** establish: **no discovery claim** - identity and
+seed direction are oracle scaffolding, `discovery_tested: false`; **the watchdog
+is not success** - 141/142 ran out of budget, and their surfel counts say
+nothing about completeness; **coverage is not completeness** and **purity is not
+accuracy** - purity describes only the pixels the observer produced, and says
+nothing about the 59% of the reference it never covered; **143's failure is
+scaffold, not system**; **the three hole mechanisms are described, not
+explained**; **one run, one seed, one fixture**, fixed head, static scene, no
+variance estimate; and **no single score** - the metrics stay separate.
+**Next: Chat's call** - whether to change the seed-direction rule so occluded
+centres do not silently cost an object, and whether the watchdog budget should
+scale with angular extent. Stopped.
