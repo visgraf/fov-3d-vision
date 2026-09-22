@@ -7671,3 +7671,124 @@ object 142 has no map, patch or persistent entity and whether a prescribed seed
 will yield useful surface is untested; and **object 143 remains retained for
 revisit** under 1c's disposition, so moving on is not abandoning it. Stopped for
 Luiz/Chat.
+
+### 2026-09-22 - MultiObject-2b, seed the scene-selected third object: object 142 instantiated at global step 42 with 38,020 pure points and zero footprint overlap
+
+Per `docs/multiobject2b.md`, `docs/multiobject2b-checks.md` and the prospective
+package Luiz applied and committed as **`863f91b`** (parent result `a31cc77`).
+
+**Measured outcome. `MULTIOBJECT2B_COMPLETE`, `structural_fails: []`.** The
+scene-level selection became a third persistent entity by **exactly one** new
+fixation. **Objects 141 and 143 are byte-identical afterwards** and all **57**
+pinned inputs unchanged.
+
+Provenance. Clean tree; **exactly the seven expected files, all `A`**; `git diff`
+against `a31cc77` over **71 frozen sources** - every FSG1/FSG3/FSG6f source,
+scene, rig, pin file, every Reality Check 1/2/2b source, **both renderers**,
+every Cyclopean-1a..1g source and every MultiObject-1a/1b/1b2/1c/2a source -
+**empty (0 lines)**, all 71 SAME; the inherited selector `multiobject1a_seed.py`
+unchanged at `a5ad5ea0055c3974`, `scene_render_fix.py` at `6e70bbb78c1043ec`,
+legacy `reality2_render_fix.py` at `9f1433d189fbcbb5`. Parent located **by
+manifest** with **all nine required conditions holding**, pointing to the
+completed 1b2 scene history and its 1c audit ancestry.
+
+Read-only integrity: 57 inputs pinned and re-hashed - 2a manifest
+`66194272c1121475` and `next_object_selection.json` `31a2de98dc187072`, 1c
+manifest `3ad6c63e761f0411` and epistemic report `7d3c7a2a29fa1ac2`, 1b2 manifest
+`74d5cc0f58a2c590`, scene graph `5df35f372460399` and object-143 map
+`bbc4b856a07d2be5`, the object-141 source `6ac98f6251b47337...f71e524a`, and all
+24 calibration/observation pairs for steps 18-41 - **all byte-identical**. Both
+objects verified pure before and after: 141 155,684 points {141}, 143 42,988
+points {143}, with `object_141_sha256_before == _after` and likewise for 143,
+`existing_objects_read_only: true`, `fusion_iterations_added: 0`,
+`growth_iterations_added: 0`, `parent_fixations_rerendered: 0`,
+`truth_opened: false`, `quality_gate_used: false`,
+`automatic_scene_scheduler: false`. Blender 5.2.1 LTS, Cycles, **OPTIX** on RTX
+4090 (driver 595.84); host `.venv/bin/python` 3.12.3; **Interactive at 14.3 s**,
+one Blender launch.
+
+Checks. `py_compile` clean; the seed self-test and three prescribed lines
+verbatim. All six negatives are **genuine source-mutation controls**, each
+exiting 1 with a distinct detector and none exiting 2
+(`handpick`->`parent_selection_consumed_not_handpicked`,
+`visibleonly`->`prior_valid_depth_seed_reuses_rule`,
+`multiprobe`->`one_new_global_fixation`,
+`legacyrenderer`->`generic_scene_renderer_not_legacy_cap`,
+`crossfuse`->`existing_objects_read_only_separate_seed`,
+`grow`->`growth_and_scheduler_deferred`). **No regression**: 15 prior suites
+green, **104 prior negatives** firing.
+
+**Parent selection reproduced, not assumed.** The id was consumed from the parent
+(`selection_consumed_from_parent: true`; the runner reads
+`pm["selected_object_id"]`), and collecting saved valid-depth samples for that id
+over the same 24-observation scope independently gives **151,133** points,
+matching the parent exactly, with the same per-step contributions - step 18
+**15,513**, 38 **19,555**, 39 **41,752**, 40 **38,724**, 41 **35,589**. Only **5**
+of 24 observations contributed.
+
+Seed direction, from the **unchanged MultiObject-1a occupied-cell spherical-mean
+selector** on the 0.1-deg grid: **151,133** evidence points quantizing to
+**22,035** occupied cells, spherical mean **(+13.97836249, -13.80151185)**,
+selected occupied cell **[140, -138]**, dot-to-mean **0.9999999218539822**,
+prescribed gaze **(+13.99956999, -13.81094221)**. Worth contrasting with
+MultiObject-1a: for object 143 the mean fell **7.392 deg** from the nearest
+occupied cell (dot 0.991690) because that object's evidence wrapped around an
+occluder, whereas here the separation is about **0.023 deg** - object 142's
+evidence is angularly compact and the occupied-cell rule was barely exercised on
+it, though it was load-bearing on 143.
+
+The one fixation: `global_step: 42` = max(evidence steps) + 1 = 41 + 1,
+continuing global chronology; `added_fixations: 1`,
+`parent_fixations_rerendered: 0`, renderer `tools/scene_render_fix.py`, with no
+reference to `reality2_render_fix.py` anywhere in the 2b sources. New view
+**65,536** pixels, **40,515** valid - frame-wide valid rate **61.8%**. Per
+positive instance id: **141** 403 visible / 141 valid (35.0%); **142** **56,083
+visible / 38,020 valid (67.8%)**; **143** 9,050 / 2,354 (26.0%). Object 142 fills
+**86%** of the frame and recovers **67.8%** - the same class as object 141's
+textured cloth and far above object 143's 1.4-2.5%.
+
+Seed patch: **38,020** points, ids exactly **{142}**, range min/median/max
+**1.6754 / 2.2982 / 4.0324 m**. Verified independently: recomputing
+`valid & (instance_id == 142)` over the saved observation gives **38,020** points
+matching the patch exactly.
+
+Three-object scene: 141 `SURFEL_MAP` 155,684 read-only; 143 `SURFEL_MAP` 42,988
+read-only; **142 `SEED_SURFEL_PATCH` 38,020**. Shared chart **602 x 437**, grid
+**0.1 deg**: 141 **37,654** cells (376.54 deg2, yaw [-12.40,+12.70], pitch
+[-8.30,+10.40]); 143 **17,947** (179.47 deg2, yaw [-30.70,+28.20], pitch
+[-9.80,+22.50]); **142 9,624** (96.24 deg2, yaw [+8.20,+20.10], pitch
+[-20.00,-9.60]). **Overlap as measurement, never a gate: 141&142 = 0, 141&143 =
+0, 142&143 = 0, all three = 0**, confirmed in the image too (intensities 70/140/
+210 with no blended overlap pixel).
+
+Visual reading. `object_142_seed_rgb.png` shows the fovea filled almost entirely
+by a **brown wood-grain surface** with a thin grey band and a sliver of cream
+cloth at the top; the grain carries genuine swirling texture, consistent with the
+67.8% recovery. `scene_cyclopean_footprints.png` is the first **three-object**
+picture: 141's cloth quadrilateral centre in the darkest grey with its panel
+seams and the black emblem ellipse still visible, 143's architectural frame
+surrounding it, and **142 as a new medium-grey block below and to the right**
+showing streaky wood-grain structure - three visibly disjoint angular
+territories.
+
+**No structural FAIL line and no code fix**; no file was modified by the run.
+
+What this establishes: **the scene-level decision became a scene-level action,
+cleanly** - the id consumed from 2a rather than declared, its 151,133-sample
+support reproduced independently, the gaze derived by the unchanged 1a selector,
+and exactly one fixation at global step 42 through the generic renderer with zero
+historical rerenders instantiating object 142 as a **third separate entity** of
+38,020 pure points, with **141 and 143 byte-identical** and all three footprints
+**mutually disjoint**. Also worth recording: **the selection picked a
+well-measurable object** - 142 recovered 67.8% against 143's 1.4-2.5% - though one
+look does not demonstrate that the ordering predicts measurability in general.
+What it does not establish: **no object completeness** - 142 has one seed patch
+and nothing more; **no growth or termination** - no growth loop ran and whether
+the frozen grower will reach `no_frontier` or a watchdog on 142 is untested; **no
+accuracy claim**, truth stayed closed; **no semantic importance**; **no general
+rule about footprint overlap or occlusion** - all three overlaps happen to be zero
+here and the contract deliberately declines to make that an invariant; **no
+automatic scheduling** beyond the single completed 2a selection; and **object 143
+remains retained for revisit** under 1c's disposition. **Next stage: grow the
+newly seeded object 142 independently while keeping 141 and 143 stable.** Stopped
+for Luiz/Chat.
