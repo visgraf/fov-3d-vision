@@ -9029,3 +9029,105 @@ counterfactual run**; **no accuracy claim**, truth stayed closed; **no object
 completeness**; **no claim the low recovery is irreducible**; and **no scheduler,
 automatic loop, second handoff, watchdog or threshold change**. **Next: FullScene-1
 is deliberately deferred until Chat/Luiz interprets this.** Stopped.
+
+### 2026-09-22 - FullScene-1a, scene state snapshot: S0 established - four persistent objects, five observed ids, and object 144 the only remaining candidate
+
+Package `a094e2f` (six files, all `A`, verified byte-identical to the delivered
+ZIP: 6 entries, 6 SAME, 0 different, 0 missing); parent result `15eedee`.
+Host-side only: `.venv/bin/python` 3.12.3, **no Blender process** (`pgrep` 0
+before and after), **9.7 s**. `FULLSCENE1A_COMPLETE`, `structural_fails: []`, no
+FAIL line anywhere; `tools/fullscene1a_compare.py` exited 0.
+
+**S0 is established.** At the exact post-MultiObject-3h state the observer holds
+**four persistent objects** - 141, 142, 143, 145 - has observed **five** positive
+instance ids across the declared history, and **one** observed id remains
+uninstantiated: **144**, selected as next on **2,436** accumulated valid-depth
+samples. It is the **only** candidate, so the selection is forced: **no runner-up
+and no margin**. The MultiObject-3h deferred gaze **(+13.700, -5.500)** remains
+**unexecuted**.
+
+Inventory (ids read from the **live** 3h scene graph, not hard-coded): 141
+**155,684** pts / **37,654** cells; 142 **310,884** / **62,784**; 143 **42,988** /
+**17,947**; 145 **6,762** / **2,125**. All read-only and instance-id pure.
+**Status evidence reported conservatively**: 142 carries
+`ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT` from MultiObject-2d and 143 the same
+from MultiObject-1c; **141 carries no label** (its Cyclopean-1f/1g audits lie
+outside the ancestry this package resolves); and **145 carries no *prior* label**
+because its MultiObject-3d audit is **stale by construction** - its geometry
+changed 6,426 -> 6,762 points through the 3e handoff and 3g action - so its
+**current** state is carried separately instead (`LOCAL_EXPLORATION_CONTINUES`,
+latest measurement `VALID_NEGATIVE_EVIDENCE`, deferred gaze unexecuted). **No
+object-completeness score was synthesized anywhere.**
+
+Declared history **64 observations, steps 18..81**, **0 duplicates**, **globally
+contiguous**, in four groups summing exactly to 64: `scene_history_143` 18..41
+(24), `selected_object_142` 42..65 (24), `selected_object_145_base` 66..78 (13),
+`handoff_and_post_handoff` 79..81 (3). The scope **deliberately begins at step
+18** and does not broaden backward into the object-141 Reality/Cyclopean lineage.
+**Nothing was rendered.**
+
+Recomputed from raw saved observations: **positive observed ids {141,142,143,144,
+145}**; **ids with valid stereo depth {141,142,143,144,145}** - the identical set;
+**uninstantiated observed ids {144}**. Candidate table (unchanged
+`multiobject3a_select`, valid depth decides, visibility diagnostic, no threshold):
+**144, 2,436 valid-depth of 66,237 visible (3.68%)**, from steps 21 (1,410), 22
+(252), 47 (107), 48 (340), 49 (327). Tie-break **not exercised**.
+
+**Ordering comparison against MultiObject-3a** (diagnostic, from saved records,
+altered nothing): 3a ranked **145 (13,047)** then **144 (2,436)**; 145 was seeded,
+grown and is now instantiated; **144 is next, exactly as that ordering
+predicted**. **Object 144's support is unchanged at 2,436** - the **16 looks added
+since 3a (steps 66..81) contributed zero new valid-depth samples for it**, with
+contributing steps still 21, 22, 47, 48, 49. All recent attention went to 145.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`15eedee` - 316 files** - compared; the diff is **empty, 0 lines**, all **316
+sha256 SAME**. **All 10 pinned inputs byte-identical** (6 MultiObject-3h artifacts
+plus all 4 object geometry sources). Parent by manifest with **all four gates** -
+truth closed, `structural_fails []`, `added_fixations` 1,
+`subsequent_local_action_executed` false. Ancestry resolves through 3g -> 3f ->
+3e -> 3d -> 3c -> 3b -> 3a -> 2d -> 2c -> 2b -> 2a -> 1c.
+
+Checks: `py_compile` clean, the four prescribed lines verbatim, `SUMMARY passed=9
+failed=0`. **All nine negatives are genuine source-mutation controls** with named
+detectors, **none exiting 0 or 2**; the **exit-2 escape branch was verified
+live**. **30/30 prior suites green, 208/208 prior negatives firing, none
+weakened**; the **Cyclopean-1f caveat stands and 1f was not edited**.
+
+**One narrowly necessary code fix, in a new FullScene-1a file only.**
+`tools/fullscene1a_run.py` read `retained_existing_object_states` from the
+MultiObject-3a **manifest**, where that key does not exist - 3a records it inside
+its **selection report**, which is where its own comparator reads it. The lookup
+resolved to `{}` and **object 142 silently carried no prior epistemic status**,
+though its MultiObject-2d audit is reachable and its geometry unchanged. Same
+class of defect as the MultiObject-1a lookup corrected earlier in this programme.
+The fix reads the report first with the manifest as fallback (+8/-1 lines).
+**Corrected, not weakened**: all nine negatives still exit 1, the checker still
+reports `passed=9 failed=0`, the fix adds **only** the label the 3a report
+actually contains (so 141 and 145 remain correctly unlabelled), and **the
+selection is completely unaffected** - 144 on 2,436 samples, identically, before
+and after. The incomplete first record was deleted and the snapshot re-run **once
+into the same path** rather than creating a duplicate, so **exactly one
+FullScene-1a record exists**, preserving the one-record-per-schema manifest scan.
+No frozen prior source was modified.
+
+What this establishes - the answer to the question asked. **What the observer
+knows exists**: across 64 observations spanning steps 18..81, **five** positive
+ids - 141, 142, 143, 144, 145 - and **all five** have at some point carried valid
+stereo depth. **What has already become a persistent object**: **four** - 141,
+142, 143, 145 - two carrying still-current `ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`
+labels (142 from 2d, 143 from 1c), one (141) carried without a status claim, and
+one (145) reported by current state rather than a stale audit. **Who is next**:
+**object 144**, the single uninstantiated observed id, chosen deterministically by
+the unchanged rule on 2,436 samples from five historical looks. What it does not
+establish: **this is an inventory, not an assessment**; **no accuracy claim**,
+truth stayed closed, so every count describes the representation and not the
+scene; **no completeness claim for any object** and **no synthesized score**; **no
+claim that 144 is well-measurable** - its valid fraction is **3.68%**, below 145's
+at selection time and far below 142's, so this may again pick a difficult target,
+and support measures how much the observer happened to measure, confounded with
+fixations aimed at other objects; **no claim the scene contains only five
+objects** - the scope begins at step 18 and no discovery mechanism ran; **no trend
+claim from 144's unchanged support** - that is a measurement of where attention
+went, not evidence about 144; and **nothing was seeded, scheduled or executed**.
+**Next: FullScene-1b - one prescribed seed fixation for object 144.** Stopped.

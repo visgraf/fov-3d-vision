@@ -203,7 +203,17 @@ def _scene_inventory(parent3h: Path, m3h: dict, chain: dict):
                 "source_schema": m1c.get("schema"),
                 "still_current_geometry": True,
             }
+    # MultiObject-3a records the retained per-object epistemic states inside its
+    # selection report, which is where its own comparator reads them; the manifest
+    # carries only the pointer.  Read the report first and keep the manifest as a
+    # fallback so either layout resolves.
     retained = m3a.get("retained_existing_object_states", {})
+    if not retained:
+        report3a_path = chain["parent3a"][0] / m3a.get("selection_report", "")
+        if report3a_path.is_file():
+            retained = json.loads(report3a_path.read_text()).get(
+                "retained_existing_object_states", {}
+            )
     for key, value in retained.items():
         try:
             oid = int(key)
