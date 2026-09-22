@@ -1,15 +1,14 @@
 """FullScene-REAL-1 end-to-end benchmark orchestrator.
 
-The orchestration is deliberately generic. Repository-specific details are
-isolated in fullscene_real1_repo_adapter.py so the live integration can be
-completed without modifying frozen pre-REAL-1 sources.
+The established benchmark scene is procedural. REAL-1 binds to its fixture
+name and to a sanitized pre-control enumeration sidecar; it never pretends an
+unrelated .blend file is the input scene.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import os
 import platform
 import subprocess
 import sys
@@ -18,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import fullscene_real1_public as public
-from fullscene_real1_repo_adapter import BenchmarkObject, RepositoryAdapter
+from fullscene_real1_repo_adapter import RepositoryAdapter
 
 
 def _json_write(path: Path, payload: Any) -> None:
@@ -40,23 +39,14 @@ def _git(repo: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=repo, text=True).strip()
 
 
-def _safe_rel(path: Path, root: Path) -> str:
-    try:
-        return str(path.resolve().relative_to(root.resolve()))
-    except Exception:
-        return str(path.resolve())
-
-
 def _status_from_audit(object_record: dict[str, Any], audit: dict[str, Any]) -> str:
-    # Adapter may provide a richer established status; preserve it when present.
     for key in ("object_status", "status", "stop_interpretation"):
         v = audit.get(key)
         if isinstance(v, str) and v:
             return v
     if object_record.get("seed_usable") is False:
         return "SEED_MEASUREMENT_FAILED"
-    term = object_record.get("termination_reason")
-    if term == "watchdog":
+    if object_record.get("termination_reason") == "watchdog":
         return "WATCHDOG_REACHED_RETAIN_FOR_REVISIT"
     return "LOCAL_GROWTH_STOPPED_OTHER"
 
@@ -86,10 +76,30 @@ def _observer_seal(out: Path, payload: dict[str, Any]) -> Path:
     return seal
 
 
+def _validate_scaffold(scaffold: dict[str, Any], fixture: str) -> None:
+    required_top = {"schema", "fixture", "fixture_truth_digest", "fields_exposed", "objects"}
+    if set(scaffold) != required_top:
+        raise AssertionError(f"enumeration oracle top-level keys crossed contract: {sorted(scaffold)}")
+    if scaffold["fixture"] != fixture:
+        raise AssertionError("enumeration oracle fixture mismatch")
+    if set(scaffold["fields_exposed"]) != set(public.ENUMERATION_OBJECT_FIELDS):
+        raise AssertionError("enumeration oracle exposed-field contract mismatch")
+    if not isinstance(scaffold["fixture_truth_digest"], str) or not scaffold["fixture_truth_digest"]:
+        raise AssertionError("enumeration oracle missing fixture truth digest")
+    ids: list[int] = []
+    for row in scaffold["objects"]:
+        if set(row) != set(public.ENUMERATION_OBJECT_FIELDS):
+            raise AssertionError(f"enumeration oracle object row crossed whitelist: {sorted(row)}")
+        ids.append(int(row["object_id"]))
+    if not ids or any(x <= 0 for x in ids) or len(ids) != len(set(ids)) or ids != sorted(ids):
+        raise AssertionError(f"invalid deterministic positive object id list: {ids}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo", type=Path, default=Path.cwd())
-    ap.add_argument("--scene", type=Path, required=True, help="Blender .blend test scene")
+    ap.add_argument("--fixture", default=public.DEFAULT_FIXTURE,
+                    help="Established procedural renderer fixture name")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--seed", type=int, default=public.SEED)
     ap.add_argument("--resume", action="store_true", help="Resume completed-object checkpoints")
@@ -97,11 +107,8 @@ def main() -> None:
     a = ap.parse_args()
 
     repo = a.repo.resolve()
-    scene = a.scene.resolve()
+    fixture = str(a.fixture)
     out = a.out.resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    if not scene.is_file() or scene.suffix.lower() != ".blend":
-        raise FileNotFoundError(f"Blender scene missing or not .blend: {scene}")
 
     branch = _git(repo, "branch", "--show-current")
     if branch != public.RUN_BRANCH:
@@ -111,23 +118,29 @@ def main() -> None:
     if subprocess.call(["git", "merge-base", "--is-ancestor", public.BASELINE_PARENT_COMMIT, "HEAD"], cwd=repo) != 0:
         raise RuntimeError(f"HEAD does not descend from required baseline {public.BASELINE_PARENT_COMMIT}")
 
+    out.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    adapter = RepositoryAdapter(repo, scene, out, a.seed)
-    objects = adapter.enumerate_benchmark_objects()
+    adapter = RepositoryAdapter(repo, fixture, out, a.seed)
+
+    # Pre-control oracle declassification boundary: a separate truth-side helper
+    # may inspect the procedural spec, but ONLY the sanitized sidecar is consumed here.
+    scaffold = dict(adapter.enumeration_scaffold())
+    _validate_scaffold(scaffold, fixture)
+    canonical_sidecar = out / "enumeration_oracle.json"
+    _json_write(canonical_sidecar, scaffold)
+    sidecar_hash = _sha256(canonical_sidecar)
+    objects = adapter.objects_from_scaffold(scaffold)
     ids = [int(o.object_id) for o in objects]
-    if any(x <= 0 for x in ids):
-        raise AssertionError("benchmark enumeration returned non-positive instance id")
-    if len(ids) != len(set(ids)):
-        raise AssertionError("duplicate benchmark object ids")
-    if ids != sorted(ids):
-        raise AssertionError("benchmark objects are not in deterministic ascending-id order")
 
     run_header = {
         "schema": public.SPEC_ID,
         "public_spec_sha256": public.public_digest(),
         "seed": int(a.seed),
-        "scene": str(scene),
-        "scene_sha256": _sha256(scene),
+        "fixture": fixture,
+        "fixture_kind": "procedural",
+        "fixture_truth_digest": scaffold["fixture_truth_digest"],
+        "enumeration_oracle_sha256": sidecar_hash,
+        "enumeration_oracle_fields": list(public.ENUMERATION_OBJECT_FIELDS),
         "repo_head_at_start": _git(repo, "rev-parse", "HEAD"),
         "branch": branch,
         "baseline_parent_commit": public.BASELINE_PARENT_COMMIT,
@@ -135,6 +148,7 @@ def main() -> None:
         "static_scene": True,
         "discovery_tested": False,
         "instance_oracle_used_for_enumeration": True,
+        "seed_direction_oracle_used": True,
         "evaluator_geometry_truth_available_to_control": False,
         "object_order": ids,
         "handoff_enabled": not a.no_handoff,
@@ -159,8 +173,7 @@ def main() -> None:
             global_step = max(global_step, int(previous.get("next_global_step", global_step)))
             continue
 
-        seed_rec = adapter.seed_object(obj, global_step, od)
-        seed_rec = dict(seed_rec)
+        seed_rec = dict(adapter.seed_object(obj, global_step, od))
         seed_rec.setdefault("object_id", int(obj.object_id))
         seed_fix = list(seed_rec.get("fixation_records", []))
         fixation_history.extend(seed_fix)
@@ -201,7 +214,6 @@ def main() -> None:
                 hfix = list(handoff.get("fixation_records", []))
                 fixation_history.extend(hfix)
                 global_step = int(handoff.get("next_global_step", global_step + len(hfix)))
-                # Re-audit the final post-handoff state, but never recurse.
                 object_record["handoff"] = handoff
                 audit = dict(adapter.audit_object(obj, object_record, od))
                 object_record["audit_after_handoff"] = audit
@@ -210,14 +222,17 @@ def main() -> None:
         row = dict(adapter.finalize_object(obj, object_record, audit, handoff, od))
         row.setdefault("object_id", int(obj.object_id))
         row.setdefault("status", _status_from_audit(object_record, audit))
-        row.setdefault("oracle_visible", obj.oracle_visible)
         object_record["scene_row"] = row
-        object_record["fixation_records"] = seed_fix + list((object_record.get("growth") or {}).get("fixation_records", [])) + list((handoff or {}).get("fixation_records", []))
+        object_record["fixation_records"] = (
+            seed_fix
+            + list((object_record.get("growth") or {}).get("fixation_records", []))
+            + list((handoff or {}).get("fixation_records", []))
+        )
         object_record["next_global_step"] = global_step
         _record_checkpoint(checkpoint, object_record)
         object_rows.append(row)
 
-    # Observer products are sealed before any evaluator truth is rendered/opened.
+    # Observer products are sealed before full evaluator truth is rendered/opened.
     observer_exports = dict(adapter.export_observer_scene(object_rows, out))
     _json_write(out / "fixation_history.json", fixation_history)
     _json_write(out / "object_status_table.json", object_rows)
@@ -225,6 +240,9 @@ def main() -> None:
         "schema": public.SPEC_ID,
         "public_spec_sha256": public.public_digest(),
         "observer_sealed": True,
+        "fixture": fixture,
+        "fixture_truth_digest": scaffold["fixture_truth_digest"],
+        "enumeration_oracle_sha256": sidecar_hash,
         "object_ids": ids,
         "attempted_object_count": len(ids),
         "object_rows": object_rows,
@@ -236,7 +254,7 @@ def main() -> None:
     seal_path = _observer_seal(out, seal_payload)
     seal_hash = _sha256(seal_path)
 
-    # Evaluation oracle phase starts here and only here.
+    # Full evaluation oracle phase starts here and only here.
     reference_exports = dict(adapter.render_reference_after_control(out))
     evaluation = dict(adapter.evaluate_against_reference(object_rows, observer_exports, reference_exports, out))
 
@@ -260,11 +278,11 @@ def main() -> None:
     _json_write(out / "scene_manifest.json", manifest)
     _json_write(out / "scene_report.json", evaluation)
 
-    # A compact markdown report is useful for the Chat/Code handoff.
     lines = [
         "# FullScene-REAL-1 scene report",
         "",
-        f"- Scene: `{scene}`",
+        f"- Procedural fixture: `{fixture}`",
+        f"- Fixture truth digest: `{scaffold['fixture_truth_digest']}`",
         f"- Objects enumerated/attempted: **{len(ids)}** — {ids}",
         f"- Total fixations: **{len(fixation_history)}**",
         f"- Observer sealed before evaluator truth: **yes** (`{seal_hash[:16]}...`)",
@@ -284,6 +302,7 @@ def main() -> None:
     (out / "scene_report.md").write_text("\n".join(lines))
 
     print("[fullscene-real1] COMPLETE " + json.dumps({
+        "fixture": fixture,
         "objects": ids,
         "attempted": len(ids),
         "instantiated": manifest["instantiated_object_ids"],

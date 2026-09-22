@@ -1,74 +1,31 @@
-# FullScene-REAL-1 checks
+# FullScene-REAL-1 repaired-binding checks
 
-## Prospective package checks
+The repaired prospective checker verifies the blocker decision before any
+scientific run:
 
-From the repository root after applying the package:
+1. REAL-1 takes `--fixture`, not `--scene`; no `.blend` input is claimed.
+2. provenance records fixture name, evaluator scene-spec truth digest and the
+   sanitized enumeration sidecar hash.
+3. object IDs remain dynamic.
+4. only `fullscene_real1_oracle_scaffold.py` may import the evaluator-side
+   procedural scene specification before observer control.
+5. the sidecar whitelist is exactly `object_id`, `seed_yaw_deg`,
+   `seed_pitch_deg`, `label`.
+6. fresh reconstruction, frozen local machinery, 12 mm association and the
+   24-fixation object guard remain in force.
+7. bounded one-handoff semantics remain in force.
+8. observer state is sealed before full evaluator reference products.
+9. observer/reference/evaluation outputs and resume remain required.
+10. no single quality/completeness score is introduced.
+
+Run:
 
 ```bash
 python tools/dev/check_fullscene_real1.py
 ```
 
-Expected:
+Mutation controls expected to exit 1:
 
-```text
-[fullscene-real1-contract] PASS dynamic_ids=true fresh_run=true frozen_local=true bounded_handoff=true
-[fullscene-real1-truth] PASS observer_sealed_before_evaluator=true separate_metrics=true
-[fullscene-real1-products] PASS scene_geometry=true sparse_rgbd_depth=true reference=true evaluation=true resume=true
-[fullscene-real1-check] SUMMARY passed=10 failed=0
-```
+`blend_input false_provenance hardcode oracle_import oracle_leak truth_early recursive reuse_maps touch_main score noresume noexports`
 
-Mutation controls — every command must exit `1`:
-
-```bash
-for m in hardcode truth_early recursive reuse_maps touch_main score noresume noexports; do
-  python tools/dev/check_fullscene_real1.py --mutation "$m"
-  test $? -eq 1 || exit 1
-done
-```
-
-`py_compile` all new Python files before execution.
-
-## Workstation integration checks
-
-Before the real run, Code must verify:
-
-1. current branch is exactly `fullscene-real-1`;
-2. branch descends from `651a6cb`;
-3. `main` and `fullscene-calibration-1` have not moved as a consequence of the
-   REAL-1 work;
-4. all pre-REAL-1 tracked non-documentation sources are byte-identical to the
-   parent state;
-5. all repository-specific implementation is confined to new
-   `fullscene_real1_*` files;
-6. object enumeration is dynamic — no literal scene object IDs such as
-   `141..145` in REAL-1 source;
-7. object order is deterministic and reported;
-8. evaluator depth/geometry is not reachable from seed/growth/audit/handoff
-   code paths;
-9. the observer seal is written before reference/evaluation files are created;
-10. resume skips completed objects without rerendering them.
-
-## Runtime acceptance checks
-
-A completed run must satisfy:
-
-```bash
-python tools/fullscene_real1_compare.py <REAL1_OUTPUT_DIRECTORY>
-```
-
-with exit code `0` and status `FULLSCENE_REAL1_COMPLETE`.
-
-The comparator requires that every enumerated positive instance ID was
-attempted and carries a final status, and that the observer/reference/evaluation
-products exist.
-
-## Scientific non-claims
-
-Passing REAL-1 does **not** establish:
-
-- autonomous object discovery;
-- physical completeness of any object;
-- scene completeness beyond the fixed-head visible benchmark inventory;
-- that measurement residue is recoverable by another sensor action;
-- that the chosen deterministic object order is optimal;
-- a single scalar quality score for the scene.
+An unknown mutation must exit 2.
