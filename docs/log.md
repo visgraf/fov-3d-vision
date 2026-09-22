@@ -9131,3 +9131,117 @@ objects** - the scope begins at step 18 and no discovery mechanism ran; **no tre
 claim from 144's unchanged support** - that is a measurement of where attention
 went, not evidence about 144; and **nothing was seeded, scheduled or executed**.
 **Next: FullScene-1b - one prescribed seed fixation for object 144.** Stopped.
+
+### 2026-09-22 - FullScene-1b, seed the S0-selected object: object 144 instantiated at global step 82 with 3,057 pure points, and it measured better than its history predicted
+
+On branch **`fullscene-calibration-1`**. Package `004d93c` (six files, all `A`);
+parent FullScene-1a result `206ac58`. `main`/`origin/main` remain at `15eedee`,
+the frozen MultiObject-3h lineage - **untouched**. Blender 5.2.1 LTS headless,
+Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host `.venv/bin/python` 3.12.3.
+**27.3 s** - one Blender launch plus the 64-look S0 evidence replay.
+`FULLSCENE1B_COMPLETE`, `structural_fails: []`, no FAIL line anywhere;
+`tools/fullscene1b_compare.py` exited 0.
+
+**The first physical action of the FullScene-1 field test succeeded.** The S0
+decision - **object 144**, consumed from the parent and never declared here -
+became one prescribed fixation at **global step 82**, gaze **(-19.520574,
+-2.005759)**, instantiating a **3,057-point `SEED_SURFEL_PATCH` pure in `{144}`**
+with all xyz finite and range **2.5146 / 2.6458 / 2.8056 m** (a 0.29 m spread).
+All four pre-existing objects stayed **byte-identical**; **all ten pairwise
+overlaps and the all-object overlap are 0**.
+
+**The low-measurability expectation was not borne out at the seed.** S0's evidence
+gave 144 a valid fraction of **3.68%**, but the prescribed view returned
+**6.46%** - comparable to object 145's seed (6.68%) and a normal look for this
+scene, from 47,332 visible pixels (72.2% of frame) yielding 3,057 valid points.
+**It gated nothing**, and one look is not a measurability claim.
+
+Parent by manifest (`previews/fullscene1a/full-seed2111`) with **every invariant
+verified**: truth closed, `snapshot_id S0`, `fullscene_initial_condition true`,
+`NEXT_OBJECT_SELECTED`, selected id **144** positive and **not** in the
+instantiated set `[141,142,143,145]`, support agreeing manifest-vs-snapshot at
+**2,436**, deferred prior-object action **unexecuted**, no scheduler, no quality
+gate, `structural_fails []`. **Live scene graph ids equal the parent's
+instantiated set.** Declared scope **64 observations, steps 18..81**; all 64
+calibration/observation pairs located.
+
+**Seed decision independently reproduced before rendering**, reimplementing the
+documented occupied-cell spherical-mean rule from scratch: evidence **2,436**
+points over 5 steps (21: 1,410; 22: 252; 47: 107; 48: 340; 49: 327), **987**
+occupied 0.1-deg cells, spherical mean **(-19.333767, -1.798502)**, chosen cell
+**[-195, -20]** at dot 0.9999881483226, gaze **(-19.520574420428,
+-2.005758596173)** - agreeing with the production
+`multiobject3b_seed.select_seed_from_saved_evidence` to **0.000e+00 deg** on mean
+and gaze, and matching cell, cell count and evidence count exactly. **Raw
+visibility was not used to choose the seed** (66,237 visible vs 2,436 valid =
+3.68%, diagnostic only).
+
+**Exactly one** Blender launch and **one** acquisition entry **`fix_82`** =
+max(18..81)+1 through the generic `scene_render_fix.py`;
+`parent_fixations_rerendered` **0**; the legacy capped renderer **never invoked**;
+all **128** pinned history files byte-identical afterwards. Seed view: valid
+points by instance **{144: 3,057, 143: 761}** - the 761 belong to 143 and were
+**not** fused, since only the selected id enters the patch; whole-frame valid
+5.8%.
+
+**All 135 pinned inputs byte-identical** (2 FullScene-1a artifacts, the parent
+live scene graph, 4 object geometry sources, all 128 S0 evidence files). Objects
+141 `6ac98f6251b47337`, 142 `6f90d985f8078a7d`, 143 `bbc4b856a07d2be5`, 145
+`ac46e7fc815d103c` - unchanged before and after. `truth_opened` false,
+`fusion_iterations_added` 0, `growth_iterations_added` 0,
+**`deferred_prior_object_action_executed` false**, quality gate / scene scheduler
+/ revisit scheduler / object discovery / semantic ranking all false.
+
+Five-object scene, shared chart **624 x 488** at 0.1 deg: 141 **37,654** cells
+(376.54 deg2), 142 **62,784** (627.84), 143 **17,947** (179.47), 145 **2,125**
+(21.25), **144 1,098 (10.98 deg2)** - the smallest in the scene, though from a
+seed larger than 145's was. **All ten pairwise overlaps and the all-object
+overlap 0**, recorded as measurements; **zero overlap is not required**.
+
+Visual: the fovea is a large flat **blue-grey panel** with a **pale cream
+rectangle inset** upper-middle and a grey band down the left edge - largely
+untextured, consistent with 6.46%, the inset's borders supplying the matchable
+edges.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`206ac58` - 320 files** - diffs to **0 lines**, both before and after execution.
+Checks: `py_compile` clean, the four prescribed lines verbatim, `SUMMARY passed=8
+failed=0`. **All ten negatives are genuine source-mutation controls** with named
+detectors, **none exiting 0 or 2**; the **exit-2 escape branch was verified
+live**. **31/31 prior suites green, 217/217 prior negatives firing, none
+weakened**; the **Cyclopean-1f caveat stands and 1f was not edited**.
+
+**One narrowly necessary code fix, inside a new FullScene-1b file only.** The
+first attempt aborted **before any render** with `KeyError: 'xyz_h'` from the
+**frozen** `multiobject3b_seed.collect_selected_object_evidence`. FullScene-1b
+reuses `fullscene1a_run._history`, which deliberately projects each observation
+down to `step`, `instance_id` and `valid` - exactly right for FullScene-1a, whose
+snapshot never needed geometry - but the frozen seed rule additionally requires
+`xyz_h`. **The frozen source is not broken**: its underlying readers all return
+`xyz_h`, and my independent reproduction using them succeeded. Fix in
+`tools/fullscene1b_run.py` only (+16/-0): after `_history` returns, re-read
+**exactly the same declared cases** through the unchanged stereo front end and
+attach `xyz_h`, asserting the re-read `instance_id` and `valid` arrays are
+**bitwise equal** to FullScene-1a's before accepting the geometry. **The scope is
+not widened.** **Corrected, not weakened**: ten negatives still exit 1, checker
+still `passed=8 failed=0`, both verbatim-asserted call sites untouched, frozen-set
+diff still **0 lines**, and the enabled seed reproduces the independent
+calculation to **0.000e+00 deg**.
+
+What this establishes: **the scene executive's S0 decision became a physical
+scene entity in one action** - id and instantiated set **consumed** from the
+parent, gaze derived by the **unchanged** valid-depth occupied-cell rule and
+**independently reproduced to 0.000e+00 deg**, evidence count reproducing S0's
+support exactly, **exactly one** fixation at step 82 through the generic renderer
+with **zero** rerenders, a **3,057-point patch pure in `{144}`**, four
+pre-existing objects **byte-identical**, 135 pinned inputs unchanged, the deferred
+action **unexecuted**, five footprints **mutually disjoint**. And, as a diagnostic
+cutting against expectation: **144 measured better at the seed (6.46%) than its
+history predicted (3.68%)**. What it does not establish: **this is a seed, not an
+object** - whether 144 grows, stalls or terminates is **untested**; **no accuracy
+claim**, truth stayed closed; **no object completeness and no measurability
+claim** from one look, 144's historical 3.68% remaining its only multi-look
+figure; **zero overlap is still not an invariant**; **nothing about object 145**,
+whose deferred action stands; and **no scheduler, discovery, revisit, semantic
+ranking, threshold or handoff**. **Next: FullScene-1c - grow object 144 with the
+frozen local machinery while all pre-existing objects remain stable.** Stopped.

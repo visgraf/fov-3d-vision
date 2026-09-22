@@ -89,6 +89,23 @@ def _rebuild_s0_history(parent: Path, pm: dict):
         raise AssertionError("reconstructed S0 history steps differ from FullScene-1a")
     if len(observations) != int(pm.get("observation_count", -1)):
         raise AssertionError("reconstructed S0 history count differs from FullScene-1a")
+    # FullScene-1a only ever needed instance ids and valid masks, so its history
+    # builder projects each observation down to those two arrays.  The frozen
+    # multiobject3b_seed evidence rule additionally needs the reconstructed xyz,
+    # so re-read exactly the same declared cases through the unchanged stereo
+    # front end and attach it.  The scope is not widened: the cases, their order
+    # and their count are the ones _history already returned and validated.
+    by_step = {int(step): case for step, case in cases}
+    for ob in observations:
+        if "xyz_h" in ob:
+            continue
+        c, obs = hdr.read_observation(by_step[int(ob["step"])])
+        rec, _meta, _state = compute_once(c, obs)
+        if not np.array_equal(np.asarray(rec["instance_id"]), np.asarray(ob["instance_id"])):
+            raise AssertionError("S0 history re-read disagrees with FullScene-1a instance ids")
+        if not np.array_equal(np.asarray(rec["valid"], bool), np.asarray(ob["valid"], bool)):
+            raise AssertionError("S0 history re-read disagrees with FullScene-1a valid mask")
+        ob["xyz_h"] = np.asarray(rec["xyz_h"]).copy()
     return parent3h, cases, observations, groups
 
 
