@@ -8552,3 +8552,131 @@ alternate matcher, baseline, vergence or illumination was tried, by design.
 **Next: next-object selection from updated scene memory**; object 145 stays
 retained for possible revisit, and whether the gap between the 3D frontier and the
 cyclopean field deserves attention is a judgement for Luiz/Chat. Stopped.
+
+### 2026-09-22 - MultiObject-3e, one bounded epistemic handoff: the global cyclopean field supplied the action the local 3D controller lacked, and frozen FSG6f reactivated
+
+Package `076731f` (seven files, all `A`); parent result `6a7cc7b`. Blender 5.2.1
+LTS headless, Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host
+`.venv/bin/python` 3.12.3. **11.7 s** - one Blender launch plus the 13-look
+epistemic reconstruction. `MULTIOBJECT3E_COMPLETE`, `structural_fails: []`, no
+FAIL line anywhere; `tools/multiobject3e_compare.py` exited 0.
+
+**Both halves of the central question answer yes.** MultiObject-3d had shown the
+final OPEN 3D frontier targets all lay **inside** the already-visited envelope
+with **none** on unseen territory. Here the **unchanged** Cyclopean-1e selector
+chose gaze **(+23.700, -5.500)** - **outside** that envelope, **6.208 deg** from
+the nearest previous fixation, at the **deepest** of the 20 unseen cells (border
+distance 17, probe cell (17, 86), `revisit_fallback_rank` 0, one eligible
+component). One fixation there was **not empty**: **21,255** target pixels
+visible, **2,085** with valid depth - **9.81% recovery, the best single-look
+figure this object has produced** (3c's max was 9.6%, the seed 6.68%). Fusing once
+drove **exterior `NEVER_OBSERVED` from 20 to 0** and turned the selected cell from
+`NEVER_OBSERVED` into **`SUPPORT`**.
+
+**Control handed back cleanly.** Frozen FSG6f, called **exactly once** through the
+unchanged `multiobject2c_policy.py` adapter with the seed-scoped history plus one
+entry, returned **`stop` false, `reason` `continue`, next gaze (+18.700,
+-10.500)**. **`candidates_before_consensus_count` went 0 -> 4**, rejected 0;
+frontier 72 -> **488**, open 30 -> **391**, map-resolved 1 -> 24,
+boundary-resolved 41 -> 73, voxels 1,368 -> 1,467, radius still 0.012. Selected
+candidate: delta (-5.0,-5.0) on the frozen lattice, score 30.46, support 104,
+predicted new area **125.90 deg2**, corridor allowed at 0.396, consensus allowed
+(open 104 vs resolved 39). **`LOCAL_POLICY_REACTIVATED`**, and **the returned
+action was recorded and NOT executed** - `experiment_stop:
+BOUNDED_AFTER_ONE_HANDOFF_AND_ONE_RETURN_DECISION`.
+
+**Recorded as measured, not explained**: 295 new surfels on a 6,426-point map grew
+the frontier **6.8x** (72 -> 488) while the map's own angular extent barely moved
+(yaw 15.679->15.684, 24.420->24.524; pitch -6.538->-6.547, 7.350->7.346). That is
+the frozen extractor's own response to new geometry, and **this single observation
+does not explain the mechanism.**
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`6a7cc7b` - 296 files** - compared; the diff is **empty, 0 lines**, all **296
+sha256 SAME**, and the changed-file list is the seven new 3e files and nothing
+else. `cyclopean1e_gaze.py` is **`a3599ea14fc00e60`**, the same hash recorded since
+Cyclopean-1f; `reality2_render_fix.py` unchanged and **never invoked**.
+
+Parent chain by manifest with every gate enforced: the one 3d record shows
+**`POLICY_EXHAUSTED_WITH_UNSEEN_TERRITORY`**,
+**`ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`** and
+**`final_policy_stop_replayed_exactly` true** with 20 exterior cells to hand off;
+its manifest leads to the 3c record with the **genuine pre-watchdog
+`no_frontier`** stop (13 of 24 fixations). **Id consumed**:
+`multiobject3e_run.py:61` reads `selected_object_id` and cross-checks it against
+3c; **the literal `145` appears zero times in all five 3e sources, including the
+checker**.
+
+**Required blocker check passed**: the pre-handoff field, rebuilt on the inherited
+0.1-deg chart at the 12 mm scale from the 3c final map plus its seed-scoped
+observations, **reproduced exterior `NEVER_OBSERVED` = 20**, matching both the 3d
+manifest and its report; the runner aborts otherwise.
+
+Scope **13 looks, steps 66..78** - the 3b seed plus the twelve 3c growth looks. **No
+earlier scene-memory observation was imported.** One new fixation at **step 79** =
+78+1 through the generic `scene_render_fix.py`; the record's `acquisition/` holds
+**only `fix_79`**, `parent_fixations_rerendered` 0.
+
+Fusion: **once**, 12 mm rule, **295 new / 1,790 matched**, **idempotent** (duplicate
+detected, xyz/support/provenance bitwise equal), map **pure `{145}`**. Map **6,426
+-> 6,721**; multi-look 4,005, max support 6; range 2.5265/2.7625/3.0033 m
+(essentially unchanged); PLY 6,721 vertices.
+
+Epistemic before -> after (all/ext/int): **`NEVER_OBSERVED` 20->0 / 20->0 / 0**;
+`OBSERVED_TARGET_NO_DEPTH` 1,514->1,584; `NO_RANGE_REFERENCE` 720->760;
+`OBSERVED_NONTARGET_ONLY` 142->174; `MIXED_OBSERVATION` 20->20;
+`OBSERVED_TARGET_WITH_DEPTH` 0. The other states **grew because the map grew** -
+pixel censuses of the two visuals give support **9,198->9,537 (+339)**, background
+4,302->3,816, depth-break +15, ambiguous +10, both totalling all 16,016 cells.
+**No quality gate was applied to the amount of change.**
+
+**All 39 pinned inputs byte-identical** - 3 MultiObject-3d artifacts, 6
+MultiObject-3c artifacts, 4 object geometry sources, all **26** saved
+calibration/observation files. 141 `6ac98f6251b47337` 155,684 `{141}`; 142
+`6f90d985f8078a7d` 310,884 `{142}`; 143 `bbc4b856a07d2be5` 42,988 `{143}`; the 3c
+source of 145 `8c9e7ffada6fb6a7` 6,426 `{145}` - all unchanged, with the updated
+map written into the new record. Boundedness flags: `added_fixations` 1,
+`returned_local_policy_decisions` 1, `returned_local_action_executed` **false**,
+`automatic_handoff_loop` false, scene/revisit schedulers false,
+`watchdog_changed` false, `quality_gate_used` false,
+`epistemic_selector_reused_unchanged` true, `policy_source_modified` false, truth
+closed. The written trace carries 14 entries (13 inherited + 1 returned) with
+`last_action_executed: false`, `bounded_handoff: true`.
+
+Scene: `selected_object_fixations_total` **14**; shared chart 624 x 488; 141
+37,654 / 142 62,784 / 143 17,947 unchanged, **145 2,041 -> 2,107 cells (21.07
+deg2)**; **all six pairwise overlaps and the all-object overlap still 0**.
+
+Visual. `handoff_rgb.png` shows why the look measured well: a terracotta panel
+with a cream stripe seen at an angle against a flat grey wall, with **the panel's
+right-hand edge in view** - a real occluding boundary a matcher can use, which the
+previous thirteen looks never reached. `epistemic_before/after.png` show the same
+comb-shaped support (a vertical spine with rib-like fronds, every edge traced
+orange as seen-but-unmeasured); the difference is at the lower right, where **the
+small red `NEVER_OBSERVED` patch present before is absent after**.
+
+Checks: `py_compile` clean, progress self-test passes, the four prescribed lines
+verbatim, `SUMMARY passed=8 failed=0`. **All eight negatives are genuine
+source-mutation controls** with named detectors, **none exiting 2**; the **exit-2
+escape branch was verified live**; independently, `policy.choose_next(` appears
+**exactly once** in the runner and `reality2_render_fix` **zero** times. **26/26
+prior suites green, 170/170 prior negatives firing, none weakened**; the
+**Cyclopean-1f caveat stands and 1f was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first time.
+
+What this establishes: **the global cyclopean epistemic field supplied one useful
+action exactly where the local 3D controller had none**, and **control was handed
+back without changing either mechanism** - every ingredient byte-identical, one
+fixation, one returned decision, `LOCAL_POLICY_REACTIVATED`, action not executed.
+What it does not establish: **one handoff, one object, one seed** - nothing shows
+the transfer generalises, would work from a different unseen cell, or that a second
+handoff behaves the same, and **no second epistemic gaze was taken, by design**;
+**not a demonstration that alternation is a good policy** - the returned action was
+never executed, so whether FSG6f would have made progress from (+18.700,-10.500) is
+**untested**; **no mechanism for the 6.8x frontier jump**, recorded and not
+explained; **no accuracy claim**, truth stayed closed; **no object completeness** -
+`NEVER_OBSERVED` reaching 0 is attention, not geometry, and **1,584 cells remain
+seen-but-unmeasured, more than before**; **no claim the unmeasured residue is
+reducible**; and **no scheduler, revisit policy or automatic loop**. **Next:
+interpret this single handoff outcome before any second action.** Stopped.
