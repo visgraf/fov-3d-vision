@@ -19,6 +19,8 @@ def _checks(pub: str, ren: str, run: str) -> list[tuple[str, bool]]:
     ast.parse(pub)
     ast.parse(ren)
     ast.parse(run)
+    start_equivalence = run.find("def _verify_renderer_equivalence")
+    end_equivalence = run.find("def _patch_from_record143", start_equivalence)
     return [
         (
             "generic_renderer_no_global_cap",
@@ -42,9 +44,16 @@ def _checks(pub: str, ren: str, run: str) -> list[tuple[str, bool]]:
         ),
         (
             "renderer_equivalence_required",
-            "require exact equality of calibration plus stored RGB/instance arrays" in pub
+            "require exact calibration, exact deterministic acquisition-contract fields" in pub
+            and "differences are measured and recorded diagnostically but are not a gate" in pub
+            and "no RGB epsilon, tolerance or post-hoc quality threshold" in pub
             and "_verify_renderer_equivalence" in run
-            and "np.array_equal(old_obs[k], new_obs[k])" in run,
+            and "_equivalence_acquisition_contract" in run
+            and 'k.startswith("instance_")' in run
+            and "np.array_equal(old_obs[k], new_obs[k])" in run
+            and '"rgb_is_diagnostic_not_gate": True' in run
+            and '"rgb_tolerance_used": False' in run
+            and "np.allclose" not in run[start_equivalence:end_equivalence],
         ),
         (
             "object141_read_only_object143_only",
@@ -74,8 +83,15 @@ def _mutate(name: str, pub: str, ren: str, run: str):
         pub = pub.replace("do not rerender its ", "rerender the ", 1)
         run = run.replace('"partial_fixations_rerendered": 0', '"partial_fixations_rerendered": 5', 1)
     elif name == "noequivalence":
-        pub = pub.replace("require exact equality of calibration plus stored RGB/instance arrays", "skip renderer equivalence", 1)
-        run = run.replace("_verify_renderer_equivalence", "_skip_renderer_equivalence", 1)
+        pub = pub.replace("require exact calibration, exact deterministic acquisition-contract fields", "skip renderer equivalence", 1)
+        run = run.replace("_verify_renderer_equivalence", "_skip_renderer_equivalence")
+    elif name == "rgbgate":
+        pub = pub.replace(
+            "differences are measured and recorded diagnostically but are not a gate",
+            "differences must be bitwise equal as a gate",
+            1,
+        )
+        run = run.replace('"rgb_is_diagnostic_not_gate": True', '"rgb_is_diagnostic_not_gate": False', 1)
     elif name == "crossfuse":
         pub = pub.replace("object 141 remains byte-identical and is never fused", "objects may cross-fuse", 1)
         run = run.replace('rec["instance_id"] == public.OBJECT_ID_2', 'np.isin(rec["instance_id"], public.OBJECT_IDS)', 1)

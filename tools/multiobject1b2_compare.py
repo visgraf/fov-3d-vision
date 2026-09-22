@@ -28,8 +28,17 @@ def main() -> None:
         if m.get("partial_fixations_rerendered") != 0:
             fails.append(f"{r}: partial history was rerendered")
         eq = m.get("renderer_equivalence", {})
-        if not eq.get("passed") or not eq.get("calibration_exact") or not eq.get("observation_arrays_exact"):
-            fails.append(f"{r}: generic renderer equivalence not established")
+        if (
+            not eq.get("passed")
+            or not eq.get("calibration_exact")
+            or not eq.get("acquisition_contract_exact")
+            or not eq.get("observation_keys_exact")
+            or not eq.get("observation_shape_dtype_exact")
+            or not eq.get("instance_arrays_exact")
+            or not eq.get("rgb_is_diagnostic_not_gate")
+            or eq.get("rgb_tolerance_used") is not False
+        ):
+            fails.append(f"{r}: generic renderer instrument equivalence not established")
         if m.get("global_history_renumbered") is not False:
             fails.append(f"{r}: global acquisition history renumbered")
         if m.get("policy_source_modified") is not False:

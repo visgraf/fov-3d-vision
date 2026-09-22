@@ -1,12 +1,12 @@
 """Public contract for MultiObject-1b2: resume object-143 growth past the legacy renderer ceiling.
 
-MultiObject-1b showed that the frozen FSG6f transfer mechanism grows object 143
-cleanly, but its run was truncated after global step 23 because the frozen
-Reality-2 acquisition entry point deliberately rejects step >=24.  This step
-changes acquisition plumbing only: completed 1b observations are replayed from
-disk without rerendering, a generic scene-fixation entry point is checked for
-physical equivalence on the last legal legacy view, and growth then resumes at
-global step 24 with the same object-scoped scientific contract.
+Revision 2 corrects the renderer-equivalence criterion after workstation evidence
+showed that Cycles/OPTIX RGB accumulation is not bit-deterministic across
+processes even when the frozen legacy renderer is rerun against its own saved
+output.  The scientific experiment is unchanged.  Instrument identity is now
+checked exactly on deterministic configuration/geometry quantities; RGB
+re-render differences are measured and recorded diagnostically, with no
+numerical tolerance and no PASS gate on radiance bytes.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import json
 
 import multiobject1b_public as parent
 
-SPEC_ID = "MultiObject1b2-resume-object143-growth-v1"
+SPEC_ID = "MultiObject1b2-resume-object143-growth-v2"
 PARENT_SPEC_ID = parent.SPEC_ID
 FIXTURE = parent.FIXTURE
 SEED = parent.SEED
@@ -54,7 +54,15 @@ PUBLIC_SPEC = {
     ),
     "renderer_equivalence": (
         "before any new scientific acquisition, rerender the saved step-23 gaze through the new "
-        "entry point and require exact equality of calibration plus stored RGB/instance arrays"
+        "entry point; require exact calibration, exact deterministic acquisition-contract fields, "
+        "identical observation keys/shapes/dtypes, and bitwise-identical instance masks. RGB "
+        "differences are measured and recorded diagnostically but are not a gate because the "
+        "frozen legacy Cycles/OPTIX renderer does not reproduce its own saved RGB bit-exactly"
+    ),
+    "rgb_equivalence": (
+        "diagnostic only: record per-eye bitwise equality, differing-element count/fraction, "
+        "max absolute error, mean absolute error, RMS error and p99 absolute error; introduce "
+        "no RGB epsilon, tolerance or post-hoc quality threshold"
     ),
     "growth_policy": "reuse multiobject1b_policy.py and frozen FSG6f unchanged",
     "empty_look_semantics": (
@@ -67,8 +75,8 @@ PUBLIC_SPEC = {
         "role": "engineering guardrail only; independent of global acquisition index",
     },
     "quality_contract": (
-        "structural continuation only; point gain, look count, footprint overlap, stereo yield "
-        "and geometry values are measurements, not PASS gates"
+        "structural continuation only; point gain, look count, footprint overlap, stereo yield, "
+        "RGB rerender differences and geometry values are measurements, not PASS gates"
     ),
     "next_stage": (
         "if object-143 local growth completes structurally, move to its cyclopean completion; "
@@ -82,6 +90,7 @@ PUBLIC_SPEC = {
         "multiobject1b_policy.py and frozen FSG6f remain unchanged",
         "the frozen 12 mm fusion rule remains unchanged",
         "the new renderer changes scheduling only, not the physical instrument",
+        "deterministic renderer-equivalence quantities are exact; RGB nondeterminism is diagnostic only",
         "no evaluator truth or scene-geometry oracle is opened by prediction code",
         "no automatic object discovery, scene scheduler, interpolation or completion rule is introduced",
     ],
