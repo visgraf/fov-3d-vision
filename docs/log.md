@@ -8165,3 +8165,123 @@ fraction **7.1%** sits closer to object 143's difficult regime (1.4-2.5%) than t
 a pattern; **not exhaustive over the programme's history**; **no revisit schedule**
 for the retained object 142. **Next: seed the selected object 145 with one
 prescribed fixation.** Stopped after selection, as instructed.
+
+### 2026-09-22 - MultiObject-3b, seed the scene-selected fourth object: object 145 instantiated at global step 66 with 3,662 pure points, but recovers only 6.68% depth on a near-textureless surface
+
+Package `532113f` (seven files, all `A`); parent result `16ccbb9`. Blender 5.2.1
+LTS headless, Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host
+`.venv/bin/python` 3.12.3. **16.0 s** - one Blender launch plus the 48-look
+evidence replay. `MULTIOBJECT3B_COMPLETE`, `structural_fails: []`, no FAIL line
+anywhere; `tools/multiobject3b_compare.py` printed `MULTIOBJECT3B_COMPLETE` with
+`structural_fails: []` and exited 0.
+
+MultiObject-3a made the second scene-level next-object decision; 3b turns it into
+exactly one action. **Object 145 - the id consumed from the parent, never declared
+here - instantiated as a fourth persistent entity by one new fixation at global
+step 66**, gaze **(+20.822184, +0.000711)**, giving a **3,662-point
+`SEED_SURFEL_PATCH` pure in `{145}`**. Objects 141, 142 and 143 **byte-identical**;
+all six pairwise footprint overlaps and the all-object overlap **0**.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`16ccbb9` - 282 files** - compared; the diff is **empty, 0 lines**, all **282
+sha256 SAME**, and the complete changed-file list between parent result and HEAD is
+the seven new 3b files and nothing else. `reality2_render_fix.py` is present,
+unchanged and **never invoked**.
+
+Parent by manifest: exactly one `MultiObject3a-...-v1` record with every required
+invariant - `selection_status NEXT_OBJECT_SELECTED`, truth closed, 0 acquisitions /
+fusions / growth, `new_object_instantiated` false, `scene_objects_read_only` true,
+`structural_fails []`.
+
+**Ids consumed, not declared.** `selected_object_id` **145** at
+`multiobject3b_run.py:222` and `instantiated_object_ids` **[141,142,143]** at
+:221, both from the 3a manifest; the runner asserts the **live 2c scene graph ids
+equal** the parent set, that the selected id is positive and **not already
+instantiated**, and that manifest and selection report agree on id and support.
+**The literal `145` appears zero times in all four 3b sources** (twice only in the
+checker, as the `handpick` mutation string and the assertion it is absent).
+
+Evidence scope **48 looks, steps 18..65** - exactly 3a's scope, re-derived and
+asserted identical to the parent's recorded steps and count. **No historical
+rerender, three ways**: the record's acquisition dir holds **exactly one** entry
+**`fix_66`**; **none** of the 48 evidence steps appears in it; `added_fixations` 1,
+`parent_fixations_rerendered` 0, and all **96** saved calibration/observation files
+byte-identical afterwards. `global_step` = max(65)+1 = **66**.
+
+**Recomputed evidence**, paths rebuilt by hand from manifest keys and aggregation
+written fresh: **13,047** valid-depth samples for 145 over **8 of 48** steps - 34
+(333), 35 (2,049), 36 (3,726), 37 (3,118), 38 (1,441), 58 (114), 59 (1,228), 60
+(1,038) - matching 3a's `selected_valid_depth_samples` exactly. The runner enforces
+the same equality **before rendering anything**. **Valid depth, not visibility**,
+drove the seed: mask `valid & (instance_id == 145)`, and the `visibleonly` negative
+that deletes `valid &` is detected.
+
+Seed direction from the **unchanged MultiObject-1a selector**: 13,047 samples ->
+**2,035** occupied 0.1-deg cells, spherical mean **(+20.636381, +0.041449)**,
+selected cell **[208, 0]** at dot **0.9999944891**, gaze **(+20.822184,
++0.000711)**. Quantizing before averaging is what stops a repeatedly-observed
+sliver winning on pixel count. **Independently reproduced to the last digit**
+(difference **0.000e+00** on mean, cell, dot and gaze). Methodological note: a
+first reimplementation used **cell centres** rather than per-cell sample means; it
+picked the **same cell** but a gaze 2.2e-02 deg away - sub-cell, under a quarter of
+one cell. The frozen docstring says the gaze is "the mean direction of one actually
+occupied cell", so the second version is faithful. **The decision is robust to that
+variation; only the sub-cell aiming point is not.**
+
+Seed view through the **generic `scene_render_fix.py`**: object 145 visible on
+**54,784** of 65,536 pixels (**83.6%** of frame) but valid depth on only **3,662** -
+**recovery 6.68%**. Whole-frame valid **3,690** (5.6%); the only other instance with
+any valid depth was 143, at **28** points. Seed patch pure `{145}`, all xyz finite,
+range **2.5517 / 2.7645 / 2.8809 m** - a spread of only **0.33 m**, consistent with
+a flat frontal surface, more distant than 141 (2.13 m) and nearer than 143 (3.51 m).
+
+**All 103 pinned inputs byte-identical** (2 of 3a, 2 of 2c, 3 object sources, all 96
+acquisition files), verified both externally and by the runner's own four guards.
+141 `6ac98f6251b47337` 155,684 `{141}`; 142 `6f90d985f8078a7d` 310,884 `{142}`; 143
+`bbc4b856a07d2be5` 42,988 `{143}` - all unchanged.
+
+Four-object scene, shared chart **624 x 488** at 0.1 deg: 141 **37,654** cells
+(376.54 deg2), 142 **62,784** (627.84), 143 **17,947** (179.47), **145 1,165
+(11.65 deg2)** - the smallest in the scene, spanning yaw [+16.30,+25.00] pitch
+[-5.60,+5.70] with the seed gaze inside it. **Overlaps as measurements, never
+failures: all six pairwise and the all-object overlap are 0.**
+
+Visual. `object_145_seed_rgb.png` explains the 6.68% directly: the fovea is **three
+flat vertical bands** - broad matte terracotta left and centre, a narrow pale cream
+stripe, a grey band right - with **essentially no texture anywhere**, so a stereo
+matcher has almost nothing to correspond. `scene_cyclopean_footprints.png` is the
+first **four-object** chart, and its **pixel census reproduces the scene graph
+exactly** (37,654 / 62,784 / 17,947 / 1,165 cells, **zero pixels at the overlap
+marker level**): 141's cloth quadrilateral with seams and emblem at centre, 143's
+architectural frame around it, 142 filling the lower half, and **145 as a narrow
+bright vertical double-stripe on the right**, disjoint from all three.
+
+Checks: `py_compile` clean, seed self-test passes, the three prescribed lines
+verbatim, `SUMMARY passed=6 failed=0`. **All seven negatives are genuine
+source-mutation controls** each exiting 1 with its named detector (`handpick`,
+`oldhistoryonly`, `visibleonly`, `multiprobe`, `legacyrenderer`, `crossfuse`,
+`grow`), **none exiting 2 - no blocker**; the **exit-2 escape branch was verified
+live**. **23/23 prior suites green, 148/148 prior negatives firing, none weakened**;
+the **Cyclopean-1f caveat stands and 1f was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first time.
+
+What this establishes: **a scene-level decision became a fourth persistent entity in
+one action** - id and instantiated set consumed from the live scene record, the
+13,047-sample support reproduced **before** anything was rendered, the seed
+direction from the **unchanged 1a rule** reproduced to the last digit, and exactly
+one new fixation at step 66 through the **generic renderer** with **zero** historical
+rerenders producing a **3,662-point patch pure in `{145}`**, with all three existing
+objects byte-identical and all four footprints disjoint. Also established as a
+diagnostic: **MultiObject-3a's caution was warranted** - 145 recovers **6.68%**, far
+from 142's 58.8-77.3% and much closer to 143's 1.4-2.5%, and the seed image shows
+why. **This gated nothing.** What it does not establish: **nothing about growth** -
+3,662 points from one look is a seed, and whether 145 grows, stalls like 143, or
+stops scientifically is untested; **no accuracy claim**, truth stayed closed; **no
+object completeness** and **no semantic importance** - 11.65 deg2 is the smallest
+footprint in the scene and means only what it says; **zero overlap is still not an
+invariant**, it now survives four objects and nothing more; **the low recovery is
+not shown to be irreducible** - no alternate matcher, baseline, vergence or
+illumination was tried, by design; and **no revisit scheduler** - 142 and 143 remain
+retained as unfinished. **Next: grow the newly seeded fourth object independently
+while every existing object stays stable.** Stopped after the seed fixation.
