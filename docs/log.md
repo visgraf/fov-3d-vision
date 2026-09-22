@@ -9245,3 +9245,115 @@ figure; **zero overlap is still not an invariant**; **nothing about object 145**
 whose deferred action stands; and **no scheduler, discovery, revisit, semantic
 ranking, threshold or handoff**. **Next: FullScene-1c - grow object 144 with the
 frozen local machinery while all pre-existing objects remain stable.** Stopped.
+
+### 2026-09-22 - FullScene-1c, grow the seeded S0 object: object 144 reaches a fully-resolved no_frontier stop after only 7 fixations, with every earlier object byte-identical
+
+On branch **`fullscene-calibration-1`**. Package `15ec8ff` (six files, all `A`);
+parent FullScene-1b result `dd4df82`. `main`/`origin/main` remain at `15eedee`,
+the completed MultiObject-3h developmental state - **untouched**; lineage linear,
+**0 merges**. Blender 5.2.1 LTS headless, Cycles, **OPTIX** on an RTX 4090
+(driver 595.84); host `.venv/bin/python` 3.12.3. **52.9 s**, 6 Blender launches.
+`FULLSCENE1C_COMPLETE`, `structural_fails: []`, no FAIL line anywhere;
+`tools/fullscene1c_compare.py` exited 0. **No code fix was required.**
+
+**The answer is yes.** The frozen local machinery grew the FullScene-1b seed -
+object **144**, consumed from the parent - from **3,057 to 3,859** surfels over
+**7** object fixations, **pure `{144}` at all 7 maps**, **all 7 fusions
+replay-idempotent**, while **all four earlier persistent objects stayed
+byte-identical** and the prior object's deferred local action **remained
+unexecuted**. Termination **`no_frontier`**, `scientific_stop_reached` **true**,
+after 7 fixations against a 24 watchdog that was **never approached**.
+
+**The three ledgers point in different directions and are kept separate.**
+
+*Attention/measurement*: 7 looks, steps 82..88, gazes on the frozen 5-deg lattice
+over yaw -19.5..-9.5, pitch -7.0..+8.0. Recovery **min 1.35% / median 6.04% / max
+8.00%**; per look (visible/valid/recovery): 82 seed 47,332/3,057/6.46%; 83
+16,464/1,008/6.12%; 84 31,516/1,905/6.04%; 85 21,983/1,759/**8.00%**; 86
+10,298/143/1.39%; 87 7,104/100/1.41%; 88 2,156/**29**/1.35% **EMPTY**. The
+inherited Reality-2b rule applied unchanged at 88: observation retained, **nothing
+fused**, map unchanged, run continued.
+
+*Geometric*: seed **3,057 -> 3,859** (**1.262x**); after the seed **matched
+4,113, new 802** (per look new: 210, 245, 230, 84, 33, 0); **1 look changed no
+geometry** (step 88); footprint **1,098 -> 1,413 cells** (10.98 -> **14.13
+deg2**, 1.287x); range **2.3344/2.6391/2.8113 m** vs the seed patch's
+2.5146/2.6458/2.8056 - the envelope widened ~18 cm at the near end; multi-look
+1,306, max support 5; PLY 3,859 vertices. **All ten pairwise overlaps and the
+all-object overlap 0.** **These are not combined into any productivity score and
+gated nothing** (the `productivitygate` negative enforces it).
+
+*Control*: **7** fixations total, **6** fresh (steps 83..88), watchdog **24**
+never approached. First decision from the seed: `continue`, **7** candidates, next
+gaze (-14.520574, -7.005759), frontier 419 / open 394. **Final decision stated
+exactly**: step 88, index 6, `stop` true, `reason` **`no_frontier`**, next gaze
+**null**, candidates **0**, rejected **0**, and frontier **25 = 0 open + 0
+map-resolved + 25 boundary-resolved** of 810 voxels. **Every frontier entry was
+BOUNDARY_RESOLVED - none open.** That differs in kind from object 145's
+MultiObject-3c stop, which ended with **30 of 72 still open** and no admissible
+candidate. **Reported as the controller's state, not as object completeness.**
+
+Parent by manifest - exactly one `FullScene1b-seed-snapshot-selected-object-v1`
+record - with **all 16 gates holding**: schema and public digest, truth closed,
+fixed head/static scene, exactly one seed fixation, zero historical rerenders, no
+fusion/growth/handoff in 1b, new object instantiated, seed patch pure, earlier
+objects read-only, deferred action unexecuted, no scene/revisit scheduler, no
+quality gate, `structural_fails []`. Consumed dynamically: target **144**,
+pre-existing **[141,142,143,145]**, seed step **82**, gaze **(-19.520574,
+-2.005759)**, **3,057** points, seed recovery **6.46%**. The seed acquisition was
+**reconstructed and verified against the saved patch, then reused - never
+rerendered** (`fix_82` absent here, `parent_fixations_rerendered` 0).
+
+Source freeze: **every tracked non-documentation source present at `dd4df82` -
+324 files** - diffs to **0 lines** against HEAD **both before and after
+execution**, and `git status` is empty after the run. Required-reuse sources
+unchanged: `multiobject2c_policy.py` `f4d4a08b00981466`, `fsg6f_frontier.py`
+`d636c9405d719916`, `fsg6f_public.py` `c79f58c9b51f33d4`, `fsg3_surface_map.py`
+`1b9dbeb873105ec9`, `scene_render_fix.py` `6e70bbb78c1043ec`,
+`reality2_render_fix.py` `9f1433d189fbcbb5` (**never invoked**), the stereo front
+end, and the FullScene-1a/1b sources. **All 11 pinned inputs byte-identical**
+afterwards (5 FS1b artifacts, the 2 seed-acquisition files, 4 pre-existing object
+sources).
+
+Scene invariants, explicitly: **all four pre-existing objects byte-identical**
+before and after; **deferred prior-object action unexecuted**; **no epistemic
+handoff**; **no scheduler, revisit, discovery or semantic ranking**; **truth
+closed**; no quality gate. Five-object scene: 141 37,654 cells, 142 62,784, 143
+17,947, 145 2,125 - all unchanged - and **144 1,098 -> 1,413**.
+
+Checks: `py_compile` clean, the four prescribed lines verbatim, `SUMMARY passed=9
+failed=0`. **All twelve negatives exit 1** with named detectors (`handpick`,
+`crossfuse`, `copypolicy`, `priorhistory`, `legacyrenderer`, `globalwatchdog`,
+`emptyabort`, `execute_deferred`, `handoff`, `productivitygate`, `scheduler`,
+`truth`), **none exiting 0 or 2**; the **exit-2 escape branch was verified live**.
+**32/32 prior suites green, 227/227 prior negatives firing, none weakened**; the
+**Cyclopean-1f caveat stands and 1f was not edited**.
+
+Visual: `object_144_growth.png` shows a **compact, sparse structure** - a small
+rectangular outline with hatched striations along its left side - extending
+modestly across the 7 panels but never filling an area. It matches the seed image,
+where 144 presented as a large flat **blue-grey panel with a pale cream rectangle
+inset**: the rectangle's border and nearby striations are the only features
+carrying matchable texture, and they are what the map consists of.
+
+What this establishes: **the frozen local machinery grew the seed under full scene
+invariance** - id consumed, seed verified and reused without rerender, 6 fresh
+actions through the frozen adapter/controller/renderer, map pure and idempotent,
+four earlier objects byte-identical, deferred action untouched, footprints
+disjoint; **the empty-look contract was exercised once and behaved as specified**;
+and **the controller reached its own stop early and cleanly**, with a *fully
+resolved* frontier (0 open, 0 map-resolved, 25 boundary-resolved, 0 candidates) -
+distinct in kind from object 145's stop. What it does **not** establish: **no
+accuracy claim**, truth closed; **not object completeness** - `no_frontier` with 0
+open means the frontier is exhausted **under the controller's own 12 mm rules and
+gaze-local extraction**, and since a frontier built from measured surfels cannot
+extend into surface the stereo front end never recovers, its coincidence with the
+flat panel's unmeasurable interior is **an observation, not a demonstrated
+mechanism** (no counterfactual was run; FullScene-1d would audit it); **no
+productivity trend** from six looks whose new counts 210/245/230/84/33/0 **gated
+nothing**; **the watchdog was not the terminator and is not called a scientific
+stop**; **no scene completeness** merely because every currently known id is
+instantiated - the S0 scope begins at step 18, no discovery has ever run, truth is
+closed; and **nothing about object 145**, whose deferred action stands. **Next:
+FullScene-1d - a separate read-only epistemic audit of the grown object 144.**
+Stopped.
