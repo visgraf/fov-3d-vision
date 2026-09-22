@@ -9357,3 +9357,109 @@ instantiated - the S0 scope begins at step 18, no discovery has ever run, truth 
 closed; and **nothing about object 145**, whose deferred action stands. **Next:
 FullScene-1d - a separate read-only epistemic audit of the grown object 144.**
 Stopped.
+
+### 2026-09-22 - FullScene-1d, epistemic audit of the zero-OPEN stop: attention IS complete, measurement is not - zero unseen cells, 1,211 seen-but-unmeasured
+
+On branch **`fullscene-calibration-1`**, **host-side only** (no Blender, `pgrep`
+0 before and after), **1.6 s**. Package `b0cfdf2` (six files, all `A`); parent
+FullScene-1c result `f2a4dda`. `main`/`origin/main` remain at `15eedee` -
+**untouched**; lineage linear, **0 merges**, 7 ahead. `FULLSCENE1D_COMPLETE`,
+`structural_fails: []`, no FAIL line anywhere; comparator exited 0;
+`final_policy_stop_replayed_exactly` **true**. **No code fix required.**
+
+**The answer is: partly.** The zero-OPEN local stop **does** correspond to
+attention resolution - **exterior `NEVER_OBSERVED` = 0**, with **zero unseen
+arcs** - but **not** to measurement resolution: **1,211 of 2,022 shoreline cells
+(59.9%) are `OBSERVED_TARGET_NO_DEPTH`**, in 24 arcs carrying **3,107 supported
+projections, all target-seen, none with valid depth**. Measured case:
+**`LOCAL_FRONTIER_RESOLVED_ATTENTION_COMPLETE_MEASUREMENT_PARTIAL`**;
+`object_status` **`ATTENTION_COMPLETE_MEASUREMENT_PARTIAL`**;
+`scene_disposition` **`RETURN_TO_SCENE_INVENTORY`**;
+`local_stop_subtype` **`ZERO_OPEN_FRONTIER_BOUNDARY_RESOLVED_STOP`**.
+**This differs from object 145's MultiObject-3d audit**, which found
+`POLICY_EXHAUSTED_WITH_UNSEEN_TERRITORY` with 20 unseen cells - the two stops
+wore the same `no_frontier` label and the audits separate them.
+
+**Parent stop reproduced exactly, all eleven fields**: stop True, `no_frontier`,
+next gaze null, voxels 810, frontier 25, **open 0**, map-resolved 0,
+**boundary-resolved 25**, candidates 0, rejected 0; saved current gaze
+(-9.520574, +2.994241). **`frontier_open_count == 0` confirmed in both saved and
+replayed decisions.** Consumed dynamically: object **144**, map **3,859** points,
+steps **82..88** (7 looks), gaze envelope yaw [-19.521,-9.521] pitch
+[-7.006,+7.994], **7 of 24** fixations.
+
+Census: chart **92 x 122** (11,224 cells) at 0.1 deg, footprint **3 cells /
+0.2605 deg** from the unchanged 12 mm radius; raw support **1,413** -> support
+**6,203**, complement **5,021**, **shoreline 2,022**, max exterior border depth
+**69**. Base: `UNOBSERVED` **1,953** (96.6%), `PHYSICAL_DEPTH_BREAK` 36,
+`AMBIGUOUS` 33, **`TARGET_CONTINUATION` 0**. Refined all/ext/int:
+**`OBSERVED_TARGET_NO_DEPTH` 1,211 / 1,031 / 180**; `NO_RANGE_REFERENCE` 578 /
+522 / 56; `OBSERVED_NONTARGET_ONLY` 157 / 157 / 0; `MIXED_OBSERVATION` 7 / 7 / 0;
+**`NEVER_OBSERVED` 0 / 0 / 0**; **`OBSERVED_TARGET_WITH_DEPTH` 0**. Components
+**6** - one EXTERIOR of 4,609 cells at depth 69 plus 5 INTERNAL holes (1, 35, 36,
+94, 246).
+
+**498 arcs, of which zero are `NEVER_OBSERVED`** - there is no unseen territory
+to characterise, which is itself the finding. **18 meaningful arcs (>=20 cells),
+every one `OBSERVED_TARGET_NO_DEPTH`**; largest 166, 161, 141 (at the chart-max
+border depth 69), 111, 97, 88 (internal), 73, 60 cells; **8 centroids inside the
+visited gaze envelope, 10 outside**, at nearest-gaze distances **1.1 to 5.3 deg**.
+Unlike object 145's case these are **not unseen** - each was imaged as target and
+returned no depth.
+
+**Frozen frontier -> cyclopean relation, all states**: **OPEN 0**, **MAP_RESOLVED
+0**, **BOUNDARY_RESOLVED 25** - and **all 25 quantize `OUT_OF_CHART`**, pointing
+beyond the angular extent 144's map occupies. The boundary-resolved count
+**reproduces the parent's 25 exactly**.
+
+Integrity: **every tracked non-documentation source present at `f2a4dda` - 328
+files** - diffs to **0 lines before and after**; `git status` empty after the run.
+Inherited sources pinned and unmodified: `multiobject3d_audit.py`
+`fc50c81dccb3d29e`, `cyclopean1a_topology.py` `6ed00fca00907f33`,
+`cyclopean1b_boundary.py` `b34371ce8ffa86c7`, `cyclopean1d_epistemic.py`
+`559351701151a144`, `multiobject2c_policy.py` `f4d4a08b00981466`,
+`fsg6f_frontier.py` `d636c9405d719916`, plus the FullScene-1a/1b/1c sources.
+**All 24 pinned inputs byte-identical** (5 FS1c artifacts, **all 5 scene-object
+geometry sources**, all 14 replayed calibration/observation files). Parent by
+manifest with **all 17 gates holding**.
+
+Scene invariants, explicitly: **no Blender, no fixation, no fusion, no growth**;
+**all five object sources byte-identical** (141 `6ac98f6251b47337`, 142
+`6f90d985f8078a7d`, 143 `bbc4b856a07d2be5`, 144 `70a4bac299d73775`, 145
+`ac46e7fc815d103c`); **deferred object-145 action remains unexecuted**; **no
+handoff, scheduler, revisit, discovery or semantic ranking**; **truth closed**;
+**older S0 history was not added** - only the FS1b seed (82) and six FS1c growth
+looks (83..88) were replayed.
+
+Checks: `py_compile` clean, the four prescribed lines verbatim, `SUMMARY passed=9
+failed=0`. **All eleven negatives exit 1** with named detectors (`acquire`,
+`handpick`, `openfrontier`, `copyaudit`, `oldhistory`, `depthonly`,
+`crossobject`, `execute_deferred`, `threshold`, `scheduler`, `truth`), **none
+exiting 0 or 2**; the **exit-2 escape branch was verified live**. **33/33 prior
+suites green, 239/239 prior negatives firing, none weakened**; the **Cyclopean-1f
+caveat stands and 1f was not edited**.
+
+Visual: the shoreline image's **pixel census reproduces the report exactly on all
+eight classes** (6,203 / 1,211 / 578 / 157 / 36 / 33 / 7 / **0**, plus 2,999
+background = all 11,224 cells). It shows the support as **wavy horizontal grey
+bands** - the striations FS1c built - with **every band edge traced orange**, teal
+nontarget speckle rimming the outer boundary, and **no red anywhere**, confirming
+visually that no unseen territory remains.
+
+What this establishes: **the zero-OPEN local stop coincides with attention
+resolution but not measurement resolution** - 0 unseen, 1,211 seen-but-unmeasured
+with 3,107 supported projections and zero valid depth; **the parent stop
+reproduced exactly** with open 0 / map-resolved 0 / boundary-resolved 25, all 25
+out-of-chart; and **the audit was strictly read-only** with every input and object
+byte-identical. What it does **not** establish: **`frontier_open_count == 0` means
+local frontier resolution under frozen FSG6f, not physical object completeness** -
+the frontier is built from measured surfels and extracted relative to the current
+gaze, so it cannot extend into surface the front end never recovers;
+**`OBSERVED_TARGET_NO_DEPTH` is measurement residue, not proof that new sensing
+could recover it** - no matcher, baseline, vergence or illumination was changed or
+tested; **`NEVER_OBSERVED = 0` is attention debt discharged under the declared
+local history, not a scene-discovery claim**; and **no accuracy or full-scene
+completeness claim** - truth stayed closed, and every currently known id being
+instantiated implies nothing about how many objects the scene contains. **Next:
+FullScene-1e - return to scene inventory and recompute the known-uninstantiated
+candidate set from the updated field-test history.** Stopped.
