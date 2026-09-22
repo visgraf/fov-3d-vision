@@ -15,6 +15,7 @@ FILES = [
     TOOLS / "fullscene_real1_run.py",
     TOOLS / "fullscene_real1_export.py",
     TOOLS / "fullscene_real1_compare.py",
+    TOOLS / "fullscene_real1_reference.py",
 ]
 
 
@@ -52,6 +53,7 @@ def main() -> None:
     run = text(TOOLS / "fullscene_real1_run.py")
     adp = text(TOOLS / "fullscene_real1_repo_adapter.py")
     ora = text(TOOLS / "fullscene_real1_oracle_scaffold.py")
+    ref = text(TOOLS / "fullscene_real1_reference.py")
 
     checks = {
         "branch_isolated": "fullscene-real-1" in pub and "main and fullscene-calibration-1 remain untouched" in pub,
@@ -63,7 +65,15 @@ def main() -> None:
         "fresh_run": "do not reuse accumulated object maps" in pub,
         "frozen_local": "multiobject2c_policy" in pub and "12 mm" in pub and "24 selected-object fixations" in pub,
         "bounded_handoff": "at most one established cyclopean epistemic handoff" in pub and "No recursive handoff" in adp,
-        "truth_quarantined": "observer_complete" in run and run.find("seal_path = _observer_seal") < run.find("reference_exports = dict(adapter.render_reference_after_control"),
+        "truth_quarantined": (
+            "observer_complete" in run
+            and run.find("seal_path = _observer_seal") < run.find("reference_exports = dict(adapter.render_reference_after_control")
+            # the post-seal evaluator panorama is the only other REAL-1 module that may
+            # open the truth-side spec, and it must refuse to run without the seal
+            and "--require-seal" in ref
+            and "refusing to open evaluator truth before the observer seal exists" in ref
+            and imports_module(TOOLS / "fullscene_real1_reference.py", "reality1_scene")
+        ),
         "outputs": all(s in pub for s in ("scene_points.ply", "observer_depth.npy", "reference_rgb.png", "evaluation_summary.json")),
         "separate_metrics": "do not synthesize a single quality/completeness score" in pub,
         "resume": "--resume" in run and "object_complete.json" in run,
