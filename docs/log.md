@@ -8285,3 +8285,141 @@ not shown to be irreducible** - no alternate matcher, baseline, vergence or
 illumination was tried, by design; and **no revisit scheduler** - 142 and 143 remain
 retained as unfinished. **Next: grow the newly seeded fourth object independently
 while every existing object stays stable.** Stopped after the seed fixation.
+
+### 2026-09-22 - MultiObject-3c, grow the scene-selected fourth object: the frozen policy reaches its own scientific stop for the first time, and the empty-look branch finally fires
+
+Package `f4098dd` (six files, all `A`); parent result `627ff7a`. Blender 5.2.1 LTS
+headless, Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host
+`.venv/bin/python` 3.12.3. **105.5 s** total, loop **105.1 s**, **12** Blender
+launches. `MULTIOBJECT3C_COMPLETE`, `structural_fails: []`, no FAIL line anywhere;
+`tools/multiobject3c_compare.py` exited 0 with `structural_fails: []`.
+
+**Two firsts, both from identical unmodified machinery.** `termination_reason`
+**`no_frontier`**, `scientific_stop_reached` **true** - the frozen FSG6f policy
+returned `continue` twelve times and then **stopped on its own condition** after
+**13 selected-object fixations, eleven short of the 24-fixation watchdog**, which
+was never reached. Objects 142 and 143 both exhausted their guardrail with the
+policy still saying `continue`; this one did not. And **the Reality-2b empty-look
+branch fired for the first time in the programme** - `empty_steps [69, 70, 76,
+78]`, **4 of 13 looks** returning fewer than 100 target points (94, 34, 70, 21),
+each recorded as **valid negative evidence**: observation entered policy history,
+**nothing fused**, map unchanged, loop continued. No error, no retry, no special
+case.
+
+Object 145 - the id consumed from the 3b parent, never declared here - grew
+**3,662 -> 6,426** surfels (**1.75x**), **pure `{145}` at all 13 maps**, all 13
+**replay-idempotent**, while 141, 142 and 143 stayed **byte-identical** and all six
+pairwise footprint overlaps stayed **0**.
+
+**No `multiobject3c_policy.py` exists** - absent on disk and from the package
+commit; `tools/multiobject2c_policy.py` (`f4d4a08b00981466`) is **reused
+unchanged**, as the Occam clause requires, and the `copypolicy` negative enforces
+it. Frozen audit at full scope: **every tracked non-documentation source present at
+`627ff7a` - 287 files** - compared; the diff is **empty, 0 lines**, all **287 sha256
+SAME**, and the changed-file list between parent result and HEAD is the six new 3c
+files and nothing else. `reality2_render_fix.py` unchanged and **never invoked**.
+
+Parent by manifest: exactly one `MultiObject3b-...-v1` record, seed 2111, truth
+closed, `added_fixations` 1, 0 fusions/growth, `new_object_instantiated` true,
+`existing_objects_read_only` true, `structural_fails []`.
+
+**Ids consumed, not declared**: `selected_object_id` **145** at
+`multiobject3c_run.py:58` and `existing_object_ids_before` **[141,142,143]** at
+:59, both from the 3b manifest; **the literal `145` appears zero times in all three
+3c sources** (three times only in the checker). The runner also asserts each
+pre-existing object is a read-only `SURFEL_MAP` and the target a
+`SEED_SURFEL_PATCH`. **Seed recomputed, not trusted**: `valid & (instance_id==145)`
+on the saved `fix_66` gives **3,662** points, **xyz byte-identical at stored
+float32 precision** and **ids byte-identical** to the saved 3b patch - verified
+independently before the run, and by the runner before initializing the map.
+
+History begins at the **3b seed, global step 66**; first new fixation **67** (the
+next chronological step), last **78**. **Seed reused, never rerendered**: the
+record's `acquisitions/` holds **fix_67..fix_78, twelve entries**, **`fix_66` is
+absent**, `parent_fixations_rerendered` 0. Pre-seed scene-memory observations
+(18..65) were **not** replayed as growth-policy history.
+
+Fixation table, 13 looks on the frozen 5-deg lattice, yaw 10.822/15.822/20.822 and
+pitch -9.999/-4.999/+0.001/+5.001/+10.001: seed (20.822,+0.001) 54,784 visible /
+3,662 valid / 6.7%; then 67 (15.822,-4.999) 2,404 / 9.4%; 68 (10.822,+0.001) 119 /
+1.7%; **69 (10.822,+5.001) 94 EMPTY**; **70 (10.822,+10.001) 34 EMPTY**; 71
+(15.822,+10.001) 1,107 / 9.6%; 72 (20.822,+10.001) 1,081 / 6.7%; 73
+(15.822,+5.001) 2,685 / 9.5%; 74 (20.822,+5.001) 2,739 / 6.8%; 75 (15.822,+0.001)
+3,538 / 9.3%; **76 (10.822,-4.999) 70 EMPTY**; 77 (15.822,-9.999) 836 / 9.5%;
+**78 (10.822,-9.999) 21 EMPTY**. Final map range **2.5265 / 2.7627 / 3.0033 m**,
+multi-look surfels **3,761**, max support **6**; PLY carries **6,426** vertices.
+
+**Recovery diagnostics, descriptive only** (`texture_diagnostics_are_gates: false`,
+`quality_gate_used: false`): per-look **min 1.3%, median 6.7%, max 9.6%**. Across
+four objects under one unchanged instrument - 142 **58.8-77.3%**, 8.2x, 24 looks,
+watchdog; 143 **1.4-2.5%**, 8.0x, 24 looks, watchdog; **145 1.3-9.6%, 1.75x, 13
+looks, `no_frontier`**. **The low recovery changed nothing**: no threshold added,
+no constant retuned, no look skipped or retried.
+
+**Termination, stated precisely.** At the final decision (step 78, object fixation
+12) the controller reported `candidates_before_consensus_count` **0** - **no
+candidate gaze was generated at all**, which is its own `no_frontier` condition -
+with `next_gaze_deg` null. Frontier **72** = **30 open** + 1 map-resolved + 41
+boundary-resolved of 1,368 voxels; `frontier_state_radius_m` 0.012. **The frozen
+rule reached its own stop, and that is not the same as the object being complete**:
+30 voxels were still open, and what ended the run is that the candidate generator
+produced nothing admissible. It bounds the **policy**, not the **geometry**.
+
+**All 10 pinned inputs byte-identical** (five 3b files, three object sources, the
+two seed-acquisition files). 141 `6ac98f6251b47337` 155,684 `{141}`; 142
+`6f90d985f8078a7d` 310,884 `{142}`; 143 `bbc4b856a07d2be5` 42,988 `{143}` - all
+unchanged. `policy_source_modified` false, truth closed, no discovery/scheduler/
+revisit/quality gate, `renderer_entrypoint tools/scene_render_fix.py`, fusion
+{0.012, 0.012}.
+
+Footprints on the shared **624 x 488** chart: 141 **37,654** (376.54 deg2), 142
+**62,784** (627.84), 143 **17,947** (179.47), **145 1,165 -> 2,041 (20.41 deg2,
+1.75x - the same factor as its point count)**, now spanning yaw [+15.50,+25.00]
+pitch [-6.80,+7.60], still **the smallest in the scene**. **All six pairwise
+overlaps and the all-object overlap are 0.**
+
+Visual. `object_145_growth.png` (13 panels) shows growth quite unlike 142's
+area-filling: a **narrow vertical wisp of thread-like strands** that thickens and
+extends slightly, never filling an area - the visible counterpart of 1.3-9.6%
+recovery, where only textured seams between flat bands ever match.
+`scene_cyclopean_footprints.png`, the four-object chart, has a **pixel census
+reproducing the scene graph exactly** with **zero overlap-marker pixels**: 141's
+cloth quadrilateral with seams and emblem at centre, 143's frame around it, 142
+filling the lower half, and **145 a bright narrow vertical double-stripe on the
+right**, taller than at the seed. `rgb/fix_70.png` shows an empty look for what it
+is - mostly flat grey wall, 145 a thin slice returning 34 points.
+
+Checks: `py_compile` clean, the three prescribed lines verbatim, `SUMMARY passed=6
+failed=0`. **All seven negatives are genuine source-mutation controls** with named
+detectors, **none exiting 2**; the **exit-2 escape branch was verified live**.
+**24/24 prior suites green, 155/155 prior negatives firing, none weakened**; the
+**Cyclopean-1f caveat stands and 1f was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first time.
+One note recorded rather than changed: the comparator prints the literal
+`MULTIOBJECT3C_COMPLETE` **before** its failure list and signals failure only via
+exit code 1 and a non-empty `structural_fails`. Here it exited 0 with an empty
+list, so the label is accurate - but on a failing record the prefix would mislead,
+and a reader must check the exit code and the list, not the word.
+
+What this establishes: **the scene-level machinery repeats without special
+treatment** - id and pre-existing set consumed from the parent, seed reproduced
+byte-identically and reused, the **already-frozen 2c adapter reused unchanged
+rather than copied**, frozen FSG6f / 12 mm / 5-deg lattice / generic renderer all
+untouched, existing objects byte-identical, new map pure at all 13 saves, every
+fusion idempotent, four footprints disjoint. And, new: **the frozen policy reached
+its own scientific stop for the first time in this series**, and **the empty-look
+branch was exercised for the first time** - both from identical machinery, so the
+difference is the object, not the instrument. What it does not establish: **a
+scientific stop is not object completeness** - the controller stopped because it
+generated no admissible candidate with **30 frontier voxels still open**, bounding
+the policy's reach rather than the geometry, and 6,426 points at 1.75x is a small
+map by any comparison here; **no accuracy claim**, truth stayed closed; **no claim
+the low recovery is irreducible** - no alternate matcher, baseline, vergence or
+illumination was tried, by design; **no explanation of why the stop came early** -
+that `no_frontier` and low texture co-occur is an observation, not a demonstrated
+mechanism, and **nothing was tuned to test it**; **zero overlap is still not an
+invariant**; and **no discovery, revisit scheduler, scene scheduler, semantic
+ranking, mesh or interpolation** was introduced, with 142 and 143 still retained as
+unfinished. **Next: audit object 145's residual epistemic state and continue scene
+progress.** Stopped for Luiz/Chat.
