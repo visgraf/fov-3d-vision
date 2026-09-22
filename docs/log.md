@@ -8423,3 +8423,132 @@ invariant**; and **no discovery, revisit scheduler, scene scheduler, semantic
 ranking, mesh or interpolation** was introduced, with 142 and 143 still retained as
 unfinished. **Next: audit object 145's residual epistemic state and continue scene
 progress.** Stopped for Luiz/Chat.
+
+### 2026-09-22 - MultiObject-3d, epistemic audit of the first frozen-policy stop: no_frontier was policy exhaustion, not attention completion, and the 3D frontier was not pointing at the unseen territory
+
+Package `6e5a1c7` (seven files, all `A`); parent result `b3c2186`. Host-side only:
+`.venv/bin/python` 3.12.3, **no Blender, no Cycles, no GPU**, `pgrep blender` 0
+before and after, **2.7 s**. `MULTIOBJECT3D_COMPLETE`, `structural_fails: []`, no
+FAIL line anywhere; `tools/multiobject3d_compare.py` exited 0 with
+`structural_fails: []`.
+
+**The answer is unambiguous: `POLICY_EXHAUSTED_WITH_UNSEEN_TERRITORY`.** The first
+`no_frontier` stop did **not** mean attention completion. **20 exterior
+`NEVER_OBSERVED` cells remain** in **two compact arcs** (13 and 7 cells), both
+with **zero supported projections** across all 13 completed views, both **outside**
+the visited gaze envelope, **0.98-3.98 deg beyond the rightmost gaze** and
+**5.88 / 6.63 deg** from the nearest completed fixation.
+
+**The sharper finding is the relation, not the count.** All **30** final OPEN 3D
+frontier targets quantize **inside** the visited gaze envelope - **0 outside** -
+at 0.62 to 4.37 deg (median 2.11) from a completed gaze, and **not one lands on a
+`NEVER_OBSERVED` cell**: **17 of 30 land on already-mapped SUPPORT**, 6 on
+complement-nonshoreline, 5 on `OBSERVED_TARGET_NO_DEPTH`, 1 each on
+`OBSERVED_NONTARGET_ONLY` and `NO_RANGE_REFERENCE`. **The policy did not decline
+to go to the unseen territory - it had no representation of it to act on.** The
+two representations disagree about where the unfinished business is, and this
+audit measures that disagreement without changing either.
+
+**Exact stop replay, the precondition for any interpretation.** Reconstructed from
+the final map, final saved observation, the complete 13-gaze list and the saved
+binocular history through the **unchanged** `multiobject2c_policy.py` adapter:
+**all eleven compared fields matched** - `stop` True, `reason` `no_frontier`,
+`frontier_voxel_count` 1368, `frontier_count`/`frontier_raw_count` 72,
+map_resolved 1, boundary_resolved 41, open 30,
+**`candidates_before_consensus_count` 0**, `consensus_rejected_candidate_count`
+0, `next_gaze_deg` null. An independent re-extraction of the frontier itself
+reproduced 72 entries partitioned 30/1/41. **The controller generated no candidate
+at all** - not candidates generated then rejected, since the rejected count is
+also 0.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`b3c2186` - 291 files** - compared; the diff is **empty, 0 lines**, all **291
+sha256 SAME**, and the changed-file list is the seven new 3d files and nothing
+else. Parent by manifest with **all three required stop gates** verified:
+`termination_reason no_frontier`, `scientific_stop_reached true`, fixations **13 <
+watchdog 24**. **Id consumed**: `multiobject3d_audit.py:56` reads
+`selected_object_id`; **the literal `145` appears zero times in all five 3d
+sources, including the checker**.
+
+Read-only: `grep -cil "subprocess|blender|bpy|cycles"` over the audit returns
+**0**; **all 35 pinned inputs byte-identical** (5 parent files, 4 object geometry
+sources, all **26** saved calibration/observation files); objects 141 (155,684
+`{141}`), 142 (310,884 `{142}`), 143 (42,988 `{143}`), 145 (6,426 `{145}`) pure
+and unchanged; `acquisitions_added` 0, `growth_iterations_added` 0,
+`watchdog_changed` false, `parent_files_modified` false, truth closed.
+
+Scope **13 looks, steps 66..78** - the 3b seed plus the twelve 3c growth looks,
+contiguous. Object-scoped chart **104 x 154** at **0.1 deg**, yaw0 +15.10, pitch0
+-7.20 (16,016 cells). Footprint from the **unchanged 12 mm** radius at this
+object's own range: `atan(0.012 / 2.7627) = 0.2488695 deg` -> 2.49 -> **3 cells**,
+matching the report exactly. Map 6,426 points -> raw support **2,041** (identical
+to 3c's published footprint) -> support **9,198**, complement 6,818, shoreline
+**2,516**.
+
+Base states: `UNOBSERVED` **2,416** (96.0%), `PHYSICAL_DEPTH_BREAK` **55**,
+`AMBIGUOUS` **45**, **`TARGET_CONTINUATION` 0**. Refined over the 2,416, all /
+exterior / internal: **`OBSERVED_TARGET_NO_DEPTH` 1,514 / 1,043 / 471**;
+`NO_RANGE_REFERENCE` 720 / 561 / 159; `OBSERVED_NONTARGET_ONLY` 142 / 142 / 0;
+**`NEVER_OBSERVED` 20 / 20 / 0**; `MIXED_OBSERVATION` 20 / 20 / 0;
+**`OBSERVED_TARGET_WITH_DEPTH` 0**. Whole-shoreline composition:
+seen-but-unmeasured **60.2%**, `NO_RANGE_REFERENCE` 28.6%, nontarget-only 5.6%,
+observed boundary structure 4.0%, **unseen 0.8%**, mixed 0.8%. **Seen-but-
+unmeasured outnumbers unseen 75.7 to 1** - the most extreme ratio in the
+programme (143 was 18.2x the same way; 142 inverted at 7.9x unseen). Evidence
+totals: `OBSERVED_TARGET_NO_DEPTH` carries **4,633 supported projections, all
+target-seen, 0 with valid depth**; `NEVER_OBSERVED` and `NO_RANGE_REFERENCE`
+carry 0.
+
+Components **16**: one EXTERIOR of 5,618 cells at max border depth **47**, plus 15
+INTERNAL holes sized 1,1,1,1,2,2,2,3,8,**154,180,190,203,221,231** - the six large
+ones are the gaps between the structure's fronds. **613 arcs**; the unseen
+territory is just **2 EXTERIOR `NEVER_OBSERVED` arcs** at border depth 16-17
+(against the chart max of 47, so **not** the deepest pockets), centroids
+(+24.22,-5.69) and (+22.10,-5.74), spans 1.2x0.5 and 0.7x0.4 deg.
+
+Visual. `object_145_epistemic_stop_shoreline.png` - a **pixel census reproduces
+the report exactly on all eight classes** (9,198 / 1,514 / 720 / 142 / 55 / 45 /
+20 / 20 plus 4,302 background = all 16,016 cells). The support is **not a blob but
+a comb**: a solid vertical spine with a dozen rib-like fronds curving off each
+side, a pleated drapery seen edge-on - precisely the textured seams a matcher can
+lock onto in an otherwise flat surface. **Every frond edge is traced in orange**
+(`OBSERVED_TARGET_NO_DEPTH`), which is why 60% of the residue is seen-but-
+unmeasured; blue and purple appear only as specks on the left edge; and the **20
+unseen cells are a single small red patch at the lower right**, exactly where the
+numbers put it - past the right edge of everything the observer looked at.
+
+Status and disposition from the literal zero/non-zero rules only: exterior
+`NEVER_OBSERVED` 20 > 0 at a genuine `no_frontier` stop ->
+**`POLICY_EXHAUSTED_WITH_UNSEEN_TERRITORY`** and
+**`ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`**. **No count was compared against any
+threshold**; `quality_gate_used` false. **`scene_disposition =
+MOVE_TO_NEXT_OBJECT`**, unconditionally.
+
+Checks: `py_compile` clean, progress self-test passes, the three prescribed lines
+verbatim, `SUMMARY passed=7 failed=0`. **All eight negatives are genuine
+source-mutation controls** with exactly the documented detectors, **none exiting
+2**; the **exit-2 escape branch was verified live**. **25/25 prior suites green,
+162/162 prior negatives firing, none weakened**; the **Cyclopean-1f caveat stands
+and 1f was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first
+time.
+
+What this establishes: **the first `no_frontier` stop was policy exhaustion, not
+attention completion** - the stop is genuine and **exactly reproducible**, yet 20
+exterior cells were never observed at all; and, mechanistically, **the 3D frontier
+was not pointing at them** - all 30 OPEN targets fall inside the already-visited
+envelope and 17 of 30 onto already-mapped support. Also, as a diagnostic: **the
+dominant residue is seen-but-unmeasured at 75.7x the unseen count**, the low-
+texture signature 3b first measured at 6.68%. What it does not establish: **not a
+defect claim against FSG6f** - the controller behaved as specified, and **nothing
+was tuned, extended or rescued**; this audit did not test whether a different
+candidate generator, corridor rule or lattice would have reached the arcs. **No
+accuracy claim**, truth stayed closed. **No object completeness** - 20 unseen cells
+bound attention, not geometry, and the 1,514 unmeasured cells bound nothing about
+the surface behind them. **No claim the unmeasured residue is irreducible** - no
+alternate matcher, baseline, vergence or illumination was tried, by design.
+**`NO_RANGE_REFERENCE` remains bookkeeping.** And **the counts gated nothing**.
+**Next: next-object selection from updated scene memory**; object 145 stays
+retained for possible revisit, and whether the gap between the 3D frontier and the
+cyclopean field deserves attention is a judgement for Luiz/Chat. Stopped.
