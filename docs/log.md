@@ -7392,3 +7392,138 @@ object-scoped watchdog, accept edge-concentrated coverage as the practical
 outcome for low-texture architecture, or move to cyclopean completion for object
 143 is a decision for Luiz/Chat. No D-MULTIOBJECT1B2 outcome is recorded because
 the scientific stop was not reached.** Stopped for Luiz/Chat.
+
+### 2026-09-21 - MultiObject-1c, object-143 epistemic audit: the residue is 18 times more seen-but-unmeasured than unseen, and the scene moves on
+
+Per `docs/multiobject1c.md`, `docs/multiobject1c-checks.md` and the prospective
+package Luiz applied and committed as **`3f3394b`** (parent result `6b722d0`).
+
+**Measured outcome. `MULTIOBJECT1C_COMPLETE`, `structural_fails: []`.**
+Read-only - **no Blender process, no acquisition, no fusion** - with all **54**
+pinned inputs byte-identical afterwards.
+**`object_143_status = ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`**,
+**`scene_disposition = MOVE_TO_NEXT_OBJECT`**.
+
+**The audit answers the question it was built for: the residue object 143 carries
+forward is overwhelmingly seen-but-unmeasured, not unexplored.**
+`OBSERVED_TARGET_NO_DEPTH` **15,089** cells against `NEVER_OBSERVED` **830** - a
+**18.2 : 1** ratio, **73.6%** versus **4.1%** of the refined shoreline. These are
+measurements, not thresholds.
+
+Provenance. Clean tree; **exactly seven files, all `A`**; `git diff` against
+`6b722d0` over **63 frozen sources** - every FSG1/FSG3/FSG6f source, scene, rig,
+pin file, every Reality Check 1/2/2b source, `scene_render_fix.py`, every
+Cyclopean-1a..1g source and every MultiObject-1a/1b/1b2 source - **empty (0
+lines)**, all 63 SAME; the reused epistemic machinery untouched
+(`cyclopean1b_boundary.py` `b34371ce8ffa86c7`, `cyclopean1d_epistemic.py`
+`559351701151a144`, `cyclopean1d_audit.py` `2f9b92537bb1556b`,
+`cyclopean1a_topology.py` `6ed00fca00907f33`). Parent located **by manifest**
+with **all ten required conditions holding** (schema
+`MultiObject1b2-resume-object143-growth-v2`, seed 2111, profile full,
+truth_opened false, object_ids [141,143], map pure {143},
+object_2_fixations_total 24, termination_reason `object2_watchdog`,
+scientific_stop_reached false, structural_fails []).
+
+**Read-only integrity**: 54 inputs pinned and re-hashed - five parent files
+(manifest `74d5cc0f58a2c590`, `object_143_surface_map.npz` `bbc4b856a07d2be5`,
+`scene_graph.json` `5df35f372460399`, `scene_cyclopean_footprints.npz`
+`5ef4982532f8bde2`, `object_143_policy_trace.json` `c17589df1aa18b4c`), the
+inherited object-141 source `6ac98f6251b47337...f71e524a`, and **all 24
+calibration/observation pairs for global steps 18-41** - **all byte-identical**.
+No `subprocess`/`blender`/`bpy` token in any 1c source, no Blender process, and
+exactly three host artifacts with no acquisition dir, `.exr`, `.ply` or render
+log. `acquisitions_added: 0`, `object_1_read_only: true`, `truth_opened: false`;
+object 141 still 155,684 points, ids {141}. Host `.venv/bin/python` 3.12.3,
+**Interactive at 10.6 s**.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. All six
+negatives are **genuine source-mutation controls**, each exiting 1 with the
+expected detector and none exiting 2 (`acquire`->`read_only_no_acquisition`,
+`object1active`->`object143_only_object141_read_only`,
+`depthonly`->`observation_separate_from_depth`,
+`threshold`->`frozen_scale_no_new_threshold`,
+`watchdog`->`watchdog_not_extended_no_policy_loop`,
+`qualitygate`->`scene_progress_not_quality_gated`). **No regression**: 13 prior
+suites green, **92 prior negatives** firing.
+
+Chart and inherited scale: **598 x 331** cells, grid **0.1 deg**, yaw0 -31.10,
+pitch0 -10.20; footprint **2 cells / 0.19584847743640496 deg**; map **42,988**
+points; **24** observations replayed (steps 18-41); raw support 17,947, support
+**65,971**, complement 131,967, shoreline **20,799**; complement components
+**489** - **1 EXTERIOR** (118,687 cells) and **488 INTERNAL** (13,280 cells,
+largest 1,407); max exterior penetration depth **288**. The footprint differs
+from object 141's 4 cells / 0.322236 deg because it is the **same frozen 12 mm
+rule at object 143's own median range**: `atan(0.012/3.510605) =
+0.19584847743640496`, reproduced to 1e-12. The metric scale is unchanged; only
+the angular subtense is smaller because the object is farther. No new tolerance.
+
+Base Cyclopean-1b states: `UNOBSERVED` **20,489**, `PHYSICAL_DEPTH_BREAK` 201,
+`AMBIGUOUS` 109, `TARGET_CONTINUATION` 0 - summing to the 20,799 shoreline cells.
+Only the 20,489 base-UNOBSERVED cells were refined.
+
+Refined Cyclopean-1d states (total / exterior / internal / arcs):
+`NEVER_OBSERVED` **830 / 830 / 0 / 73**; `OBSERVED_TARGET_NO_DEPTH` **15,089 /
+7,274 / 7,815 / 687**; `OBSERVED_TARGET_WITH_DEPTH` **1 / 1 / 0 / 1**;
+`OBSERVED_NONTARGET_ONLY` **816 / 816 / 0 / 195**; `MIXED_OBSERVATION` **88 / 88
+/ 0 / 66**; `NO_RANGE_REFERENCE` **3,665 / 2,363 / 1,302 / 3,088**. Sums exact:
+20,489 total = 11,372 exterior + 9,117 internal, 4,110 arcs. **Exterior
+`NEVER_OBSERVED`** is 830 cells in 73 arcs with deepest inherited border distance
+**226**, the largest arc only **125** cells at (-10.753, -8.982) with its own max
+depth 23 - **73 shallow rim scraps, not one deep pocket**.
+`OBSERVED_TARGET_NO_DEPTH` dominates and is the only state with substantial
+**internal** presence (7,815 cells), matching the 488 interior components - holes
+inside already-visited territory. `OBSERVED_TARGET_WITH_DEPTH` fired exactly
+**once**, recorded as an honest near-null.
+
+Inherited final FSG6f decision from the parent trace, global step **41** /
+object-fixation 23: `stop: false`, `reason: 'continue'`, next gaze **(+6.5029,
+-12.9404)**, `frontier_count` **991**, **`frontier_open_count` 696**,
+map_resolved 43, boundary_resolved 252, frontier_voxel_count 18,125, 4 candidates
+before consensus, 0 rejected. **This audit explains that open frontier**: the
+policy correctly kept saying continue, but the territory behind those 696 voxels
+is largely surface already looked at and unmeasurable, not surface yet to visit.
+
+Visual reading. `object_143_epistemic_shoreline.png` shows object 143's support
+as a **frame** - broad marbled band across the top, vertical bands both sides, a
+band along the bottom, surrounding a large white interior that is object 141's
+territory and correctly not 143's. The shoreline is overwhelmingly **orange
+`OBSERVED_TARGET_NO_DEPTH`**, lying *inside* the support, lacing through the
+marbled band and outlining hundreds of interior holes. **Red `NEVER_OBSERVED`**
+appears only as a thin trace on the **outer** rim - far left, bottom-left, bottom,
+outer right - with **cyan `OBSERVED_NONTARGET_ONLY`** in places along that same
+boundary. **Object 143's outer extent is essentially delimited; what is missing is
+depth within what it has already seen.**
+
+Status and disposition: `ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT` because exterior
+`NEVER_OBSERVED` is **830 > 0** - the literal rule, no threshold - and
+`scene_disposition = MOVE_TO_NEXT_OBJECT` with `next_stage = 'next-object
+discovery/selection'`, reported **regardless** of the status, as designed. Worth
+stating precisely because the label alone could mislead: **the status reads
+"attention incomplete" on 830 remaining unseen cells while the residue is 18.2
+times more seen-but-unmeasured than unseen.** Both facts are recorded; neither is
+a gate.
+
+**No structural FAIL line and no code fix**; no file was modified. One note on my
+own tooling: my first integrity checker mis-resolved the `fix_18` seed
+acquisition, because MultiObject-1a stores its case as `acquisition/fix_18`
+directly while 1b/1b2 use `acquisitions/fix_NN/fix_NN`. That was a defect in my
+scratchpad script, not in the audit or the data; corrected to handle both
+layouts, after which all 54 inputs verified byte-identical. No repository file was
+involved.
+
+What this establishes: **the two causes of residual frontier are now separated,
+and they are not equally responsible** - 73.6% seen-but-unmeasured against 4.1%
+genuinely unseen, so **raising the watchdog would mostly buy more looks at surface
+the instrument has already failed to measure**, exactly the conflation the audit
+existed to prevent; the dominant residue is also **internal** (7,815 no-depth
+cells across 488 interior components), holes inside visited territory rather than
+an outward frontier; and all of this was done **read-only**. What it does not
+establish: **no accuracy claim**, truth stayed closed; **no threshold** - 830,
+15,089 and 18.2:1 are measurements and the disposition is independent of them;
+**why stereo fails is not explained** - the audit reads saved validity and adds no
+texture measure, matcher change, illumination or layered occlusion model; **the
+830 unseen cells are not shown to be reachable**; **`NO_RANGE_REFERENCE` (3,665)
+remains unclassified** by the inherited local-range rule;
+`OBSERVED_TARGET_WITH_DEPTH` fired once so that state is unexercised; and
+**nothing about objects 141/142/144/145 is established** - discovery remains
+deferred, which is the next stage. Stopped for Luiz/Chat.
