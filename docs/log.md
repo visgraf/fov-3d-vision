@@ -7792,3 +7792,131 @@ automatic scheduling** beyond the single completed 2a selection; and **object 14
 remains retained for revisit** under 1c's disposition. **Next stage: grow the
 newly seeded object 142 independently while keeping 141 and 143 stable.** Stopped
 for Luiz/Chat.
+
+### 2026-09-22 - MultiObject-2c, grow the scene-selected third object: object 142 reaches 310,884 pure surfels at 8.2x, but stops on the watchdog with 650 of 679 frontier voxels still open
+
+Package `b623dea` (seven files, all `A`); parent result `97ba8cf`. Ran on the
+workstation: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on an RTX 4090 (driver
+595.84), host `.venv/bin/python` 3.12.3. **4 m 21 s** total, **260.0 s** of it the
+growth loop - 23 Blender launches.
+
+**`MULTIOBJECT2C_COMPLETE` structurally, `structural_fails: []`, no FAIL line
+anywhere - but `termination_reason: object3_watchdog` with
+`scientific_stop_reached: false`, and that is not success.** The frozen policy
+returned `continue` at **all 24** of its decisions and never once returned
+`no_frontier`.
+
+MultiObject-2b instantiated object 142 as a third entity and stopped; 2c adds the
+one difficulty left - **grow it with the frozen mechanism** - and nothing else.
+
+Frozen audit. `git diff 97ba8cf HEAD` over **75 frozen sources** (every FSG1/FSG3/
+FSG6f source, scene, rig, pin file, every Reality Check 1/2/2b source, **both
+renderers**, every Cyclopean-1a..1g and every MultiObject-1a/1b/1b2/1c/2a/2b
+source) is **empty, 0 lines**, all 75 sha256 SAME: `fsg6f_frontier.py`
+`d636c9405d719916`, `multiobject1b_policy.py` `4068b3a4ecd7d645`,
+`scene_render_fix.py` `6e70bbb78c1043ec`, `fsg3_surface_map.py`
+`1b9dbeb873105ec9`, `reality2b_public.py` `dfe1ca243c4c1543`.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim -
+`[multiobject2c-growth] PASS parent_selected=true preexisting_read_only=true
+selected_only=true frozen_fsg6f=true seed_scoped_history=true`,
+`[multiobject2c-instrument] PASS generic_renderer=true
+object_scoped_watchdog=true empty_evidence=true texture_diagnostic=true
+scheduler=false`, `[multiobject2c-check] SUMMARY passed=6 failed=0`. **All seven
+negatives are genuine source-mutation controls**, each exiting 1 and naming its
+detector (`handpick`->`parent_selected_target_not_handpicked`,
+`crossfuse`->`preexisting_read_only_selected_only_growth`,
+`copypolicy`->`frozen_fsg6f_adapter`, `priorhistory`->`seed_scoped_history`,
+`legacyrenderer`/`globalwatchdog`->`generic_renderer_object_scoped_watchdog`,
+`texturegate`->`empty_evidence_texture_diagnostic_no_scheduler_gate`), **none
+exiting 2**. **All 16 prior suites green and 110 prior negatives still firing,
+none weakened** (multiobject2b/2a/1c/1a 6/6, multiobject1b2 7/7, multiobject1b
+6/6, cyclopean1g..1a 6/6 each, reality2b 7/7 (10/10), reality1 6/6, fsg6f 14/14
+(15/15)).
+
+**The id is consumed, not declared.** Parent located **by manifest** - the one
+`MultiObject2b-seed-selected-object-v1` record at seed 2111 with `truth_opened`
+false - and `multiobject2c_run.py:55` reads `int(m.get("selected_object_id", -1))`
+from it. **The literal `142` appears nowhere in any MultiObject-2c source.**
+
+**Seed reproduced, not trusted.** Re-running `compute_once` on `fix_42` and
+selecting `valid & (instance_id == 142)` gives **38,020** points, `xyz`
+**byte-identical** to the saved 2b patch, ids `{142}`. The seed acquisition was
+**reused, never rerendered**: `parent_fixations_rerendered: 0`, `fix_42` absent
+from the 2c output.
+
+Read-only. **All 9 pinned inputs byte-identical afterwards**; **141** 155,684
+points ids `{141}` and **143** 42,988 ids `{143}`, both unchanged.
+`policy_source_modified: false`, `truth_opened: false`, `quality_gate_used:
+false`, `automatic_scene_scheduler: false`, `automatic_object_discovery: false`,
+`renderer_entrypoint: tools/scene_render_fix.py` - the legacy
+`reality2_render_fix.py` is not referenced anywhere in the 2c sources.
+
+Growth. History begins at the 2b seed (global step 42); 23 added fixations at
+global steps **43-65** on the frozen 5-degree lattice, sweeping pitch -8.811 /
+-13.811 / -18.811 across yaw -21 to +24. Object 142 grew **38,020 -> 310,884**
+surfels (**8.2x**), **pure `{142}` at every one of 24 saved maps** - never
+admitting 141, 143, 144 or 145 - **all 24 replay-idempotent**, **no empty looks**
+(`empty_steps: []`; every look far exceeded the inherited `<100` limit, so the
+Reality-2b negative-evidence branch was **not exercised**). Multi-look surfels
+**130,949**, max support **8**, range **1.3565 / 2.4113 / 4.0649 m**;
+`object_142_surface_map.ply` carries **310,884** vertices.
+
+**Texture-recovery diagnostics, descriptive only** (`texture_diagnostics_are_gates:
+false`): per-look target depth recovery **min 58.8%, median 70.3%, max 77.3%** -
+a narrow, consistently high band, against object 143's **1.4-2.5%** on its
+low-texture architectural surface. **These numbers ranked nothing, stopped
+nothing and gated nothing.**
+
+**Termination.** `object3_watchdog`, `selected_object_fixations_total: 24` =
+`watchdog_selected_object_fixations: 24`, `scientific_stop_reached: false`. At
+the final decision the policy wanted gaze **(+9.0, -18.811)** with **650 open
+frontier voxels of 679** (16 map-resolved, 13 boundary-resolved) - **95.7% of the
+frontier still open**, proportionally *more* open than object 143 at its own
+watchdog (696 of 991, 70.2%). **Object 142 is nowhere near exhausted.**
+
+Scene. 141 `SURFEL_MAP` 155,684 read-only, **37,654** cells (376.54 deg2); 143
+`SURFEL_MAP` 42,988 read-only, **17,947** (179.47 deg2); **142 `SURFEL_MAP`
+310,884, 62,784 cells (627.84 deg2)** - grown from 9,624 cells at seed, **now the
+largest footprint in the scene, larger than 141 and 143 combined**. Shared chart
+**624 x 488**, grid 0.1 deg; 142 spans yaw [-29.80,+30.50], pitch
+[-25.20,-9.00]. **Overlap as measurement, never a gate: 141&142 = 0, 141&143 = 0,
+142&143 = 0, all three = 0** - still disjoint after a 6.5x footprint expansion.
+
+Visual reading. `object_142_growth.png` (24 panels) shows genuine **area-filling**
+growth: a compact seed block at lower right, a horizontal band extended leftward
+by look 5, thickened downward with a bottom-centre notch by look 11, solid by
+look 17, and a continuous densely filled expanse spanning the full width at the
+end - **interiors filled solid, not hollow**. That is the visible counterpart of
+the ~70% recovery, and the sharpest contrast with object 143, whose growth under
+1.4-2.5% recovery was edge-concentrated lacework with unfilled interiors.
+`scene_cyclopean_footprints.png` shows 141's cloth quadrilateral with its seams
+and the black emblem ellipse still visible, 143's architectural frame around it,
+and **142 as a broad wood-grain expanse filling the entire lower half**.
+
+**No structural FAIL line and no code fix**; no file was modified by the run.
+
+What this establishes: **the frozen single-object growth mechanism works on a
+target chosen by scene memory** - the id consumed from the 2b manifest rather
+than declared, the seed reproduced byte-identically and reused without
+rerendering, and the frozen FSG6f controller reached only through a pure label
+adapter driving 23 further fixations to **310,884 pure surfels at 8.2x**, with
+**141 and 143 byte-identical** and all three footprints **mutually disjoint** -
+the complete selection -> seed -> growth chain now runs end to end without
+cross-object contamination. Also recorded as a diagnostic contrast: **the
+measurement regime differs enormously between objects**, 58.8-77.3% against
+1.4-2.5%, visible in filled interiors versus lacework. What it does not
+establish: **the scientific question is open** - termination was the
+object-scoped **watchdog**, not `no_frontier`, with the policy saying `continue`
+24 times of 24 and 650 of 679 frontier voxels still open, so this shows only that
+growth does not terminate within 24 looks, **not where it would end**; **the
+watchdog is not scientific success**; **no object completeness** - 627.84 deg2 of
+footprint says nothing about how much of 142 exists; **no accuracy claim**, truth
+stayed closed, so 310,884 points describe the representation and not the scene;
+**the empty-look branch remains untested**; **zero overlap is still not an
+invariant**, it survived this expansion in this configuration and nothing more;
+and **no discovery, scheduler, semantic ranking, mesh or interpolation** was
+introduced, with **object 143 still retained for revisit** under 1c's
+disposition. **Because the scientific stop was not reached, whether to raise the
+object-scoped watchdog for 142, accept the current coverage, or move to another
+scene-level decision is a judgement for Luiz/Chat.** Stopped.
