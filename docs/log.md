@@ -7126,3 +7126,126 @@ spent, leaving at most 5 renders under this acquisition path.** That ceiling, no
 object 143, stopped this run. **Resolving it is a design decision for Luiz/Chat;
 no D-MULTIOBJECT1B outcome is recorded because none was reached.** Stopped for
 Luiz/Chat.
+
+### 2026-09-21 - MultiObject-1b2, resumed object-143 growth: BLOCKED - the renderer-equivalence gate is unsatisfiable, and the frozen renderer fails it too
+
+Per `docs/multiobject1b2.md`, `docs/multiobject1b2-checks.md` and the prospective
+package Luiz applied and committed as **`c0d2fc2`** (pre-package parent
+`ea873ed`, the blocked MultiObject-1b commit).
+
+**Measured outcome. `MULTIOBJECT1B2_BLOCKED` - no new scientific view was acquired
+and no completion is claimed.** The partial-reuse half of the design worked
+perfectly; the gate that guards it cannot pass, **and neither can the frozen
+legacy renderer**. Per the contract - *"If renderer equivalence fails, stop. Do
+not loosen exact equality or alter the instrument to force passage"* - the run
+stops and reports.
+
+**The replay half worked exactly.** Replaying the blocked MultiObject-1b record
+through the frozen policy reproduced all six object-143 maps **byte-identically**:
+`map_18` 5,344 / `map_19` 7,757 / `map_20` 11,391 / `map_21` 12,810 / `map_22`
+13,942 / `map_23` 15,589 surfels, every one with xyz and support arrays equal,
+ids pure **{143}**, and byte-identical files. The five successful looks were
+**reused, not rerendered** - the partial record's `fix_19`..`fix_23` are untouched
+and no `fix_24` was created in it. Global chronology preserved; nothing
+renumbered.
+
+**The gate failed, and the breakdown matters.** At the saved step-23 gaze
+(-23.4970979736, +12.0596257012) the generic `tools/scene_render_fix.py` gave
+`AssertionError: generic scene renderer failed exact legacy-equivalence check:
+calibration=True arrays=False`. By array: `calibration.json` **exactly equal**;
+`instance_L` and `instance_R` **bitwise equal**; `rgb_L` differing on 582,550 of
+1,228,800 (**47.408%**) and `rgb_R` on 562,419 (**45.770%**), both with max
+|delta| **7.748604e-07** - **6.5 float32 ulp at 1.0**. Both renderers reported the
+same **209,715,200** samples and identical observation key sets. Everything
+deterministic matched exactly, including both oracle first-hit masks that carry
+the geometry and segmentation the experiment depends on.
+
+**The decisive test: the frozen renderer cannot reproduce its own saved output.**
+Rather than assume the new renderer was at fault, `reality2_render_fix.py` was
+re-run at the same step and gaze - into the session scratchpad only, leaving the
+record untouched - and compared with its **own** saved arrays: `rgb_L` differing
+**47.458%**, `rgb_R` **45.669%**, max |delta| 7.152557e-07 / 8.344650e-07, with
+calibration re-matching exactly and both instance masks bitwise equal.
+Generic-vs-legacy-re-render differs by the same amount (47.212% / 45.563%, max
+8.344650e-07). **Cycles/OPTIX radiance accumulation on this platform is not
+bit-deterministic across processes at the ~6-8 ulp level.** The gate compares all
+observation arrays with `np.array_equal`, so **it measures GPU bit-determinism
+rather than renderer equivalence, and no renderer can pass it - including the one
+it is meant to validate against.** That is a defect in the gate's exactness
+criterion, not evidence the instrument changed.
+
+**Nothing was changed, because every remedy is a decision**: loosening to a
+tolerance is explicitly forbidden and would introduce a new constant defining
+instrument identity; comparing only the deterministic arrays (calibration plus
+instance masks, which already match bitwise) redefines what the gate asserts;
+forcing determinism alters the instrument; re-rendering steps 19-23 with the
+generic renderer would discard the reuse the experiment exists to demonstrate.
+**None was taken; no file was modified.**
+
+Provenance. Clean tree; **exactly the seven expected files, all `A`**, including
+the authorized new entry point `tools/scene_render_fix.py`; `git diff` against
+`ea873ed` over **58 frozen sources** - every FSG1/FSG3/FSG6f source, scene, rig,
+pin file, every Reality Check 1/2/2b source, every Cyclopean-1a..1g source and
+every MultiObject-1a/1b source - **empty (0 lines)**, all 58 SAME, with the frozen
+`reality2_render_fix.py` untouched at `9f1433d189fbcbb5...`. The new renderer's
+instrument delegation was inspected rather than assumed: `VERGENCE_DISTANCE_M`,
+`DEFAULT_SPP`, `SEEDS` and `render_seed(...)` from `reality2_public`, scene and
+texture from `reality1_scene`, same `make_calibration(...)` and
+`base.check_renderer_equivalence()`; its only substantive difference is requiring
+`step >= 0` instead of `6 <= step < 24`. Inputs located **by manifest**: exactly
+one `MultiObject1a-second-object-seed-v1` seed-2111 `full` record, and the blocked
+partial verified as the reported one (no completed manifest, maps 18-23
+contiguous, acquisitions 19-23, no acquisition 24, all maps pure id 143,
+diagnostic step-24 log present). **All 15 pinned inputs byte-identical after the
+failed run** - three 1a files, six partial maps, five partial patches and the
+object-141 source `6ac98f6251b47337...f71e524a`. **Object 141 did not change by a
+single byte.**
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **9.9 s** to the gate failure, plus one
+scratchpad diagnostic re-render.
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. All six negatives
+are **genuine source-mutation controls**, each exiting 1 with its detector named
+and none exiting 2 (`globalcap`->`generic_renderer_no_global_cap`,
+`instrument`->`physical_instrument_frozen`,
+`rerenderpartial`->`partial_history_reused_not_rerendered`,
+`noequivalence`->`renderer_equivalence_required`,
+`crossfuse`->`object141_read_only_object143_only`,
+`globalwatchdog`->`object_scoped_watchdog_no_discovery`). **No regression**: 12
+prior suites green, **85 prior negatives** still firing.
+
+**Not reached, and therefore not reported as measurements**: the first new global
+step 24 was never acquired; object 143 remains at its resumed **15,589** surfels;
+there is no new fixation sequence, termination reason, empty look, per-look fusion
+or idempotence figure, and no new footprint or growth visual. The policy's own
+stop and the 24-object-fixation watchdog were both untested.
+`multiobject1b2_compare.py` had no completed record and was not run. The carried
+object-143 state is unchanged from 1b: 15,589 surfels, pure {143}, policy last
+returning `continue` with 1,193 open frontier voxels of 1,264, at **6 of 24**
+object-scoped fixations.
+
+Structural failures: the blocking `AssertionError` above. **No integrity
+failure** - 15/15 pinned inputs byte-identical, object 141 unchanged, no `fix_24`
+anywhere, partial acquisitions untouched, replayed maps pure id 143, no evaluator
+truth opened. **Code fixes: none.**
+
+What this establishes: **the reuse mechanism is exact** - all six maps reproduced
+byte-identically with pure ids and no rerender, so that half of the design needs
+nothing further; and, substantively, **the two renderers agree on every quantity
+this platform reproduces at all** (calibration exact, both instance masks bitwise
+equal, same sample budget) while **radiance is not bit-reproducible even by the
+frozen renderer against its own output**, so the gate measures GPU determinism
+rather than instrument identity and **cannot be satisfied by any renderer**. What
+it does not establish: **nothing about object-143 growth past step 23** - no view
+was acquired, so the actual scientific questions (does it reach `no_frontier`,
+does it hit the watchdog, how does the low-texture surface behave, does
+measurement deficit appear) are all untouched; **no accuracy claim**; and
+**nothing licenses a tolerance** - that the frozen renderer also fails the exact
+test shows the criterion is wrong, not what the right one is. **Resolution is a
+design decision for Luiz/Chat**: narrow the gate to the deterministic arrays that
+already match bitwise, adopt an explicit justified radiance tolerance, or require
+a deterministic render configuration. The continuation is otherwise ready - the
+reuse path is proven exact and the only obstacle is how instrument identity should
+be tested. **No D-MULTIOBJECT1B2 outcome is recorded because none was reached.**
+Stopped for Luiz/Chat.
