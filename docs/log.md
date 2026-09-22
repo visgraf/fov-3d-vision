@@ -8060,3 +8060,108 @@ are irreducible** - no alternate matcher, baseline, vergence or illumination was
 tried, by design. **`NO_RANGE_REFERENCE` is bookkeeping, not a finding.** And **the
 counts gated nothing**. **Next: next-object selection from updated scene memory**;
 object 142 stays in persistent memory for possible revisit. Stopped for Luiz/Chat.
+
+### 2026-09-22 - MultiObject-3a, next-object selection from updated scene memory: object 145 wins on 13,047 valid-depth samples, but the larger memory did not change the answer
+
+Package `69c1a49` (seven files, all `A`); parent result `a2d8b5e`. Host-side only:
+`.venv/bin/python` 3.12.3, **no Blender, no Cycles, no GPU**, `pgrep blender` 0
+before and after, **7.2 s** replaying 48 saved looks, **no acquisition directory**
+in the output. `MULTIOBJECT3A_COMPLETE`, `structural_fails: []`, no FAIL line
+anywhere; `tools/multiobject3a_compare.py` printed `MULTIOBJECT3A_COMPLETE` with
+`structural_fails: []` and exited 0.
+
+MultiObject-2d released scene progress while retaining object 142 as incomplete.
+3a repeats the MultiObject-2a decision rule unchanged on a **doubled memory**.
+
+**Selected: object 145** on **13,047** accumulated valid-depth samples against
+runner-up **144**'s **2,436** - margin **10,611, 5.36x**. `tie_break` not
+exercised. **No seed fixation taken**; the run stops at the selection.
+
+**The honest result is that the larger memory did not change the answer.** Across
+all 48 looks the only positive ids present anywhere are **141, 142, 143, 144,
+145**, so the third object's 24-look history **exposed no new object**; and 145
+was already the argmax on the old history alone. Measured counterfactual: old
+history only (18..41) **145 10,667 vs 144 1,662, margin 6.42x**; third-object
+history only (42..65) **145 2,380 vs 144 774, margin 3.07x**; combined **13,047
+vs 2,436, 5.36x**. The new looks contributed 18.2% of 145's support and 31.8% of
+144's, **narrowing** the margin without reordering anything. **Stability, not
+discovery** - reported as measured, not as the contract anticipated.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`a2d8b5e` - 277 files** - compared; the diff is **empty, 0 lines**, all **277
+sha256 SAME**, and the complete changed-file list between parent result and HEAD
+is the seven new 3a files and nothing else.
+
+Parent by manifest: exactly one `MultiObject2d-...-v1` record with every required
+invariant - `scene_disposition MOVE_TO_NEXT_OBJECT`, truth closed,
+`acquisitions_added` 0, `growth_iterations_added` 0, both read-only flags true,
+`structural_fails []`. The chain was walked by manifest at every hop: 2d -> 2c
+(object 142, steps 42..65) -> 2b -> 1b2-r2.
+
+Checks: `py_compile` clean, selector self-test passes, the three prescribed lines
+verbatim, `SUMMARY passed=6 failed=0`. **All six negatives are genuine
+source-mutation controls**, each exiting 1 with its named detector (`acquire`,
+`hardcode`, `oldhistoryonly`, `visibleonly`, `threshold`, `scheduler`), **none
+exiting 2 - no blocker**; the **exit-2 escape branch was verified live** with an
+inert mutation. One precise note: the `hardcode` mutation injects
+`selected_object_id = 145`, which happens to be the real answer - **the control is
+structural (string absent from source), not outcome-based**. **22/22 prior suites
+green, 142/142 prior negatives firing, none weakened**; the **Cyclopean-1f caveat
+stands and 1f was not edited**.
+
+Evidence scope: **48 looks, steps 18..65**, 0 duplicates, globally contiguous -
+old scene history (1b2-r2) **24 looks, 18..41** plus third-object history (2b seed
++ 2c growth) **24 looks, 42..65**. The old half is itself assembled by manifest:
+1a seed at 18, six reused steps 18..23 from the 1b partial record, 18 new steps
+24..41. **Scope boundary stated precisely**: "complete saved history" is what the
+contract's `evidence_scope` declares and begins at global step 18; the object-141
+Cyclopean/Reality lineage is excluded by contract (exactly one such acquisition,
+`fix_17`, is reachable in the Cyclopean-1g record).
+
+Instantiated ids **[141, 142, 143]** consumed at `multiobject3a_run.py:106` from
+the **current 2c `scene_graph.json`**, with guards that at least three objects
+exist and the 2c selected id is in the graph. **No scene id is declared in any 3a
+source.**
+
+Candidate table (valid depth decides; visibility diagnostic only): **145** 13,047
+valid / 183,164 visible / **7.1%** / depth at 8 of 9 visible steps (34-38, 58-60;
+also visible at 41 with no usable depth; largest steps 36 **3,726**, 37 **3,118**,
+35 **2,049**); **144** 2,436 / 66,237 / **3.7%** / depth at 5 of 5 (21, 22, 47-49;
+largest step 21 **1,410**). Both valid fractions are low - **recorded as a
+diagnostic, gating nothing**.
+
+**Independent recomputation** without the package selector or its case-resolution
+helpers - paths rebuilt by hand from manifest keys, instantiated set re-read from
+`scene_graph.json`, aggregation written fresh: **selected id, selected support,
+candidate ordering and the full valid+visible table all match exactly**.
+
+**All 105 pinned inputs byte-identical** - 3 files of 2d, 3 of 2c, 3 object
+geometry sources, and all **96** saved calibration/observation files (48 x 2).
+Objects unchanged and pure: 141 `6ac98f6251b47337` 155,684 `{141}`; 142
+`6f90d985f8078a7d` 310,884 `{142}`; 143 `bbc4b856a07d2be5` 42,988 `{143}`.
+`new_object_instantiated` false, `semantic_ranking_used` false,
+`quality_gate_used` false, `revisit_scheduler_used` false, truth closed.
+`retained_existing_object_states` carries 142 as
+`ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT` - **a fact carried forward that did not
+block the selection**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first
+time, and no frozen source was modified.
+
+What this establishes: **the scene-level loop closes** - persistent memory
+supported `explore -> retain as unfinished -> select another` **without any object
+being declared geometrically complete**, in one deterministic decision with no new
+view, no seed, no fusion, no growth, no threshold and no scheduler, reproduced
+exactly by independent recomputation. And, as a genuine **negative** result of
+equal weight: **the doubled memory exposed no new object and did not change the
+ordering**. What it does not establish: **no accuracy claim**, truth stayed closed
+- 13,047 counts usable stereo samples in saved views, not reconstruction quality;
+**not a saliency or importance ranking** - support measures how much the observer
+happened to measure, confounded with how often each object fell inside fixations
+aimed at *other* objects (145's support comes entirely from steps 34-38 and 58-60,
+gazes aimed at 143 and 142); **not a claim that 145 is measurable** - its valid
+fraction **7.1%** sits closer to object 143's difficult regime (1.4-2.5%) than to
+142's (58.8-77.3%), so this may well pick a hard target, and one prior case is not
+a pattern; **not exhaustive over the programme's history**; **no revisit schedule**
+for the retained object 142. **Next: seed the selected object 145 with one
+prescribed fixation.** Stopped after selection, as instructed.
