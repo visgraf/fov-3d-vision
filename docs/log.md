@@ -7249,3 +7249,146 @@ a deterministic render configuration. The continuation is otherwise ready - the
 reuse path is proven exact and the only obstacle is how instrument identity should
 be tested. **No D-MULTIOBJECT1B2 outcome is recorded because none was reached.**
 Stopped for Luiz/Chat.
+
+### 2026-09-21 - MultiObject-1b2 revision 2: corrected equivalence gate passes, object 143 resumes exactly and grows to 42,988 surfels, but terminates on the object-scoped watchdog with the policy still saying continue
+
+Per `docs/multiobject1b2.md` (corrected) and the specification correction Luiz
+applied and committed as **`9bbfbff`**, on top of the blocked result `c588700`.
+Fresh output `previews/multiobject1b2-r2/full-seed2111`; **the first blocked 1b2
+record is preserved untouched** (14 files, equivalence observation
+byte-identical), and its evidence remains in the `c588700` log entry above.
+
+**Measured outcome. `MULTIOBJECT1B2_COMPLETE` structurally, `structural_fails:
+[]` - but `termination_reason: object2_watchdog` with `scientific_stop_reached:
+false`. The watchdog is not success.** The frozen policy returned `continue` at
+**all 24** of its decisions and never reached `no_frontier`.
+
+Provenance. Clean tree; the correction modifies only the five 1b2 files and its
+two docs and **does not touch `tools/scene_render_fix.py`** (unchanged at
+`6e70bbb78c1043ec`); `git diff` against `c588700` over **59 frozen sources** -
+every FSG1/FSG3/FSG6f source, scene, rig, pin file, every Reality Check 1/2/2b,
+every Cyclopean-1a..1g, every MultiObject-1a/1b source **and the generic
+renderer** - **empty (0 lines)**, all 59 SAME, frozen `reality2_render_fix.py`
+still `9f1433d189fbcbb5`. Inputs by manifest: exactly one
+`MultiObject1a-second-object-seed-v1` seed-2111 `full` record; the blocked 1b
+partial re-audited as reported (no completed manifest, maps 18-23 contiguous,
+acquisitions 19-23, no acquisition 24, all maps pure id 143). **All 16 pinned
+items byte-identical afterwards**, including the object-141 source
+`6ac98f6251b47337...f71e524a` and the first blocked 1b2 equivalence observation.
+**Object 141 did not change by a single byte.**
+
+Environment: Blender 5.2.1 LTS headless, Cycles, **OPTIX** on RTX 4090 (driver
+595.84); host `.venv/bin/python` 3.12.3. **2 m 44 s** total, **154.3 s** for the
+growth loop after resume, 19 Blender launches (one equivalence re-render, 18 new
+fixations).
+
+Checks. `py_compile` clean; the three prescribed lines verbatim. All **seven**
+negatives are genuine source-mutation controls, each exiting 1 with its detector
+named and none exiting 2 - including the new **`rgbgate`** control that fires if
+an RGB tolerance is reintroduced (`globalcap`->`generic_renderer_no_global_cap`,
+`instrument`->`physical_instrument_frozen`,
+`rerenderpartial`->`partial_history_reused_not_rerendered`,
+`noequivalence`/`rgbgate`->`renderer_equivalence_required`,
+`crossfuse`->`object141_read_only_object143_only`,
+`globalwatchdog`->`object_scoped_watchdog_no_discovery`). **No regression**: 12
+prior suites green, **85 prior negatives** firing.
+
+**Corrected equivalence at step 23** (criterion
+`deterministic-instrument-contract-v2`, gaze (-23.4970979736, +12.0596257012)):
+all five blocking deterministic checks **exact** - `calibration_exact`,
+`acquisition_contract_exact`, `observation_keys_exact`,
+`observation_shape_dtype_exact`, and `instance_arrays_exact` for **both**
+`instance_L` and `instance_R`. RGB recorded as diagnostic only
+(`rgb_is_diagnostic_not_gate: true`, `rgb_tolerance_used: false`): `rgb_L`
+47.424% differing, max 7.152557e-07, mean 4.431207e-08, rms 7.689193e-08, p99
+2.384186e-07; `rgb_R` 45.737%, max 7.152557e-07, mean 4.265641e-08, rms
+7.552280e-08, p99 2.384186e-07. `passed: true`. **Mean absolute difference is
+below one float32 ulp at 1.0** (1.192e-07) and p99 is exactly 2 ulp - confirming
+quantitatively that this is accumulation noise, as the blocked run established
+when the frozen renderer missed its own saved RGB by the same order.
+
+**Partial replay**: `partial_fixations_rerendered: 0`,
+`global_history_renumbered: false`, six reused looks (global 18-23), replay
+reproduced each saved map, all pure id 143. **First new global step 24**, as
+required.
+
+**The 24 object-143 fixations**: 6 reused (18-23) + **18 new (24-41)**, tracing a
+perimeter circumnavigation on the frozen 5-degree lattice - left along pitch
+-2.94, up to +17.06, right across the top to +21.50, down the right side to
+-12.94, back left. Object 143 **5,344 (seed) -> 15,589 (resume) -> 42,988**
+surfels. **No empty looks** (`empty_steps: []`); **`idempotent_replay` true on all
+24**; **purity verified independently at all 24 maps as exactly {143}**, never
+admitting 141, 142, 144 or 145; resume surfels displaced median 0.0000, p99 2.76,
+max **8.66 mm** (radius 12); final multi-look 3,598, max support 3; range median
+2.2121 -> **3.5106 m**.
+
+**Termination**: `object2_watchdog` at exactly 24 object fixations. The policy's
+last decision wanted gaze **(+6.5029, -12.9404)** with **696 open frontier voxels
+of 991** (43 map-resolved, 252 boundary-resolved). The frontier *is* converging -
+against the blocked 1b state, open fell **1,193 -> 696** (-42%) and
+boundary-resolved rose **17 -> 252** (x15) - so **object 143 is being resolved,
+just not within 24 looks.** That is a measurement, not a threshold.
+
+Scene representation: `object_1_read_only: true`,
+`automatic_object_discovery: false`, `truth_opened: false`,
+`policy_source_modified: false`, adapter `id143_to_frozen_fsg6f_target_label`,
+renderer `tools/scene_render_fix.py`. Shared 0.1-deg chart **602 x 335**: object
+141 **37,654** cells (376.54 deg2), object 143 **17,947** (179.47 deg2, from the
+seed's 1,670), **overlap 0**, confirmed numerically and in the image, which
+reserves its brightest level for shared cells and contains none. 141 spans yaw
+[-12.40,+12.70] pitch [-8.30,+10.40]; 143 now spans yaw [-30.70,+28.20] pitch
+[-9.80,+22.50].
+
+Visual reading. `object_143_growth.png` reveals object 143 as a large
+**architectural corner structure**, not a compact object: a ledge sliver at the
+seed, then a vertical wall segment and upper band, then the upper band extended
+across the full width, a right-hand vertical edge and a bottom band. **Growth is
+edge-concentrated; region interiors stay unsampled throughout.**
+`scene_cyclopean_footprints.png` shows object 143 **framing** object 141 - band
+above, vertical bands both sides, band below, with the cloth and its black emblem
+ellipse (the residue 1g could not measure) in the centre. That is the same
+enclosure relation MultiObject-1a inferred indirectly when the seed's spherical
+mean landed inside 141's footprint, now visible directly.
+`object_143_surface_map.ply` carries 42,988 vertices. Objects **144** (steps
+21-22) and **145** (step 36, 3,726 valid px) were newly visible and correctly
+**not instantiated**.
+
+**The low-texture surface does produce measurement deficit, decisively.** Yield
+per new look: min **229**, median **1,198**, mean 1,732, max **5,608** target
+points, against ~**55,000** for a typical object-141 look - the best 143 look is
+**10.1%** of that and the median **2.2%**. Sampled validity: `fix_24` frame valid
+**2.1%** with 54,801 id-143 pixels visible and 1,360 measured (**2.5%**);
+`fix_30` **1.4%** valid, 62,839 visible, 911 measured (**1.4%**); `fix_36`
+**6.0%**, 15,799 visible, 229 measured (**1.4%**); `fix_41` **61.4%** valid back
+near the textured cloth, 11,752 visible, 2,147 measured (18.3%). **Object 143
+fills the frame and the instrument recovers 1.4-2.5% of it** - the Cyclopean-1g
+emblem problem at architectural scale, and the reason the watchdog was reached:
+each look resolves a little frontier so the policy correctly continues, but the
+yield cannot exhaust a surface this large in 24 looks. One subtlety: **no empty
+look occurred even so**, because 1.4% of ~60,000 pixels is still ~900 points, far
+above the inherited `<100` limit - the empty-look contract sits well below what
+even a barely-measurable large surface returns, so that branch stayed untested.
+
+**No structural FAIL line and no code fix**; no file was modified by the run.
+
+What this establishes: **the corrected equivalence criterion is the right shape
+and passes** - gating on calibration, acquisition contract, observation
+keys/shapes/dtypes and both oracle instance masks, all exact, while recording RGB
+with **no tolerance**, separates instrument identity from GPU accumulation
+determinism, with `rgbgate` preventing regression; **the interrupted experiment
+resumed exactly** (six looks reused, zero rerenders, no renumbering, first new
+step 24); **the FSG6f transfer holds over a long run** (18 further looks, purity
+{143} at every map, all 24 idempotent, resume surfels moved at most 8.66 mm,
+object 141 byte-identical, zero shared-chart overlap); and **the low-texture
+surface demonstrably starves the instrument**. What it does not establish: **the
+scientific question is still open** - termination was the watchdog, not
+`no_frontier`, with 696 open frontier voxels remaining and `continue` returned 24
+times out of 24, so this shows only that growth does not terminate within 24
+looks on this surface; **no accuracy claim**, truth stayed closed; **the
+empty-look branch remains untested**; **zero footprint overlap is still not an
+invariant**; and objects 142/144/145 remain uninstantiated by design, so nothing
+is established about discovery or scene scheduling. **Whether to raise the
+object-scoped watchdog, accept edge-concentrated coverage as the practical
+outcome for low-texture architecture, or move to cyclopean completion for object
+143 is a decision for Luiz/Chat. No D-MULTIOBJECT1B2 outcome is recorded because
+the scientific stop was not reached.** Stopped for Luiz/Chat.
