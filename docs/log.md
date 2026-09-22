@@ -7920,3 +7920,143 @@ introduced, with **object 143 still retained for revisit** under 1c's
 disposition. **Because the scientific stop was not reached, whether to raise the
 object-scoped watchdog for 142, accept the current coverage, or move to another
 scene-level decision is a judgement for Luiz/Chat.** Stopped.
+
+### 2026-09-22 - MultiObject-2d, epistemic audit of the scene-selected third object: the remaining frontier is mostly territory never looked at, the inverse of object 143
+
+Package `8ad0b50` (seven files, all `A`); parent result `9d96330`. Host-side only:
+`.venv/bin/python` 3.12.3, **no Blender, no Cycles, no GPU**; the audit took
+**4.5 s** replaying 24 saved looks. `MULTIOBJECT2D_COMPLETE`, `structural_fails:
+[]`, no FAIL line anywhere; `tools/multiobject2d_compare.py` on the completed
+record printed `MULTIOBJECT2D_COMPLETE` with `structural_fails: []` and exited 0.
+
+MultiObject-2c left object 142 densely grown but stopped on the watchdog with the
+policy still saying `continue`. 2d asks what that remaining frontier *means*, in
+the existing vocabulary, adding nothing.
+
+**The answer inverts the previous object's.** Of object 142's **2,055** shoreline
+cells: **986 (48.0%) `NEVER_OBSERVED`**, **628 (30.6%) already-resolved boundary
+structure** (`PHYSICAL_DEPTH_BREAK` 537 + `AMBIGUOUS` 91), **291 (14.2%)
+`NO_RANGE_REFERENCE`**, **125 (6.1%) `OBSERVED_TARGET_NO_DEPTH`**, 25 (1.2%)
+`OBSERVED_NONTARGET_ONLY`. That is **7.9x more unseen than seen-but-unmeasured**.
+The same audit on object 143 found **830 unseen against 15,089
+seen-but-unmeasured - 18.2x the other way**; and on object 141 Cyclopean-1f drove
+exterior `NEVER_OBSERVED` to **zero**. Three objects, three different remainders,
+one unchanged vocabulary: **the epistemic bottleneck is a property of the object
+and the attention it received, not of the instrument.** The shorelines say it too
+- 143's (20,799 cells) *exceeded* its own footprint (17,947), the lacework
+signature; 142's (2,055) is **3.3%** of its footprint (62,784), a filled region
+with a thin rim.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`9d96330` - 272 files** - compared; `git diff` over that set is **empty, 0 lines**,
+all **272 sha256 SAME**, and the complete changed-file list between parent result
+and HEAD is the seven new 2d files and nothing else.
+
+Parent by manifest: exactly one `MultiObject2c-grow-selected-object-v1` record at
+seed 2111 with truth closed. **Id consumed, not declared** -
+`multiobject2d_audit.py:52` reads `selected_object_id`, and the literal `142`
+appears **zero** times across all five 2d sources (the only textual matches are
+inside the checker's own `handpick` mutation strings).
+
+**Read-only, and no acquisition**: `grep -ci "blender|subprocess|bpy|cycles"` over
+the audit returns **0**; `pgrep blender` was 0 before and after. **All 56 pinned
+inputs byte-identical** - 5 parent files, 3 scene-object geometry sources, and all
+**48** saved selected-object calibration/observation files (24 looks x 2). Objects
+141 (155,684 `{141}`), 143 (42,988 `{143}`) and 142 (310,884 `{142}`) all pure and
+unchanged. `acquisitions_added: 0`, `growth_iterations_added: 0`,
+`watchdog_changed: false`, `parent_files_modified: false`, `truth_opened: false`,
+`quality_gate_used: false`.
+
+Checks: `py_compile` clean, progress self-test passes, the three prescribed lines
+verbatim, `SUMMARY passed=6 failed=0`. **All seven negatives are genuine
+source-mutation controls**, each exiting 1 with exactly the detector the contract
+names (`acquire`, `handpick`, `crossobject`, `depthonly`, `threshold`, `watchdog`,
+`qualitygate`), **none exiting 2** - and the **exit-2 escape branch was verified
+live**, an inert mutation on a scratch copy being detected by no check. **21/21
+prior suites green and 135/135 prior negatives firing**; the cyclopean1f caveat
+(its six negatives exit 1 unconditionally) stands unchanged.
+
+Scope: `observation_count` **24**, steps **42..65** contiguous - the 2b seed plus
+the 23 2c growth looks, nothing else.
+
+Chart and inherited scale: object-scoped chart **612 x 171**, grid **0.1 deg**,
+yaw0 -30.20, pitch0 -25.60, 104,652 cells. Footprint from the **unchanged 12 mm**
+radius at this object's own range: `atan(0.012 / 2.4113) = 0.2851310 deg` -> 2.85
+-> **3 cells**, matching the reported 0.2851309 deg to **1.7e-8 deg**. **No new
+threshold, tolerance, texture gate, interpolation or occlusion model.** Map
+310,884 points -> raw support **62,784** (identical to the footprint cell count 2c
+published, an independent cross-check) -> support **79,416**, complement 25,236.
+
+Base states (Cyclopean-1b, unchanged): `UNOBSERVED` **1,427**,
+`PHYSICAL_DEPTH_BREAK` **537**, `AMBIGUOUS` **91**, **`TARGET_CONTINUATION` 0** -
+nowhere does the evidence say the target simply continues past the mapped edge.
+
+Refined (Cyclopean-1d, unchanged) over the 1,427 base-UNOBSERVED cells, exterior /
+internal: `NEVER_OBSERVED` **986 / 986 / 0**; `NO_RANGE_REFERENCE` 291 / 284 / 7;
+`OBSERVED_TARGET_NO_DEPTH` 125 / 26 / **99**; `OBSERVED_NONTARGET_ONLY` 25 / 25 /
+0; **`OBSERVED_TARGET_WITH_DEPTH` 0** and **`MIXED_OBSERVATION` 0**. Totals 1,427
+/ 1,321 / 106. Components: **25** - one EXTERIOR of 25,129 cells at max border
+depth **59**, plus **24 INTERNAL** holes of 1-34 cells.
+
+Arcs: **316** total. **The unobserved frontier is six large arcs, not slivers** -
+986 cells, sizes min 3 / median 181.5 / max 339, four arcs carrying 978 of them,
+border depth min 4 / median 18.5 / **max 59 = the chart-wide maximum**,
+cell-weighted mean 31.1. **Every one has `supported_projection_samples` = 0**: in
+24 completed views no supported projection ever landed there. By contrast
+`OBSERVED_TARGET_NO_DEPTH` has **156 supported projections, 156 target-seen, 0
+with valid depth** - observation cleanly separated from measurement.
+
+**Where the unobserved territory lies is structural and measured.** The 2c gaze
+lattice visited yaw **[-21.000, +24.000]**, pitch **[-18.811, -8.811]**, while the
+object spans yaw [-30.20, +31.00], pitch [-25.60, -8.50]. **All six arcs lie below
+the lowest gaze row**, two also beyond the yaw extremes - **986 of 986 cells
+(100%)** outside the span the lattice reached. The frozen policy proposed only
+three pitches in 24 decisions (-8.811 x10, -13.811 x9, -18.811 x5) and **never a
+row below -18.811**, with `delta_pitch_deg` 0.0 at 15 of 24. **Recorded as an
+observation; nothing was changed in response.**
+
+Inherited final policy decision (context only, from the parent's own trace): step
+**65**, object fixation 23, `reason` **continue**, `stop` false, frontier **679** =
+**650 open** + 16 map-resolved + 13 boundary-resolved, next gaze **(+8.9996,
+-18.8109)**, `delta_pitch_deg` **0.0**, corridor fraction 1.0 binocular,
+`frontier_state_radius_m` **0.012** - the same 12 mm this audit reuses. **This
+audit explains that `continue` without endorsing it**: work genuinely remained.
+
+Visual. `object_142_epistemic_shoreline.png` - a **pixel census of the rendered
+image reproduces the report exactly** (79,416 support, 986 red, 537 blue, 291 dark
+grey, 125 orange, 91 purple, 25 teal, 23,181 background, summing to all 104,652
+cells), an independent cross-check of numbers against picture. A broad solid grey
+slab fills the frame; the **entire top edge** is a thin continuous **blue**
+`PHYSICAL_DEPTH_BREAK` line - the far edge already resolved against background,
+not missing attention; the **left, right and bottom** edges are a continuous
+**red** `NEVER_OBSERVED` rim with a large white notch at bottom-centre where
+support has not closed between the two lower lobes; the interior carries only
+**orange speckle**, the 125 unmeasured pinholes, nothing structural. **750 of the
+986 unobserved cells (76%) lie in the bottom third.**
+
+Status from the literal zero-comparison rule in `multiobject2d_progress.py`:
+exterior `NEVER_OBSERVED` = 986 > 0 -> **`ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`**.
+**No count was compared against any threshold.** `scene_disposition =
+MOVE_TO_NEXT_OBJECT`, unconditionally, as the contract requires.
+
+**No structural FAIL line and no code fix**; no 2d file needed repair and no frozen
+source was modified. The inherited NaN->int64 cast `RuntimeWarning`
+(`cyclopean1a_topology.py:117-118`) appeared twice in console (48 with
+`simplefilter("always")`, two per look), raised because **40.47%** of observation
+pixels carry non-finite `xyz`; re-proved harmless by inspection (`_indices` filters
+on an explicit `isfinite` term) and by measurement (NaN-prefiltered rebuild gives
+**bitwise-identical** evidence arrays). The parent was not edited.
+
+What this establishes: **after dense, well-measured growth the remaining frontier
+of object 142 is primarily territory never looked at**, and that this differs
+qualitatively per object under one unchanged vocabulary; and **structurally, the
+unobserved remainder is exactly where the gaze lattice did not go**. What it does
+not establish: **it is descriptive, not a diagnosis** - it does not show why the
+lattice stopped short, whether more looks would reach those arcs, or that the
+policy is deficient; no counterfactual was run and **nothing was tuned**. **No
+accuracy claim**, truth stayed closed. **No object completeness** - 986 unobserved
+cells bound attention, not geometry. **No claim the 125 seen-but-unmeasured cells
+are irreducible** - no alternate matcher, baseline, vergence or illumination was
+tried, by design. **`NO_RANGE_REFERENCE` is bookkeeping, not a finding.** And **the
+counts gated nothing**. **Next: next-object selection from updated scene memory**;
+object 142 stays in persistent memory for possible revisit. Stopped for Luiz/Chat.
