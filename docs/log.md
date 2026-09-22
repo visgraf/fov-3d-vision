@@ -7527,3 +7527,43 @@ remains unclassified** by the inherited local-range rule;
 `OBSERVED_TARGET_WITH_DEPTH` fired once so that state is unexercised; and
 **nothing about objects 141/142/144/145 is established** - discovery remains
 deferred, which is the next stage. Stopped for Luiz/Chat.
+
+### 2026-09-22 - MultiObject-1c re-run: the prospective package was re-applied and deleted the Results section; the audit reproduces byte-identically
+
+The prospective MultiObject-1c package was re-applied and committed as
+**`c29bcff`** on top of the result commit `e5336fb`. That commit changed **only**
+`docs/multiobject1c.md`, deleting the 240-line Results section and restoring the
+document to its pre-run state. **The measured record
+(`previews/multiobject1c/full-seed2111`) and the 2026-09-21 log entry above were
+untouched**, and no tool source changed: all five MultiObject-1c sources are
+byte-identical to the original run (`multiobject1c_public.py` `cf5ab2a1a0bca72a`,
+`_progress.py` `598d5d4d4987e0f0`, `_audit.py` `c96944d7d2d244a7`, `_compare.py`
+`d6659e576e9ea8bd`, `check_multiobject1c.py` `99e9eccb7a16fff1`), with the frozen
+diff against `6b722d0` still **0 lines**.
+
+The audit was therefore re-run from the same unique parent into a fresh output.
+**It reproduced the record exactly**: `object_143_epistemic_report.json` and
+`object_143_epistemic_shoreline.png` are **byte-identical** to the originals and
+the manifest matches on every path-independent field. Headline figures are
+unchanged - shoreline **20,799**, `OBSERVED_TARGET_NO_DEPTH` **15,089**,
+`NEVER_OBSERVED` **830**, max exterior penetration depth **288**,
+`object_143_status = ATTENTION_INCOMPLETE_RETAIN_FOR_REVISIT`,
+`scene_disposition = MOVE_TO_NEXT_OBJECT`, `structural_fails: []`.
+
+Integrity re-verified: the three prescribed check lines verbatim, all six
+mutation negatives exiting 1 with their expected detectors and none exiting 2,
+**13/13** prior suites green and **92/92** prior negatives firing, all **54**
+pinned inputs byte-identical, no Blender process, and only the three host
+artifacts. Interactive at **11.2 s**.
+
+One housekeeping action: the re-run initially produced a second record carrying
+the same `MultiObject1c-object143-epistemic-audit-v1` schema, which would have
+broken the "exactly one record" scan a later step performs. Since the re-run was
+byte-identical and regenerable in ~11 s, the duplicate directory was removed and
+the canonical `previews/multiobject1c/full-seed2111` retained; exactly one such
+record now exists.
+
+The Results section was restored verbatim from `e5336fb` with a dated
+reproduction note appended. **No scientific semantics, chart resolution, 12 mm
+radius, epistemic state definition or scene-progress disposition was touched, and
+no tool source was modified.** Stopped for Luiz/Chat.
