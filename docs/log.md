@@ -8924,3 +8924,108 @@ independent evidence for anything**; **no accuracy claim**, truth stayed closed;
 and nothing suggests it shrank; **no claim the low recovery is irreducible**; and
 **no scheduler, automatic loop, second handoff, watchdog or threshold change**.
 **Next: interpret this one bounded cycle before taking another action.** Stopped.
+
+### 2026-09-22 - MultiObject-3h, second post-handoff local action: it added no geometry at all - a valid empty look - and the two steps point the same way
+
+Package `fcb7180` (seven files, all `A`, verified byte-identical to the delivered
+ZIP: 7 entries, 7 SAME, 0 different, 0 missing); parent result `8633eb4`. Blender
+5.2.1 LTS headless, Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host
+`.venv/bin/python` 3.12.3. **11.4 s** - one Blender launch plus the 15-look
+history replay. `MULTIOBJECT3H_COMPLETE`, `structural_fails: []`, no FAIL line
+anywhere; `tools/multiobject3h_compare.py` exited 0;
+`pre_action_policy_replayed_exactly` **true**.
+
+**The second post-handoff local action produced no geometry at all.** Executing
+exactly the gaze 3g returned - **(+13.700, -10.500)** - yielded **65** valid
+target depth points, **below the inherited 100-point limit**, so under the
+unchanged Reality-2b rule this is **`VALID_NEGATIVE_EVIDENCE`**: observation kept,
+**nothing fused**, and map, footprint and range envelope **all unchanged** (6,762
+points, 2,125 cells, 2.5265/2.7625/3.0033 m). Frozen FSG6f nevertheless returned
+`continue` with next gaze **(+13.700, -5.500)** and **2** candidates:
+`LOCAL_EXPLORATION_CONTINUES`, **recorded and not executed**.
+
+**Side by side, the two post-handoff local steps** - gaze (+18.700,-10.500) vs
+**(+13.700,-10.500)**; target visible 10,007 (15.3% of frame) vs **4,831 (7.4%)**;
+valid depth 648 vs **65**; recovery 6.48% vs **1.35%**; empty false vs **true**;
+matched 607 vs **0**; new **41** vs **0**; novelty 0.0633 vs **null**; map +41 vs
+**0**; footprint +18 cells vs **0**; range unmoved both. **Two-step totals: 713
+valid target points -> 41 new surfels, 607 matched - all novelty in step 1.**
+
+**The question answered without a threshold: the second measurement does not
+change the interpretation of the first - it points the same way, more sharply.**
+Step 1 was already dominated by re-measurement (93.7% matched, 6.3% novelty);
+step 2 produced nothing. Alongside that, recovery across this object's life runs
+**6.68%** (seed) -> **9.81%** (handoff) -> **6.48%** (3g) -> **1.35%** (3h),
+target visibility halved between the two local steps, the frontier total fell
+**278 -> 165**, candidates **4 -> 2**, and the leading frontier score **20.25 ->
+6.42**. **All descriptive; no threshold, gate or ranking was introduced**, and the
+`productivitygate` negative exists to keep it that way.
+
+Handoff-file note: the four companion files (`MULTIOBJECT3H_APPLY.md`,
+`_CHECKS.md`, `_CODE_PROMPT.md`, `_HANDOFF.md`) are delivered outside the
+repository and are correctly absent from it; the repository check documentation
+`docs/multiobject3h-checks.md` is what was run.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`8633eb4` - 311 files** - compared; the diff is **empty, 0 lines**, all **311
+sha256 SAME**, and the changed-file list is the seven new 3h files and nothing
+else; the legacy renderer unchanged and **never invoked**.
+
+Parent by manifest: the one 3g record with **all five gates** - `structural_fails
+[]`, truth closed, `added_fixations` 1, `subsequent_local_action_executed` false,
+`subsequent_policy_status LOCAL_EXPLORATION_CONTINUES`. **Object and gaze
+consumed, never hand-picked**: id **145** and gaze **(+13.700,-10.500)** from
+`subsequent_local_policy_decision.next_gaze_deg`. **Exact pre-action replay**
+reproduced the saved decision (stop False, continue, frontier 278, OPEN 167,
+voxels 1,487, candidates 4, rejected 0) and **`executed_gaze_deg` ==
+`pre_action_policy_decision.next_gaze_deg`, verified True**.
+
+One new fixation at **global step 81** = 80+1 through the generic
+`scene_render_fix.py`. **No history rerendered**: `acquisition/` holds **exactly
+one entry, `fix_81`**, none of the fifteen prior steps (66..80) appears in it,
+`parent_fixations_rerendered` 0, and all 30 history files are byte-identical
+afterwards.
+
+Image: the fovea is dominated by the **wood floor** across its lower half, a grey
+wall band above, and **object 145 reduced to a sliver at the top-right corner**.
+The 56.1% frame-wide validity is the floor, not the target - the policy has walked
+the gaze progressively off the object.
+
+**All 52 pinned inputs byte-identical** - 9 MultiObject-3g artifacts, 2 of 3f, 4
+of 3e, 3 of 3c, 4 object geometry sources, all 30 history files (steps 66..80).
+**The 3g active-object source was not modified in place** (`ac46e7fc815d103c`);
+because the look was empty and nothing fused, the map written into the 3h record
+is byte-identical to it, which is the correct outcome - `fusion_iterations_added`
+**0**. Objects 141 `6ac98f6251b47337`, 142 `6f90d985f8078a7d`, 143
+`bbc4b856a07d2be5` unchanged. Scene after: 16 selected-object fixations, last
+global step 81, footprints 37,654 / 62,784 / 17,947 / **2,125** all unchanged from
+3g, **all six pairwise overlaps and the all-object overlap still 0**. Policy trace
+16 entries, `last_action_executed: false`.
+
+Checks: `py_compile` clean, the five prescribed lines verbatim, `SUMMARY passed=9
+failed=0`. **All ten negatives are genuine source-mutation controls** with named
+detectors, **none exiting 2**; the **exit-2 escape branch was verified live**.
+**29/29 prior suites green, 198/198 prior negatives firing, none weakened**; the
+**Cyclopean-1f caveat stands and 1f was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first
+time.
+
+What this establishes: **mechanically**, the second action executed cleanly and
+the bounded contract held - gaze consumed, parent decision replayed exactly, one
+fixation at step 81, zero rerenders, inherited empty-look rule applied unchanged,
+map pure, all 52 inputs and the three other objects byte-identical, the new
+decision recorded and **not executed**. **Measured**, the step **added no
+geometry**: 65 points at 1.35% recovery, `VALID_NEGATIVE_EVIDENCE`, 0 matched, 0
+new, map/footprint/range unchanged - while the controller still returned
+`continue`. What it does not establish: **two steps are not a trend** - two
+observations on one object at one seed cannot establish a rate, a limit, or that a
+third step would also be empty, and **no third action was taken, by design**,
+leaving (+13.700,-5.500) **untested**; **not a claim the local controller is
+failing** - it behaved exactly as specified and **nothing was tuned**; **not an
+explanation** - this measures *that* productivity fell, not *why*, and the
+co-occurrence with the gaze walking off the object is an observation with **no
+counterfactual run**; **no accuracy claim**, truth stayed closed; **no object
+completeness**; **no claim the low recovery is irreducible**; and **no scheduler,
+automatic loop, second handoff, watchdog or threshold change**. **Next: FullScene-1
+is deliberately deferred until Chat/Luiz interprets this.** Stopped.
