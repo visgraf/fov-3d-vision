@@ -8806,3 +8806,121 @@ corridor gate** - that it read 0.000 in every unvisited direction before is a
 measurement at one gaze, not a characterisation of the rule; and **no scheduler,
 second action or automatic loop**. **Next: interpret this audit before any second
 action.** Stopped.
+
+### 2026-09-22 - MultiObject-3g, execute one returned local action: the action was executable and the controller continues, but 93.7% of what it measured was already in the map
+
+Package `c955696` (seven files, all `A`); parent result `1d18de9`. Blender 5.2.1
+LTS headless, Cycles, **OPTIX** on an RTX 4090 (driver 595.84); host
+`.venv/bin/python` 3.12.3. **11.2 s** - one Blender launch plus the history
+replay. `MULTIOBJECT3G_COMPLETE`, `structural_fails: []`, no FAIL line anywhere;
+`tools/multiobject3g_compare.py` exited 0; `pre_action_policy_replayed_exactly`
+**true**.
+
+**The bounded answer is yes on both halves, but the geometric yield is small and
+should not be overstated.** Executing exactly the already-returned gaze
+**(+18.700, -10.500)** produced **useful local evidence** - **648** valid
+selected-object depth points, well above the inherited 100-point limit, so **not
+empty** - and frozen FSG6f then returned `continue` with next gaze **(+13.700,
+-10.500)** and **4 candidates**: **`LOCAL_EXPLORATION_CONTINUES`**. But of those
+648 points, **607 matched existing surfels and only 41 were new**: map **6,721 ->
+6,762 (+41, +0.6%)**, footprint 2,107 -> 2,125 cells (+18), and the **range
+envelope did not move at all** (2.5265/2.7625/3.0033 m, identical to 3e). The
+packaged label `LOCAL_ACTION_ADDED_GEOMETRY` is literally correct (new > 0) and
+also the weakest of its positive categories; **this was much closer to a
+re-measurement than an expansion.**
+
+**Action consumed, never chosen.** `selected_object_id` **145** and the gaze
+**(+18.700, -10.500)** both come from the 3f manifest
+(`returned_next_gaze_deg`), cross-checked identical to the 3e
+`returned_local_policy_decision.next_gaze_deg`, and the 3e decision was
+**replayed exactly before any render** (stop False, continue, frontier 488, OPEN
+391, voxels 1,467, candidates 4, rejected 0). **`executed_gaze_deg` ==
+`pre_action_policy_decision.next_gaze_deg`, verified True.**
+
+Parent chain by manifest: the one 3f record (truth closed, 0 acquisitions, 0
+fusions, action unexecuted, both replays exact, `structural_fails []`) carrying
+its causal result intact (`{PRE_MAP_PRE_GAZE 72, PRE_MAP_POST_GAZE 429,
+POST_MAP_PRE_GAZE 72, POST_MAP_POST_GAZE 488}` plus both counterfactuals),
+resolving to the 3e execution state (handoff step 79, 14 fixations, 6,721 points,
+unexecuted) and the 3c seed-scoped history (66..78).
+
+One new fixation at **global step 80** = 79+1 through the generic
+`scene_render_fix.py`. **No history rerendered**: the record's `acquisition/`
+holds **exactly one entry, `fix_80`**, none of the fourteen prior steps (66..79)
+appears in it, `parent_fixations_rerendered` 0, and all 26 history files plus the
+handoff acquisition pair are byte-identical afterwards.
+
+Executed look: target visible **10,007** px (15.3% of frame), valid depth
+**648**, **recovery 6.48%**, frame-wide valid **49.0%**, `empty_look` false. The
+6.48% is back in object 145's ordinary band, below the handoff look's 9.81% and
+near its 6.68% seed; the image shows why - at pitch -10.5 deg the fovea is
+dominated by the **wood floor**, with the terracotta panel and cream stripe
+reduced to a thin band along the top edge. The high frame-wide validity is the
+floor, not the target.
+
+Fusion once with the unchanged 12 mm rule, selected-object valid points only:
+input 648, **matched 607 (93.7%)**, **new 41 (6.3%)**, **idempotent**, map **pure
+`{145}`**, multi-look surfels 4,086, max support 6; PLY 6,762 vertices.
+
+**Subsequent FSG6f decision, recorded and NOT executed**: `stop` False, `reason`
+`continue`, next gaze **(+13.700, -10.500)**, current gaze (+18.700, -10.500);
+frontier **488 -> 278**, OPEN **391 -> 167**, map-resolved 24 -> 6,
+boundary-resolved 73 -> 105, voxels 1,467 -> 1,487; **candidates 4 -> 4**,
+rejected 0. Selected candidate delta **(-5.0, 0.0)**, score 20.25, support 63
+(raw 95), predicted new area **135.71 deg2**, corridor **allowed at 0.463**
+(threshold 0.15), consensus allowed (open 63 vs resolved 32).
+**The frontier count fell while the candidate count held at 4** - exactly what
+MultiObject-3f's decomposition predicts, since the total tracks the current-gaze
+window and the window moved back over already-visited territory. **Recorded as
+consistent with that finding, not as independent confirmation of it.**
+`subsequent_local_action_executed` **false**; the written trace carries **15**
+entries with `last_action_executed: false`.
+
+Frozen audit at full scope: **every tracked non-documentation source present at
+`1d18de9` - 306 files** - compared; the diff is **empty, 0 lines**, all **306
+sha256 SAME**, changed-file list is the seven new 3g files and nothing else; the
+legacy renderer unchanged and **never invoked**. Note: `MULTIOBJECT3G_APPLY.md`
+and `MULTIOBJECT3G_CHECKS.md` are **not present in the repository** - the package
+was already applied at `c955696` and its checks live at
+`docs/multiobject3g-checks.md`, which were run exactly as written.
+
+**All 51 pinned inputs byte-identical** - 4 MultiObject-3f artifacts, 11
+MultiObject-3e artifacts, 4 MultiObject-3c artifacts, 4 object geometry sources,
+all 26 history files, and the handoff acquisition pair. **The active object's 3e
+source was not modified in place**: it is still `b085e591f0b50b0e`, and the
+updated map is written separately into the 3g record as `ac46e7fc815d103c`.
+Objects 141 `6ac98f6251b47337`, 142 `6f90d985f8078a7d`, 143 `bbc4b856a07d2be5`
+unchanged. Scene after: 15 selected-object fixations, last global step 80,
+footprints 37,654 / 62,784 / 17,947 / **2,125**, **all six pairwise overlaps and
+the all-object overlap still 0**.
+
+Checks: `py_compile` clean, progress self-test passes, the four prescribed lines
+verbatim, `SUMMARY passed=9 failed=0`. **All ten negatives are genuine
+source-mutation controls** with named detectors, **none exiting 2**; the
+**exit-2 escape branch was verified live**. **28/28 prior suites green, 188/188
+prior negatives firing, none weakened**; the **Cyclopean-1f caveat stands and 1f
+was not edited**.
+
+**No structural FAIL line and no code fix**; the package ran as applied, first
+time.
+
+What this establishes, within one bounded cycle: **the action returned by
+attentional reactivation was executable and did not collapse** - consumed rather
+than chosen, replayed exactly first, producing useful non-empty evidence, fusing
+cleanly (idempotent, pure), with frozen FSG6f then returning `continue` and a
+concrete next gaze. So the full bounded loop - attention supplies a look, the
+local controller reactivates, its action is executed, and the controller can
+still continue - **closed once**, with every piece of machinery frozen and every
+pre-existing object byte-identical. And, stated plainly because it qualifies
+that: **the geometric yield was small** - 93.7% matched, +0.6% map, +18 footprint
+cells, range envelope unmoved. What it does not establish: **one executed action,
+one object, one seed** - nothing shows the cycle repeats, converges or stays
+productive, and **no second action was taken, by design**, leaving (+13.700,
+-10.500) **untested**; **not evidence that alternation is a good policy** - a
+single continuing decision is not a trajectory, and the small yield is a reason
+for caution rather than confidence; **the frontier fall 488 -> 278 is not
+independent evidence for anything**; **no accuracy claim**, truth stayed closed;
+**no object completeness** - the seen-but-unmeasured residue was not re-audited
+and nothing suggests it shrank; **no claim the low recovery is irreducible**; and
+**no scheduler, automatic loop, second handoff, watchdog or threshold change**.
+**Next: interpret this one bounded cycle before taking another action.** Stopped.
