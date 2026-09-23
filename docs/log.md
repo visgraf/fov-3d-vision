@@ -9558,3 +9558,102 @@ variance estimate; and **no single score** - the metrics stay separate.
 **Next: Chat's call** - whether to change the seed-direction rule so occluded
 centres do not silently cost an object, and whether the watchdog budget should
 scale with angular extent. Stopped.
+
+### 2026-09-23 - FullScene-REAL-1S: one visible-seed recovery ring - the ring worked, the seed did not
+
+One bounded 5-degree Moore ring around REAL-1's single failed-centre seed, on
+branch `fullscene-real-1` only. Record
+`previews/fullscene-real1-seed-round1/full-seed2111`, seed 2111, profile `full`,
+OPTIX. `[real1-seed-round] COMPLETE {"targets": 1, "probes": 8}`; comparator
+`FULLSCENE_REAL1_SEED_ROUND_COMPLETE structural_fails: []` exit 0.
+
+**The round succeeded by its own criteria and failed as physics, and its own
+criteria could not tell the difference.**
+
+Target selected dynamically: filtering the baseline status table for
+`NOT_VISIBLE_OR_NO_TARGET_SUPPORT` returned **exactly one row, object 143
+`rc1_wall`**, failed centre gaze **(0.000, 0.000)**. No scene id is written in
+any seed-round source.
+
+All eight probes rendered before selection, steps **66..73**, eight Blender
+launches for eight probes (asserted equal). Target visible / valid-depth per
+ring: (-5,-5) 17,226/6,055; **(0,-5) 13,758/6,169**; (+5,-5) 10,428/4,119;
+(-5,0) 1,025/27; **(+5,0) 0/0**; (-5,+5) 6,996/70; (0,+5) 6,469/39; (+5,+5)
+9,167/122. **Seven of eight probes saw an object that showed zero pixels at its
+own centre** - one 5-degree step clears this occluder geometrically. A sharp
+asymmetry: downward probes recovered 4,119-6,169 points, upward probes saw
+comparable wall but recovered only 39-122.
+
+Deterministic winner ring 1, gaze (0.000, -5.000), 6,169 of 13,758 (44.8%). No
+tie-break needed. Selection read only observer-side instance support and stereo
+validity; the seed-round closure reaches 14 modules and **no evaluator-side
+module**, and no `reference_*` artifact is named in its sources.
+
+The winning observation was **reused, not re-rendered**
+(`rendered_new_fixation: false`, `extra_seed_renders: 0`, exactly 8
+acquisitions on disk). The FullScene-1b extraction gave **6,169 points,
+`seed_patch_pure: true`**, range 2.025/2.141/2.431 m. The frozen 100-point
+`initialize()` minimum was **reported, not applied**; no map initialized, no
+growth.
+
+**Then the depth.** The recovered wall sits at median **2.141 m**, while the
+baseline's own object-141 map - the cloth occluding it - has median **2.136 m**.
+The wall must be behind the cloth. The instrument's vergence distance is
+**2.1 m** (a setting, not truth): the recovered median is **41 mm from the
+vergence plane** and **89.5% of points lie within +/-150 mm of it**. All of
+that is knowable without truth. A post-hoc check against the sealed REAL-1
+reference, run after the round was on disk and influencing nothing, confirms
+it: all 6,169 points are **directionally correct** (the wall truly is first hit
+along every one), true range 3.380/3.393/3.421 m, **median absolute error
+1,251 mm, p95 1,326 mm, and 0 of 6,169 - 0.00% - within 50 mm of the true
+surface**.
+
+Mechanism, visible in the probe image: between cloth and table the wall is a
+**featureless grey band** (the Reality-1 quiet wall, 0.60 + 0.012*noise). With
+nothing to match, stereo returns disparities at the vergence plane; the oracle
+first-hit mask then labels those pixels 143 because the left eye's first hit
+really is the wall. The output is dense, confident-looking, label-pure and
+metrically false.
+
+**Quantity was anti-correlated with correctness.** Post-hoc per-probe median
+error / fraction within 50 mm: ring 0 1,234.7 mm / 0.00%; **winner ring 1
+1,251.0 mm / 0.00%**; ring 2 1,243.0 mm / 0.78%; ring 3 1,265.2 mm / 0.00%;
+ring 5 1,262.0 mm / 5.71%; ring 6 1,242.3 mm / 0.00%; **ring 7 322.3 mm /
+11.48%**. The prescribed quantity-first rule **selected the worst probe
+available**: ring 7 has 50x fewer points, 4x lower error and the only
+meaningful near-surface fraction, because its 122 points sit in a thin wall
+sliver at the cloth's edge where a real discontinuity gives the matcher
+something to lock onto.
+
+Integrity: baseline **767 files byte-identical** before and after
+(digest-of-digests `76ad8b411a9e48ab...`), including the four `reference_*`
+products and `observer_complete.json`; the run's own pin covered 18 artifacts
+with `baseline_files_changed: 0`. py_compile clean on all five modules;
+`[real1-seed-round-check] SUMMARY passed=8 failed=0`; **all eight mutations
+exit 1** with named detectors, unknown exits 2; REAL-1's own checker still
+13/13 with all twelve mutations exit 1; **54/54 suites green, 331/331 prior
+negatives firing**; **337 sources at `f49ec8e` and 329 at `651a6cb`
+byte-identical**. `growth_actions/audit_actions/handoff_actions` all 0,
+`truth_opened` false, and the output tree contains **zero**
+map/growth/audit/handoff/reference artifacts. `main` `15eedee` and
+`fullscene-calibration-1` `651a6cb` untouched.
+
+What this establishes: **one 5-degree ring clears this occluder geometrically**
+(7 of 8 neighbours saw it); the round is bounded exactly as specified; the
+baseline was pure input; and **a visible direction is not a usable seed** - the
+winner is label-pure with 0.00% of points within 50 mm. Critically, **an
+observer-side red flag existed and the prescribed rule ignored it**: recovered
+depth piling up at the vergence plane and coinciding with the occluder's
+measured depth are both truth-free signals. What it does **not** establish:
+**this is not a recovery success** despite `recovery_status: RECOVERED_SEED`;
+**no claim that a vergence-plane guard would fix it** - the pile-up is measured,
+no such test was implemented or validated, and inventing one is outside this
+round's contract; **no general occluded-seed claim** at n=1, one radius, one
+lattice step, one fixture; **no claim the wall is unreconstructable** - ring 7
+got 11.48% within 50 mm, so structure-adjacent wall is measurable; **no
+discovery claim**; and **the seed was not used** - REAL-1 still records 143 as
+`NOT_VISIBLE_OR_NO_TARGET_SUPPORT`. **Next: Chat's call** - whether the
+selection rule should carry a truth-free plausibility test (recovered range must
+exceed the occluder's along the same direction, or must not pile up at the
+vergence plane), and whether a textureless surface should be reported as
+unmeasured rather than measured-at-vergence. Stopped; no second ring.
