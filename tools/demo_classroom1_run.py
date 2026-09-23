@@ -176,6 +176,7 @@ def main() -> None:
         "finished_unix": time.time(),
     }
     _write(out / "demo_manifest.json", manifest)
+    adapter.write_report(manifest, out)
     print(
         f"DEMO_CLASSROOM1_COMPLETE foreground={len(rows)}/{len(objs)} "
         f"fixations={len(all_fix)} attention=oracle global_guard={global_guard_hit}"
