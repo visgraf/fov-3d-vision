@@ -63,19 +63,36 @@ def main() -> None:
             "recovery_status": "RECOVERED_SEED" if recovered else "ONE_RING_EXHAUSTED_NO_SEED",
         }
         all_targets.append(result)
+    # The baseline is input, not workspace: re-hash every pinned artifact and
+    # every per-object map and refuse any difference.
+    baseline_proof = rr.verify_baseline_unchanged()
     manifest = {
         "schema": public.SPEC_ID,
         "public_spec_sha256": public.public_digest(),
         "baseline_result_commit": public.BASELINE_RESULT_COMMIT,
         "baseline_out": str(baseline),
+        "baseline_seal_sha256": base["baseline_seal_sha256"],
+        "baseline_read_only_verified": True,
+        **baseline_proof,
         "one_round_complete": True,
         "rendered_probe_count": sum(x["probe_count"] for x in all_targets),
+        "blender_launches": int(rr.blender_launches),
+        "render_seconds": float(rr.render_seconds),
+        "extra_seed_renders": 0,
+        "ring_offsets": [list(o) for o in public.RING_OFFSETS],
+        "lattice_step_deg": public.GRID_STEP_DEG,
+        "probe_global_steps": [int(pp["global_step"]) for x in all_targets for pp in x["probes"]],
         "growth_actions": 0,
         "audit_actions": 0,
         "handoff_actions": 0,
         "truth_opened": False,
         "targets": all_targets,
     }
+    # One render per probe and no ninth seed fixation, counted rather than asserted.
+    if int(rr.blender_launches) != int(manifest["rendered_probe_count"]):
+        raise AssertionError(
+            f"render count {rr.blender_launches} != probe count {manifest['rendered_probe_count']}"
+        )
     _write(out / "probe_ledger.json", all_targets)
     _write(out / "seed_recovery_report.json", manifest)
     _write(out / "seed_recovery_manifest.json", manifest)
