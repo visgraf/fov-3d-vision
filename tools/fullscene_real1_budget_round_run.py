@@ -26,7 +26,13 @@ def main():
   next_step+=fresh
   audit=rr.audit_after_round(row,cont,od)
   results.append({'object_id':oid,'baseline_status':row.get('status'),'continuation':cont,'audit':audit})
- seal={'schema':public.SPEC_ID,'public_spec_sha256':public.public_digest(),'baseline_result_commit':public.BASELINE_RESULT_COMMIT,'one_round_complete':True,'round_fixation_limit_per_target':public.ROUND_FIXATION_LIMIT,'handoff_actions':0,'truth_opened_before_seal':False,'targets':results,'sealed_unix':time.time()}
+ # The baseline is input, not workspace: re-hash every pinned artifact and map
+ # before the seal is written.
+ baseline_proof=rr.verify_baseline_unchanged()
+ seal={'schema':public.SPEC_ID,'public_spec_sha256':public.public_digest(),'baseline_result_commit':public.BASELINE_RESULT_COMMIT,'one_round_complete':True,'round_fixation_limit_per_target':public.ROUND_FIXATION_LIMIT,'handoff_actions':0,'truth_opened_before_seal':False,'returned_handoff_actions':0,'second_block':False,'adaptive_budget_rule_used':False,'reseeded':False,'historical_rerenders':0,'baseline_seal_sha256':base['baseline_seal_sha256'],'baseline_read_only_verified':True,**baseline_proof,'blender_launches':int(rr.blender_launches),'render_seconds':float(rr.render_seconds),'targets':results,'sealed_unix':time.time()}
+ # One render per fresh fixation and nothing else, counted rather than asserted.
+ _fresh=sum(int(x['continuation'].get('fresh_fixation_count',0)) for x in results)
+ if int(rr.blender_launches)!=_fresh: raise AssertionError(f'render count {rr.blender_launches} != fresh fixation count {_fresh}')
  _w(out/'continuation_seal.json',seal); _w(out/'continuation_report.json',seal)
  evaluation=rr.evaluate_after_seal(results,out/'continuation_seal.json',out/'evaluation')
  manifest=dict(seal); manifest['postseal_evaluation']=evaluation; manifest['truth_opened_after_seal']=True
