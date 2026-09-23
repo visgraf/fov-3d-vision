@@ -64,6 +64,7 @@ def main() -> None:
             continue
 
         gaze = tuple(adapter.choose_oracle_seed_gaze(obj, guidance))
+        action_source = "ORACLE_SEED"
         current_map: Path | None = None
         history: list[dict[str, Any]] = []
         redirects = 0
@@ -73,11 +74,19 @@ def main() -> None:
             meas = dict(adapter.acquire_and_validate(obj, gaze, step, od, guidance))
             meas["global_step"] = step
             meas["gaze_deg"] = [float(gaze[0]), float(gaze[1])]
+            meas["action_source"] = action_source
             history.append(meas)
             all_fix.append(meas)
             step += 1
 
             fused = dict(adapter.initialize_or_fuse(obj, meas, od, current_map))
+            # Per-fixation fusion ledger travels with the measurement record.
+            meas["fused"] = bool(fused.get("fused", False))
+            meas["fused_new"] = int(fused.get("new", 0))
+            meas["fused_matched"] = int(fused.get("matched", 0))
+            meas["map_points_after"] = fused.get("map_points")
+            meas["empty_look"] = bool(fused.get("empty_look", False))
+            meas["fusion_note"] = fused.get("reason")
             mp = fused.get("map_path")
             if mp:
                 current_map = Path(mp)
@@ -90,12 +99,14 @@ def main() -> None:
                     break
                 redirects += 1
                 gaze = (float(ng[0]), float(ng[1]))
+                action_source = "ORACLE_REDIRECT"
                 continue
 
             local = dict(adapter.local_next_action(obj, od, history, current_map))
             ng = local.get("next_gaze_deg")
             if ng is not None and not bool(local.get("stop", False)):
                 gaze = (float(ng[0]), float(ng[1]))
+                action_source = "LOCAL_FSG"
                 continue
 
             # Demo-mode rescue: local machinery has stopped/stalled, but Blender may
@@ -111,6 +122,7 @@ def main() -> None:
                 break
             redirects += 1
             gaze = (float(ng[0]), float(ng[1]))
+            action_source = "ORACLE_REDIRECT"
         else:
             stop_reason = "DEMO_OBJECT_GUARDRAIL"
 
@@ -120,6 +132,7 @@ def main() -> None:
         rows.append(row)
         _write(od / "object_complete.json", row)
 
+    _write(out / "fixation_history.json", all_fix)
     exports = dict(adapter.export_demo(rows, guidance, all_fix, out))
     manifest = {
         "schema": public.SPEC_ID,
@@ -134,6 +147,17 @@ def main() -> None:
         "repo_head": _git(repo, "rev-parse", "HEAD"),
         "object_rows": rows,
         "fixation_count": len(all_fix),
+        "fixation_history": "fixation_history.json",
+        "action_source_counts": {
+            k: sum(1 for f in all_fix if f.get("action_source") == k)
+            for k in ("ORACLE_SEED", "LOCAL_FSG", "ORACLE_REDIRECT")
+        },
+        "renderer_precondition_refusals": sum(
+            1 for f in all_fix if f.get("renderer_precondition_refused")),
+        "empty_looks": sum(1 for f in all_fix if f.get("empty_look")),
+        "raw_valid_stereo_total": sum(int(f.get("raw_valid_stereo_count", 0)) for f in all_fix),
+        "accepted_total": sum(int(f.get("accepted_count", 0)) for f in all_fix),
+        "oracle_rejected_total": sum(int(f.get("oracle_rejected_count", 0)) for f in all_fix),
         "exports": exports,
         "started_unix": started,
         "finished_unix": time.time(),
