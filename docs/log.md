@@ -9657,3 +9657,98 @@ selection rule should carry a truth-free plausibility test (recovered range must
 exceed the occluder's along the same direction, or must not pile up at the
 vergence plane), and whether a textureless surface should be reported as
 unmeasured rather than measured-at-vergence. Stopped; no second ring.
+
+### 2026-09-23 - FullScene-REAL-1W: one quarter-budget continuation - the watchdog fired three looks early, and the stop it delayed is still not resolution
+
+One 6-fixation continuation block for every REAL-1 watchdog-retained object, on
+branch `fullscene-real-1` only. Record
+`previews/fullscene-real1-budget-round1/full-seed2111`, seed 2111, profile
+`full`, OPTIX. `[real1-budget-round] COMPLETE {"targets": 2,
+"fresh_fixations": 6}`; comparator `FULLSCENE_REAL1_BUDGET_ROUND_COMPLETE
+structural_fails: []` exit 0. No REAL-1S seed-recovery data entered; the seam
+refuses such a path (verified live).
+
+Targets selected dynamically: `WATCHDOG_REACHED_RETAIN_FOR_REVISIT` returned
+**141 `rc1_cloth` and 142 `rc1_table`**. Both resumed from their **saved final
+REAL-1 map**, `reseeded: false`, `historical_rerenders: 0`; object-local history
+was rebuilt by **re-reading** 24 saved acquisitions each from disk - no render,
+and the map was never re-fused from history.
+
+**Both saved final decisions were `stop=false, reason=continue`** - FSG6f really
+did still want to continue when the guardrail fired - and both were reproduced
+**exactly** through unchanged `multiobject3f_audit._exact_decision_replay`
+across all ten exact fields plus the next gaze, **before any fresh render**.
+Saved state: 141 open **47**, voxels 2,443, frontier 197, next (+0.113,+6.076);
+142 open **1,138**, voxels 28,845, frontier 1,582, next (-10.000,-14.769).
+
+**Both reached the policy's own `no_frontier` stop after 3 of the 6 allotted
+looks** - the block was never exhausted. 6 Blender launches for 6 fresh
+fixations (asserted equal), no empty looks. Steps 66-68 and 69-71.
+
+Per look, new surfels: 141 gave **45 / 4,311 / 177**; 142 gave **2,459 / 2,985 /
+2,684**. Continuation is dominated by **re-measurement**: 141 fused 4,533 new
+against 151,489 matched (**2.9% new**), 142 8,128 against 120,313 (**6.3%**).
+Look 66 produced **45 new surfels from 49,374 valid target points**.
+
+**The two `no_frontier` stops are not the same stop.** 141's open count *rose*
+**47 -> 122** and it stopped because **all three candidates were rejected by the
+OPEN-majority consensus rule** (candidates 2->3, rejected 0->**3**). 142's fell
+1,138 -> 1,048 and it stopped because it **generated no candidates at all**
+(candidates 3 -> **0**). Same label, two mechanisms, and neither means the
+frontier is empty. This reproduces the MultiObject-3d / FullScene-1d
+single-object distinction at scene scale, now under a budget intervention.
+
+Post-round audit (read-only, `audit_triggered_action: false`, 27 observations
+each): raw support 36,499->37,726 (**+1,227**) and 75,537->75,793 (**+256**);
+attention residue **0 -> 0** and **1,158 -> 1,033 (-125)**; measurement residue
+**31 -> 32 (+1)** and **74 -> 284 (+210)**. **142's support-cell figure fell
+100,122 -> 98,180, and that is NOT surface loss**: its chart is rebuilt from the
+map extent and its footprint radius dropped 4 -> 3 cells because footprint is
+`atan(0.012/median_range)`, so each surfel paints a smaller disk on a different
+grid. 141's chart is bit-identical (263x199, fp 4), so its **+793** is clean.
+Visually 141 is near-solid with **no red at all** and one small orange arc - the
+zero-contrast emblem, still unmeasured after three more looks - while 142 keeps
+a **red border** along left, right and bottom: the 1,033 cells the policy
+declined to act on.
+
+Post-seal against the immutable REAL-1 reference (seal written first,
+`truth_opened_before_seal: false`; evaluator refuses a missing or non-closed
+seal, verified live; `non_target_objects_unchanged: true`): **141 coverage
+0.9388 -> 0.9696 (+0.0308)** on +408 correct pixels; **142 coverage 0.5898 ->
+0.5907 (+0.0009)** on **+40** correct pixels. **Purity stayed exactly 1.0000 and
+contamination exactly 0.0000** for both. Depth error got **slightly worse** for
+both: 141 median 9.54->9.78 mm, p95 21.15->22.10 mm; 142 median 26.02->26.93 mm,
+p95 196.19->203.96 mm.
+
+**The same three-look intervention bought 141 a 3.08-point coverage gain and 142
+0.09** - and 142 did it while adding nearly twice as many surfels (8,128 vs
+4,533) for **+40** correct pixels. Geometric growth and coverage growth are not
+the same quantity.
+
+Integrity: baseline **767 files byte-identical** before/after (digest-of-digests
+`76ad8b411a9e48ab...`), run-side pin 28 artifacts with
+`baseline_files_changed: 0`; py_compile clean on five modules;
+`[real1-budget-round-check] SUMMARY passed=9 failed=0`; **all nine mutations
+exit 1** with named detectors, unknown exits 2; two live seal negatives refuse;
+**55/55 suites green, 331/331 prior negatives firing**; **337 sources at
+`f49ec8e` and 342 at `f1a2ae7` byte-identical**; `handoff_actions` 0,
+`second_block` false, `adaptive_budget_rule_used` false, `blender_launches` 6.
+`main` `15eedee` and `fullscene-calibration-1` `651a6cb` untouched.
+
+What this establishes: **the watchdog fired three looks early for both
+objects**; the saved decision reproduced exactly from saved map and re-read
+history alone; **`no_frontier` is still not one state**; continuation is
+dominated by re-measurement; **geometric growth and coverage growth are
+different quantities**; and the extra budget cost a little depth accuracy while
+**purity and contamination were untouched**. What it does **not** establish:
+**no budget rule** - one block, one size, two objects, one seed, and no formula
+was fitted; **`no_frontier` after continuation is not completeness** (141 ends
+with 122 open and 32 unmeasured cells, 142 with 1,048 open and **1,033
+never-observed**); **142's support-cell drop is not surface loss**; the slightly
+worse depth error is **an observation, not a law**, at n=2 with no isolating
+test; **nothing about why consensus rejected 141's candidates or why 142
+generated none**; **no claim more looks would help either** - 141's hole is a
+zero-contrast measurement limit, 142's is an attention debt the policy declined
+to act on; and **no score or productivity metric**. **Next: Chat's call** -
+whether to open the consensus/candidate-generation mechanism that produced two
+different stops under the same label. Stopped; no second block.
