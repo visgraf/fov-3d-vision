@@ -9752,3 +9752,93 @@ zero-contrast measurement limit, 142's is an attention debt the policy declined
 to act on; and **no score or productivity metric**. **Next: Chat's call** -
 whether to open the consensus/candidate-generation mechanism that produced two
 different stops under the same label. Stopped; no second block.
+
+### 2026-09-23 - Demo-Tabletop-1: the whole idea, end to end, with truth as declared scaffolding
+
+First polished concept demonstration, on branch `demo-tabletop-1` only. Record
+`previews/demo-tabletop1/full-seed2111`, seed 2111, profile `full`, OPTIX,
+72 fixations, 72 Blender launches, 587 s rendering.
+`DEMO_TABLETOP1_COMPLETE objects=5 fixations=72`; comparator
+`structural_fails: []` exit 0. **This is a demo, not an autonomy experiment.**
+
+Mode change respected: Blender truth was used on the control path for object
+identity/masks, seed and redirect gazes, measurement validation, and the
+declared background layer. **The one hard boundary held and was verified, not
+asserted.** Across all 69 rendered fixations the accepted foreground set is a
+**bitwise row-subset of the stereo xyz array (69/69)**, a pure boolean filter
+of it, with **0 fixations** where reference depth supplied a foreground value,
+and **1,210,308 of 1,210,308 accepted rows (100.00%)** differing bitwise from
+the reference-derived position along the same direction - that position was
+computed only to record it was not adopted.
+
+Objects (dynamic enumeration, live labels, no hard-coded ids): **141 rc1_cloth**
+20 fixations / 1 redirect / DEMO_TARGET_SATISFIED / 146,548 surfels / 0.9510
+coverage; **142 rc1_table** 32 / 7 / DEMO_OBJECT_GUARDRAIL / 368,295 / 0.7491;
+**143 rc1_wall BACKGROUND_SCAFFOLD** 0 fixations, **0 foreground surfels**;
+**144 rc1_book_left** 11 / 1 / DEMO_TARGET_SATISFIED / 4,123 / 0.9082;
+**145 rc1_box_right** 9 / 0 / DEMO_TARGET_SATISFIED / 6,779 / 0.9228.
+
+**The established local controller did most of the work**: action sources were
+**LOCAL_FSG 60, ORACLE_REDIRECT 8, ORACLE_SEED 4** - 83% of fixations came from
+the unchanged frozen FSG policy, with the oracle as scaffolding rather than as
+the controller. Also recorded: 3 renderer precondition refusals, 4 empty looks
+under the inherited <100-point rule.
+
+Validation: raw 1,272,447 stereo samples, **accepted 1,210,308, oracle-rejected
+62,139 (4.88%)**, all of them gate rejections (0 wrong-instance, 0
+no-reference-hit). Per object raw->accepted median / p95: 141 **5.22->5.22 mm /
+15.81->15.81 mm, 0.00% rejected**; 142 **33.95->29.71 mm / 151.86->99.83 mm,
+6.60% rejected**; 144 31.97->31.53 / 69.52->64.22, 0.19%; 145 15.04->15.03 /
+61.88->61.56, 0.09%. **The gate is essentially only active on the table**,
+where it cuts p95 from 151.9 to 99.8 mm; on the cloth - near the 2.1 m vergence
+plane and well textured - it rejects nothing. That matches what REAL-1 measured
+independently about where this stereo front end is trustworthy.
+
+Layers kept separate in every product: **A** stereo foreground 525,745 surfels /
+42,837 px; **B** oracle background 41,453 px, soft-depth median 3.623 m from
+robust reference quantiles; **C** reference truth; **D** composite with
+per-pixel provenance in `demo_layer.npy`,
+`background_surfels_counted_in_foreground: 0` and
+`composite_is_autonomous_reconstruction: false`. Story: 69 timeline frames and
+`demo.mp4` (1040x334, 69 frames, 34.5 s).
+
+**Four defects found by running, each diagnosed before any change, all fixed in
+new Demo files only.** (1) The established `fsg_render.check_geometry` refused
+fixation 49 - "max 5.1974e-07 m; hits 70" - and the failing clause was
+`count < 100`, not the 2e-5 tolerance: it samples 121 random pixels per eye and
+needs 100 hits, and the demo had proposed a gaze whose frame was mostly empty
+past the table edge. Fixed with one `_pick_gaze()` rule shared by seeds and
+redirects, thresholded at 0.50 frame occupancy - calibrated against measurement,
+since the renderer's own ratio is 100/242 = 0.413, every gaze that actually
+rendered measured >= 0.847, and the refused one ~0.29. (2) Frozen
+`fsg3_surface_map.fuse` refused a 92-point patch on object 144: `fuse()` carries
+the same 100-point floor as `initialize()`, and the inherited Reality-2b
+empty-look rule already covers it - it was being applied only on the initialize
+path. (3) No per-fixation ledger was persisted; added `fixation_history.json`
+with action source and fusion counts. (4) The report files were never generated
+and `demo.mp4` held 49 of 69 frames because refused fixations leave numbering
+gaps that ffmpeg's `%03d` pattern stops at; added the report writer and switched
+to glob input.
+
+**No pre-Demo source was modified: all 347 tracked sources at baseline
+`0e09f5b` are byte-identical**; the branch is purely additive (8 new files).
+Checks: py_compile clean on six modules, reference-helper self-test green,
+`[demo-tabletop1-check] passed=9 failed=0`, all five mutations exit 1,
+comparator exit 0, every required output present, **56/56 suites green and
+331/331 prior negatives firing**. `main` `15eedee`,
+`fullscene-calibration-1` `651a6cb` and `fullscene-real-1` `0e09f5b` all
+unmoved.
+
+What this demonstrates: **the full architecture runs end to end** - look,
+foveated binocular render, established stereo, validation, 12 mm fusion,
+persistent per-object geometry, attention redirect, scene accumulation - with a
+legible visual story; **metric foreground geometry is stereo throughout**,
+verified per fixation; foreground and declared background stay separate
+everywhere. What it does **not** establish: **no autonomous discovery** (identity
+from truth); **no autonomous gaze policy** (seeds and redirects from truth, and
+the demo condition is measured against reference support); **no truth-free
+measurement validation** (the gate *is* the reference); **no controller
+optimality** (the table hit an engineering guardrail at 74.9%); **background
+geometry was not inferred** - `rc1_wall` is declared, and inferring that
+decomposition with its soft-depth regime is the future research problem; and
+**the composite is not a fully autonomous reconstruction**. Stopped.
