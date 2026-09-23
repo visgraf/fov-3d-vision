@@ -881,10 +881,149 @@ class RepositoryAdapter:
             return None
         first = Image.open(out / frames[0])
         w, h = first.width - first.width % 2, first.height - first.height % 2
-        cmd = ["ffmpeg", "-y", "-framerate", "2", "-i", str(out / "timeline" / "fix_%03d.png"),
+        # Glob, not %03d: a renderer-refused fixation leaves a gap in the frame
+        # numbering and the numeric pattern would silently stop at the first one.
+        cmd = ["ffmpeg", "-y", "-framerate", "2", "-pattern_type", "glob",
+               "-i", str(out / "timeline" / "fix_*.png"),
                "-vf", f"crop={w}:{h}:0:0,format=yuv420p", "-c:v", "libx264", "-preset", "medium",
                str(out / "demo.mp4")]
         p = subprocess.run(cmd, capture_output=True, text=True)
         (out / "logs").mkdir(parents=True, exist_ok=True)
         (out / "logs" / "ffmpeg.log").write_text(p.stdout + "\n--- STDERR ---\n" + p.stderr)
         return "demo.mp4" if p.returncode == 0 and (out / "demo.mp4").is_file() else None
+
+    # ---------- report ----------
+
+    def write_report(self, manifest: dict[str, Any], out: Path) -> dict[str, Any]:
+        """Write demo_report.json / demo_report.md distinguishing A/B/C/D layers."""
+        rows = manifest["object_rows"]
+        fg = [r for r in rows if r.get("role") == "STEREO_FOREGROUND"]
+        bg = [r for r in rows if r.get("role") == "BACKGROUND_SCAFFOLD"]
+        hist = json.loads((out / "fixation_history.json").read_text())
+        rendered = [f for f in hist if not f.get("renderer_precondition_refused")]
+        prov = json.loads((out / "demo_layer_provenance.json").read_text())
+        soft = json.loads((out / "background_soft_depth.json").read_text())
+
+        report = {
+            "schema": "DemoTabletop1-report-v1",
+            "what_this_is": "oracle-assisted concept demonstration, NOT an autonomy experiment",
+            "layers": {
+                "A_stereo_foreground_reconstruction": {
+                    "metric_geometry_from": "foveated binocular render -> established stereo -> oracle validity gate -> 12 mm fusion",
+                    "objects": [int(r["object_id"]) for r in fg],
+                    "surfels": int(manifest["exports"]["foreground_surfels_total"]),
+                    "panorama_pixels": int(prov["foreground_pixels"]),
+                    "products": ["foreground_scene_points.npz/.ply", "objects/object_<id>.npz/.ply",
+                                 "foreground_depth.npy", "foreground_instance.npy",
+                                 "foreground_valid.png", "foreground_rgb_mosaic.png"],
+                },
+                "B_oracle_background_scaffold": {
+                    "metric_geometry_from": "reference soft depth (NOT stereo)",
+                    "objects": [int(r["object_id"]) for r in bg],
+                    "labels": list(public.BACKGROUND_LABELS),
+                    "surfels_counted_as_foreground": 0,
+                    "panorama_pixels": int(prov["background_pixels"]),
+                    "soft_depth_median_m": soft.get("range_median_m"),
+                    "products": ["background_mask.png", "background_rgb.png", "background_soft_depth.json"],
+                },
+                "C_reference_truth": {
+                    "source": "evaluator reality1_scene, rendered before control in Demo Mode",
+                    "products": ["reference_rgb.png", "reference_depth.npy", "reference_instance.npy"],
+                },
+                "D_demo_composite": {
+                    "composition": "layer A where stereo foreground exists, else layer B; per-pixel provenance in demo_layer.npy",
+                    "is_autonomous_reconstruction": False,
+                    "products": ["demo_rgb.png", "demo_depth.npy", "demo_depth_preview.png",
+                                 "demo_instance.npy", "demo_layer_provenance.json"],
+                },
+            },
+            "oracle_aids_used": {
+                "object_identity_and_masks": True,
+                "seed_gaze_from_reference_support": True,
+                "redirect_gaze_when_local_control_stalls": True,
+                "reference_depth_for_measurement_validation": True,
+                "reference_rgb_for_background_texture": True,
+                "reference_depth_inserted_into_metric_foreground": False,
+            },
+            "measurement": {
+                "raw_valid_stereo_total": int(manifest["raw_valid_stereo_total"]),
+                "accepted_total": int(manifest["accepted_total"]),
+                "oracle_rejected_total": int(manifest["oracle_rejected_total"]),
+                "oracle_rejected_fraction": (float(manifest["oracle_rejected_total"]
+                                                   / max(1, manifest["raw_valid_stereo_total"]))),
+                "gate": f"|range_stereo - range_ref| <= max({public.DEPTH_GATE_ABS_M}, {public.DEPTH_GATE_REL}*range_ref)",
+                "accepted_is_row_subset_of_stereo_all_fixations": all(
+                    f.get("accepted_is_row_subset_of_stereo") for f in rendered),
+                "reference_supplied_foreground_values_count": sum(
+                    1 for f in rendered if f.get("reference_depth_supplied_foreground_values")),
+            },
+            "attention": {
+                "action_source_counts": manifest["action_source_counts"],
+                "renderer_precondition_refusals": int(manifest["renderer_precondition_refusals"]),
+                "empty_looks": int(manifest["empty_looks"]),
+                "max_object_fixations": public.MAX_OBJECT_FIXATIONS,
+                "max_oracle_redirects": public.MAX_ORACLE_REDIRECTS,
+            },
+            "objects": rows,
+            "not_established": list(public.PUBLIC_SPEC["scientific_claims_not_made"]),
+        }
+        (out / "demo_report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+
+        L = report["layers"]
+        m = report["measurement"]
+        lines = [
+            "# Demo-Tabletop-1 — oracle-assisted concept demonstration",
+            "",
+            "**This is a concept demonstration, not an autonomy experiment.** Blender truth was",
+            "available to control for object identity, gaze guidance, measurement validation and",
+            "the declared background layer. The composite is **not** a fully autonomous",
+            "reconstruction.",
+            "",
+            "## The four layers",
+            "",
+            "| layer | metric geometry from | objects | extent |",
+            "|---|---|---|---|",
+            f"| **A** stereo foreground | stereo -> oracle gate -> 12 mm fusion | {L['A_stereo_foreground_reconstruction']['objects']} | {L['A_stereo_foreground_reconstruction']['surfels']:,} surfels, {L['A_stereo_foreground_reconstruction']['panorama_pixels']:,} px |",
+            f"| **B** oracle background | reference soft depth (NOT stereo) | {L['B_oracle_background_scaffold']['objects']} {L['B_oracle_background_scaffold']['labels']} | {L['B_oracle_background_scaffold']['panorama_pixels']:,} px, median {L['B_oracle_background_scaffold']['soft_depth_median_m']:.3f} m |",
+            "| **C** reference truth | evaluator scene, rendered before control | all | 2048x1024 |",
+            "| **D** demo composite | A where present, else B | all | provenance in `demo_layer.npy` |",
+            "",
+            f"Background surfels counted as foreground: **{L['B_oracle_background_scaffold']['surfels_counted_as_foreground']}**.",
+            "",
+            "## Objects",
+            "",
+            "| id | label | role | fixations | redirects | stop | foreground surfels | reference coverage |",
+            "|---:|---|---|---:|---:|---|---:|---:|",
+        ]
+        for r in rows:
+            cov = r.get("reference_angular_coverage")
+            lines.append(
+                f"| {r['object_id']} | `{r['label']}` | {r['role']} | {r.get('fixations', 0)} | "
+                f"{r.get('oracle_redirects', 0)} | {r.get('stop_reason')} | {r.get('foreground_surfels', 0):,} | "
+                f"{('%.4f' % cov) if cov is not None else '—'} |")
+        lines += [
+            "",
+            "## Measurement validation",
+            "",
+            f"- gate: `{m['gate']}`",
+            f"- raw valid stereo: **{m['raw_valid_stereo_total']:,}**",
+            f"- accepted: **{m['accepted_total']:,}**",
+            f"- oracle-rejected: **{m['oracle_rejected_total']:,}** ({m['oracle_rejected_fraction']*100:.2f}%)",
+            f"- accepted set is a bitwise row-subset of the stereo array on every rendered fixation: "
+            f"**{m['accepted_is_row_subset_of_stereo_all_fixations']}**",
+            f"- fixations where reference depth supplied a foreground value: "
+            f"**{m['reference_supplied_foreground_values_count']}**",
+            "",
+            "## Attention",
+            "",
+            f"- action sources: **{report['attention']['action_source_counts']}**",
+            f"- renderer precondition refusals: {report['attention']['renderer_precondition_refusals']}",
+            f"- empty looks (inherited <100-point rule): {report['attention']['empty_looks']}",
+            f"- guardrails: {report['attention']['max_object_fixations']} fixations/object, "
+            f"{report['attention']['max_oracle_redirects']} oracle redirects/object",
+            "",
+            "## Not established",
+            "",
+        ] + [f"- {x}" for x in report["not_established"]] + [""]
+        (out / "demo_report.md").write_text("\n".join(lines))
+        return report

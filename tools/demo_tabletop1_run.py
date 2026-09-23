@@ -163,6 +163,7 @@ def main() -> None:
         "finished_unix": time.time(),
     }
     _write(out / "demo_manifest.json", manifest)
+    adapter.write_report(manifest, out)
     print(f"DEMO_TABLETOP1_COMPLETE objects={len(rows)} fixations={len(all_fix)}")
 
 
