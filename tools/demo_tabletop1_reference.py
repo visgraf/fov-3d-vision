@@ -123,6 +123,23 @@ def deepest_interior_cell(mask: np.ndarray) -> tuple[int, int] | None:
     return int(ys[order[0]]), int(xs[order[0]])
 
 
+def interior_cells_deepest_first(mask: np.ndarray, limit: int = 64) -> list[tuple[int, int]]:
+    """Interior cells of `mask` ordered deepest-first, ties by (y, x).
+
+    Same chamfer transform and same tie-break as deepest_interior_cell; this
+    simply exposes the ordered candidate list so a caller can skip a candidate
+    the instrument will not accept without changing the ordering rule.
+    """
+    m = np.asarray(mask, bool)
+    if not m.any():
+        return []
+    d = _chamfer_fast(m)
+    ys, xs = np.nonzero(m)
+    dd = d[ys, xs]
+    order = np.lexsort((xs, ys, -dd))
+    return [(int(ys[i]), int(xs[i])) for i in order[:int(limit)]]
+
+
 def cell_to_gaze(y: int, x: int, width: int, height: int) -> tuple[float, float]:
     """Inverse of the fixed equirect convention used by spherical_zbuffer."""
     yaw = (float(x) + 0.5) / float(width) * 360.0 - 180.0
@@ -237,11 +254,16 @@ def self_test() -> None:
         raise AssertionError(f"deepest interior of a square block should be its centre, got {cell}")
     if deepest_interior_cell(np.zeros((4, 4), bool)) is not None:
         raise AssertionError("empty mask must yield no cell")
+    ordered = interior_cells_deepest_first(m, limit=5)
+    if not ordered or ordered[0] != (4, 4):
+        raise AssertionError("ordered candidates must start at the deepest cell")
+    if interior_cells_deepest_first(np.zeros((4, 4), bool)):
+        raise AssertionError("empty mask must yield no ordered candidates")
     y, x = 0, 0
     yaw, pitch = cell_to_gaze(y, x, 2048, 1024)
     if not (abs(yaw + 179.912) < 1e-2 and abs(pitch - 89.912) < 1e-2):
         raise AssertionError(f"cell_to_gaze convention drifted: {yaw} {pitch}")
-    print("[demo-tabletop1-reference] PASS chamfer_agrees=true deepest_interior=true gaze_convention=true")
+    print("[demo-tabletop1-reference] PASS chamfer_agrees=true deepest_interior=true ordered_candidates=true gaze_convention=true")
 
 
 if __name__ == "__main__":

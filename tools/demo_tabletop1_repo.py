@@ -64,6 +64,19 @@ DEMO_COVERAGE_TARGET = 0.90
 MIN_REDIRECT_COMPONENT_CELLS = 50
 # The frozen FSG3 initialize() itself refuses fewer than 100 points.
 MIN_MAP_INIT_POINTS = 100
+# The established renderer refuses a fixation whose frame is mostly empty: its
+# own check_geometry() samples 121 pixels per eye (242 rays) and requires >=100
+# hits, i.e. >= 0.413 scene occupancy. The demo therefore declines to PROPOSE a
+# gaze the instrument would refuse. 0.50 leaves margin above 0.413; every gaze
+# that actually rendered in the first attempt measured >= 0.847 occupancy, so
+# this is not tuned to rescue a particular case. The window is the foveal frame
+# (256 px at s0=0.05 deg = 12.8 deg) expressed in panorama cells.
+FRAME_DEG = 12.8
+MIN_FRAME_SCENE_FRACTION = 0.50
+
+
+class RendererRefused(RuntimeError):
+    """The established renderer declined this fixation by its own precondition."""
 
 
 @dataclass(frozen=True)
@@ -137,13 +150,13 @@ class RepositoryAdapter:
             if comps:
                 big = np.zeros_like(mask)
                 big[comps[0][:, 0], comps[0][:, 1]] = True
-                cell = ref_builder.deepest_interior_cell(big)
-                if cell is not None:
-                    gy, gx = cell
-                    yaw, pitch = ref_builder.cell_to_gaze(gy, gx, public.PANO_WIDTH, public.PANO_HEIGHT)
+                pick = self._pick_gaze(big, [])
+                if pick.get("gaze_deg") is not None:
+                    gy, gx = pick["cell_yx"]
                     entry.update({
                         "seed_cell_yx": [int(gy), int(gx)],
-                        "seed_gaze_deg": [float(yaw), float(pitch)],
+                        "seed_gaze_deg": list(pick["gaze_deg"]),
+                        "seed_frame_scene_fraction": pick["frame_scene_fraction"],
                         "seed_reference_range_m": float(depth[gy, gx]),
                     })
                 d = depth[mask]
@@ -228,6 +241,11 @@ class RepositoryAdapter:
         self.render_seconds += time.perf_counter() - t0
         (logs / f"render_{step:02d}.log").write_text(p.stdout + "\n--- STDERR ---\n" + p.stderr)
         if p.returncode != 0:
+            # The established renderer declines a frame with too little geometry
+            # (check_geometry needs >=100 of its 242 sampled rays to hit). The demo
+            # records that refusal transparently; anything else is a real failure.
+            if "Blender truth check FAIL" in (p.stdout + p.stderr):
+                raise RendererRefused(f"renderer precondition refused fixation {step} at {gaze}")
             raise RuntimeError(f"demo Blender fixation {step} failed; see {logs}")
         rr = json.loads((out / "run.json").read_text())
         if not rr.get("complete") or int(rr.get("step", -1)) != step:
@@ -248,7 +266,24 @@ class RepositoryAdapter:
             check_kernel_equivalence()
             self._kernel_checked = True
         oid = int(obj.object_id)
-        case = self._render(int(global_step), gaze_deg, object_dir)
+        try:
+            case = self._render(int(global_step), gaze_deg, object_dir)
+        except RendererRefused as exc:
+            self._live.setdefault(oid, {"map": None, "gazes": [], "history": [], "rgb": [],
+                                        "steps": [], "refused": []})
+            self._live[oid].setdefault("refused", []).append(
+                (float(gaze_deg[0]), float(gaze_deg[1])))
+            return {
+                "object_id": oid, "case": None, "rgb": None,
+                "renderer_precondition_refused": True, "renderer_refusal": str(exc),
+                "target_visible_pixels": 0, "raw_valid_stereo_count": 0,
+                "accepted_count": 0, "oracle_rejected_count": 0,
+                "raw_depth_error_median_m": None, "raw_depth_error_p95_m": None,
+                "accepted_depth_error_median_m": None, "accepted_depth_error_p95_m": None,
+                "frame_valid_fraction": None, "stereo_xyz_sha256": None,
+                "accepted_xyz_sha256": None, "accepted_is_row_subset_of_stereo": True,
+                "reference_depth_supplied_foreground_values": False, "accepted_patch": None,
+            }
         c, obs = hdr.read_observation(case)
         rec, _meta, state = compute_once(c, obs)
 
@@ -324,7 +359,8 @@ class RepositoryAdapter:
                 accepted_mask=np.asarray(accept, bool),
             )
 
-        self._live.setdefault(oid, {"map": None, "gazes": [], "history": [], "rgb": [], "steps": []})
+        self._live.setdefault(oid, {"map": None, "gazes": [], "history": [], "rgb": [],
+                                    "steps": [], "refused": []})
         live = self._live[oid]
         live["gazes"].append((float(gaze_deg[0]), float(gaze_deg[1])))
         live["steps"].append(int(global_step))
@@ -415,7 +451,11 @@ class RepositoryAdapter:
         sm = live["map"]
         if sm is None or not len(sm.xyz_h):
             return {"stop": True, "reason": "no_map", "next_gaze_deg": None}
-        case = Path(history[-1]["case"])
+        usable = [h for h in history if h.get("case")]
+        if not usable:
+            return {"stop": True, "reason": "no usable acquisition", "next_gaze_deg": None,
+                    "action_source": "LOCAL_FSG"}
+        case = Path(usable[-1]["case"])
         c, obs = hdr.read_observation(case)
         rec, _meta, state = compute_once(c, obs)
         x, y, cw, ch = map(int, rec["crop_xywh"])
@@ -435,6 +475,55 @@ class RepositoryAdapter:
         return out
 
     # ---------- bounded oracle redirect ----------
+
+    def _frame_half_cells(self) -> int:
+        return int(round(FRAME_DEG / (360.0 / public.PANO_WIDTH) / 2.0))
+
+    def _frame_scene_fraction(self, yaw: float, pitch: float) -> float:
+        """Fraction of the foveal frame around (yaw,pitch) containing ANY scene.
+
+        Mirrors what the established renderer's own geometry check counts, so the
+        demo does not propose a look the instrument will decline.
+        """
+        occ = self._scene_occupancy()
+        h, w = occ.shape
+        half = self._frame_half_cells()
+        x = int(np.floor(((float(yaw) + 180.0) % 360.0) / 360.0 * w))
+        y = int(np.floor((90.0 - float(pitch)) / 180.0 * h))
+        y0, y1 = max(0, y - half), min(h, y + half + 1)
+        x0, x1 = max(0, x - half), min(w, x + half + 1)
+        win = occ[y0:y1, x0:x1]
+        return float(win.mean()) if win.size else 0.0
+
+    def _scene_occupancy(self) -> np.ndarray:
+        occ = self._ref.get("_occupancy")
+        if occ is None:
+            occ = (np.isfinite(self._ref["depth"]) & (self._ref["depth"] > 0)
+                   & (self._ref["instance"] > 0))
+            self._ref["_occupancy"] = occ
+        return occ
+
+    def _pick_gaze(self, mask: np.ndarray, visited: list[tuple[float, float]]) -> dict[str, Any]:
+        """Deepest-interior candidate that the instrument will actually accept."""
+        cands = ref_builder.interior_cells_deepest_first(mask, limit=64)
+        skipped_visited = 0
+        skipped_frame = 0
+        for gy, gx in cands:
+            yaw, pitch = ref_builder.cell_to_gaze(gy, gx, public.PANO_WIDTH, public.PANO_HEIGHT)
+            if any(abs(v[0] - yaw) < 1e-9 and abs(v[1] - pitch) < 1e-9 for v in visited):
+                skipped_visited += 1
+                continue
+            frac = self._frame_scene_fraction(yaw, pitch)
+            if frac < MIN_FRAME_SCENE_FRACTION:
+                skipped_frame += 1
+                continue
+            return {"cell_yx": [int(gy), int(gx)], "gaze_deg": [float(yaw), float(pitch)],
+                    "frame_scene_fraction": frac, "candidates_considered": len(cands),
+                    "skipped_already_visited": skipped_visited,
+                    "skipped_frame_too_empty": skipped_frame}
+        return {"gaze_deg": None, "candidates_considered": len(cands),
+                "skipped_already_visited": skipped_visited,
+                "skipped_frame_too_empty": skipped_frame}
 
     def _covered_mask(self, oid: int) -> np.ndarray:
         sm = self._live.get(oid, {}).get("map")
@@ -481,18 +570,15 @@ class RepositoryAdapter:
             return rec
         big = np.zeros_like(uncovered)
         big[comps[0][:, 0], comps[0][:, 1]] = True
-        cell = ref_builder.deepest_interior_cell(big)
-        if cell is None:
+        live_o = self._live.get(oid, {})
+        pick = self._pick_gaze(big, list(live_o.get("gazes", [])) + list(live_o.get("refused", [])))
+        rec.update({k: v for k, v in pick.items() if k != "gaze_deg"})
+        if pick.get("gaze_deg") is None:
+            rec["reason"] = ("no candidate cell was both unvisited and inside a frame the established "
+                             "renderer would accept")
             return rec
-        gy, gx = cell
-        yaw, pitch = ref_builder.cell_to_gaze(gy, gx, public.PANO_WIDTH, public.PANO_HEIGHT)
-        live = self._live.get(oid, {})
-        for g in live.get("gazes", []):
-            if abs(g[0] - yaw) < 1e-9 and abs(g[1] - pitch) < 1e-9:
-                rec["reason"] = "deterministic redirect cell already visited"
-                return rec
-        rec["redirect_cell_yx"] = [int(gy), int(gx)]
-        rec["next_gaze_deg"] = [float(yaw), float(pitch)]
+        rec["redirect_cell_yx"] = pick["cell_yx"]
+        rec["next_gaze_deg"] = list(pick["gaze_deg"])
         return rec
 
     def finalize_foreground_object(self, obj: DemoObject, object_dir: Path, current_map: Path | None,
@@ -768,6 +854,8 @@ class RepositoryAdapter:
                 scene = canvas[y0:y1, x0:x1]
             else:
                 scene = np.zeros_like(ref_rgb8)
+            if not m.get("rgb"):
+                continue
             look = np.asarray(Image.open(m["rgb"]).convert("RGB"))
             h = max(look.shape[0], scene.shape[0])
             sc = Image.fromarray(scene)
