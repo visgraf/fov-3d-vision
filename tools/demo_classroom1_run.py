@@ -1,4 +1,4 @@
-"""Run the oracle-assisted Classroom concept demonstration."""
+"""Run the oracle-attention Classroom concept demonstration."""
 from __future__ import annotations
 
 import argparse
@@ -80,19 +80,21 @@ def main() -> None:
         if step >= public.MAX_TOTAL_FIXATIONS:
             global_guard_hit = True
             break
+
         od = out / "objects" / f"object_{obj.object_id}"
         od.mkdir(parents=True, exist_ok=True)
         gaze = tuple(adapter.choose_oracle_seed_gaze(obj, guidance))
         current_map: Path | None = None
         history: list[dict[str, Any]] = []
-        redirects = 0
         stop_reason = "UNSET"
 
         while len(history) < public.MAX_OBJECT_FIXATIONS and step < public.MAX_TOTAL_FIXATIONS:
+            action_source = "ORACLE_SEED" if not history else "ORACLE_UNCOVERED_SUPPORT"
             meas = dict(adapter.acquire_and_validate(obj, gaze, step, od, guidance))
             meas["global_step"] = step
             meas["object_id"] = obj.object_id
             meas["gaze_deg"] = [float(gaze[0]), float(gaze[1])]
+            meas["action_source"] = action_source
             history.append(meas)
             all_fix.append(meas)
             step += 1
@@ -101,34 +103,22 @@ def main() -> None:
             mp = fused.get("map_path")
             if mp:
                 current_map = Path(mp)
+            # Keep fusion provenance in the same per-fixation ledger.
+            for k, v in fused.items():
+                if k != "map_path":
+                    meas[f"fusion_{k}"] = v
+            if mp:
+                meas["map_path"] = str(mp)
 
-            if current_map is None:
-                rem = dict(adapter.oracle_uncovered_support(obj, guidance, current_map, history))
-                ng = rem.get("next_gaze_deg")
-                if ng is None or redirects >= public.MAX_ORACLE_REDIRECTS:
-                    stop_reason = "NO_TRUSTWORTHY_SEED_AFTER_ORACLE_GUIDANCE"
-                    break
-                redirects += 1
-                gaze = (float(ng[0]), float(ng[1]))
-                continue
-
-            local = dict(adapter.local_next_action(obj, od, history, current_map))
-            ng = local.get("next_gaze_deg")
-            if ng is not None and not bool(local.get("stop", False)):
-                gaze = (float(ng[0]), float(ng[1]))
-                continue
-
-            # Demo-mode rescue only. This is explicitly oracle attention assistance,
-            # not a new general controller and not a scientific stopping condition.
             rem = dict(adapter.oracle_uncovered_support(obj, guidance, current_map, history))
+            meas["oracle_after_fixation"] = rem
             if bool(rem.get("demo_target_satisfied", False)):
                 stop_reason = "DEMO_TARGET_SATISFIED"
                 break
             ng = rem.get("next_gaze_deg")
-            if ng is None or redirects >= public.MAX_ORACLE_REDIRECTS:
-                stop_reason = "ORACLE_GUIDANCE_EXHAUSTED"
+            if ng is None:
+                stop_reason = "ORACLE_SUPPORT_EXHAUSTED"
                 break
-            redirects += 1
             gaze = (float(ng[0]), float(ng[1]))
         else:
             stop_reason = "DEMO_OBJECT_GUARDRAIL" if len(history) >= public.MAX_OBJECT_FIXATIONS else "DEMO_GLOBAL_GUARDRAIL"
@@ -139,8 +129,10 @@ def main() -> None:
             "label": obj.label,
             "source_group": obj.source_group,
             "role": "STEREO_FOREGROUND",
+            "attention_mode": public.CONTROLLER_MODE,
             "fixations": len(history),
-            "oracle_redirects": redirects,
+            "oracle_attention_fixations": len(history),
+            "local_fsg_attention_actions": 0,
             "stop_reason": stop_reason,
         })
         rows.append(row)
@@ -156,8 +148,12 @@ def main() -> None:
         "public_spec_sha256": public.public_digest(),
         "oracle_assisted_demo": True,
         "truth_available_to_control": True,
+        "controller_mode": public.CONTROLLER_MODE,
+        "oracle_attention_for_all_fixations": True,
+        "local_fsg_attention_actions": 0,
         "discovery_tested": False,
         "autonomous_controller_tested": False,
+        "fsg6f_generalization_tested": False,
         "autonomous_background_decomposition_tested": False,
         "foreground_reference_depth_fused": False,
         "scene_id": public.SCENE_ID,
@@ -173,13 +169,17 @@ def main() -> None:
         "foreground_objects_processed": len(rows),
         "background_row": background_row,
         "fixation_count": len(all_fix),
+        "oracle_attention_fixation_count": len(all_fix),
         "global_guard_hit": global_guard_hit,
         "exports": exports,
         "started_unix": started,
         "finished_unix": time.time(),
     }
     _write(out / "demo_manifest.json", manifest)
-    print(f"DEMO_CLASSROOM1_COMPLETE foreground={len(rows)}/{len(objs)} fixations={len(all_fix)} global_guard={global_guard_hit}")
+    print(
+        f"DEMO_CLASSROOM1_COMPLETE foreground={len(rows)}/{len(objs)} "
+        f"fixations={len(all_fix)} attention=oracle global_guard={global_guard_hit}"
+    )
 
 
 if __name__ == "__main__":

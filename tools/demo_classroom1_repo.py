@@ -1,11 +1,12 @@
-"""Repository seam for Demo-Classroom-1.
+"""Repository seam for Demo-Classroom-1, oracle-attention mode.
 
-This is Demo Mode: Blender truth may guide attention, grouping and rejection.
-The one hard boundary remains that evaluator/reference xyz/depth must never be
+This is deliberately a concept demo rather than a controller experiment.
+Blender truth may guide object grouping, ALL gaze choices, and rejection.
+The hard boundary is unchanged: evaluator/reference xyz/depth must never be
 inserted as metric foreground reconstruction.
 
-Claude Code should bind these methods to the live repository while changing
-only new Demo-Classroom-1 files unless a genuine blocker is reported first.
+Only new Demo-Classroom-1 files may be changed to bind this seam unless a
+new genuine blocker is reported first.
 """
 from __future__ import annotations
 
@@ -28,70 +29,73 @@ class RepositoryAdapter:
         self.seed = int(seed)
 
     def preflight_scene(self) -> dict[str, Any]:
-        """Inspect the live Classroom blend before any demo acquisition.
+        """Verify the live Classroom binding and acquisition/reference paths.
 
-        Verify the manifest binding, file hash, metric units, EYE/head camera,
-        pose/convention, render engine viability, and the object/group structure
-        that can support deterministic reference instance masks. Return
-        {ready: bool, ...}. No established source may be edited to pass preflight.
+        This includes the .blend hash, metric EYE convention, renderability,
+        dynamic grouping support, established Classroom foveated-pair renderer,
+        stereo-field conversion, and reference-panorama path.  The previously
+        reported lack of an FSG6f/.blend controller bridge is NOT a blocker in
+        this mode because Classroom attention is explicitly oracle-driven.
         """
         raise NotImplementedError
 
     def build_reference_and_guidance(self, preflight: dict[str, Any]) -> dict[str, Any]:
-        """Create 2048x1024 RGB/depth/instance reference and guidance metadata.
+        """Build 2048x1024 reference RGB/depth/instance and oracle metadata.
 
-        This is intentionally truth-side and may happen before control. Prefer
-        the established Classroom preview360/foveated rig conventions. Object
-        identities/groups must be created dynamically from the live .blend and
+        Truth is intentionally available before control in Demo Mode. Object
+        identities/groups must be derived dynamically from the live .blend and
         the exact grouping rule must be recorded.
         """
         raise NotImplementedError
 
     def build_scene_plan(self, guidance: dict[str, Any]) -> dict[str, Any]:
-        """Partition visible scene support into foreground entities + one background.
+        """Partition visible support into foreground entities + ONE background.
 
-        Preferred default: derive a scene-adaptive soft background range from
-        occupied reference-depth quantiles (q70..q90), combine it with reference
-        angular support, keep sufficiently supported nearer groups as foreground,
-        and aggregate far/background-like support into ONE special background
-        object. Do not hand-pick Classroom object names. Record the actual rule.
-
-        Return at least:
-          foreground_objects: [{object_id,label,source_group}, ...]
-          background: {... special-object metadata ...}
-          decomposition: {... exact deterministic rule and counts ...}
+        Preferred rule: occupied reference-depth q70..q90 defines a soft far
+        band; sufficiently supported nearer structural groups are explicit
+        foreground targets; far/contextual support and otherwise-unassigned
+        visible support are aggregated into __BACKGROUND__. Do not hand-pick
+        Classroom object names.
         """
         raise NotImplementedError
 
     def choose_oracle_seed_gaze(self, obj: DemoObject, guidance: dict[str, Any]) -> tuple[float, float]:
-        """Choose a deterministic visible seed gaze from the object's reference mask."""
+        """Choose a deterministic visible/deep-interior seed from reference support."""
         raise NotImplementedError
 
     def acquire_and_validate(self, obj: DemoObject, gaze_deg: tuple[float, float], global_step: int,
                              object_dir: Path, guidance: dict[str, Any]) -> dict[str, Any]:
-        """Render one Classroom foveated stereo fixation and validate stereo with truth.
+        """Render one Classroom foveated stereo fixation and validate with truth.
 
-        Reuse the established Classroom pair renderer/rig and stereo front end;
-        adapt their output to the existing FSG accepted-point representation.
-        Required record includes target-visible support, raw stereo count,
-        accepted/rejected counts, raw/accepted depth error, acquisition paths,
-        and direct proof accepted xyz is a row-subset/filter of stereo xyz.
+        Reuse the established Classroom PairRenderer/foveated warp and stereo
+        field. Convert valid target stereo samples to the FSG Patch convention,
+        then apply the demo reference-depth gate. The returned record must prove
+        accepted xyz is a pure row-subset/filter of stereo xyz and that no
+        reference xyz was substituted.
         """
         raise NotImplementedError
 
     def initialize_or_fuse(self, obj: DemoObject, measurement: dict[str, Any], object_dir: Path,
                            existing_map: Path | None) -> dict[str, Any]:
-        """Use established surface-map initialization/fusion on accepted stereo xyz only."""
-        raise NotImplementedError
-
-    def local_next_action(self, obj: DemoObject, object_dir: Path, history: list[dict[str, Any]],
-                          current_map: Path) -> dict[str, Any]:
-        """Use/replay the established local FSG controller; do not invent a Classroom controller."""
+        """Use established 12 mm surface-map initialize/fuse on accepted stereo xyz only."""
         raise NotImplementedError
 
     def oracle_uncovered_support(self, obj: DemoObject, guidance: dict[str, Any], current_map: Path | None,
                                  history: list[dict[str, Any]]) -> dict[str, Any]:
-        """Measure uncovered reference angular support and propose one deterministic redirect gaze."""
+        """Drive ALL post-seed Classroom attention from reference support.
+
+        Compare the target's reference angular support with support represented
+        by the current stereo map, report demo coverage, and choose the next
+        deterministic deepest/interior uncovered gaze. Use the completed
+        Tabletop gaze-precondition lesson to skip oracle candidates whose frame
+        cannot satisfy the established renderer's scene-occupancy precondition.
+
+        Return at least:
+          demo_target_satisfied: bool
+          reference_coverage: float
+          next_gaze_deg: [yaw,pitch] or None
+          candidate/source diagnostics sufficient to audit why the gaze was chosen
+        """
         raise NotImplementedError
 
     def finalize_foreground_object(self, obj: DemoObject, object_dir: Path, current_map: Path | None,
@@ -102,12 +106,13 @@ class RepositoryAdapter:
                                   out: Path) -> dict[str, Any]:
         """Export the ONE adaptive special background object.
 
-        It may use Blender RGB/reference depth and trivial spherical/shell geometry.
-        It must be separate from foreground point counts, depth errors and purity.
+        It may use Blender RGB/reference depth and trivial spherical/shell
+        geometry. It must remain separate from foreground point counts, stereo
+        depth-error metrics, and any claim of observer-inferred geometry.
         """
         raise NotImplementedError
 
     def export_demo(self, object_rows: list[dict[str, Any]], background_row: dict[str, Any],
                     guidance: dict[str, Any], fixation_history: list[dict[str, Any]], out: Path) -> dict[str, Any]:
-        """Export foreground, special background, provenance-preserving composite, timeline and movie."""
+        """Export foreground, background, composite, provenance, timeline, movie and report."""
         raise NotImplementedError

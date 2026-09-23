@@ -1,63 +1,127 @@
-# Demo-Classroom-1 — Oracle-assisted concept demonstration in a realistic room
+# Demo-Classroom-1 — Oracle-Attention Concept Demonstration
 
 ## Purpose
 
-This is the second concept demonstration, following the completed Tabletop demo. The goal is to carry the same active foveal-stereo organism into the repository's realistic Blender Classroom scene without turning the exercise into another controller-research round.
+This is the second concept demonstration after Demo-Tabletop-1. Its goal is to show that the foveated binocular acquisition, established stereo front end, demo measurement validation, 12 mm persistent surface fusion, foreground/background decomposition, and scene export can operate on the realistic Blender Classroom.
 
-Blender truth is intentionally allowed to scaffold scene grouping, masks, visible seeds, rescue gaze directions, measurement validation, and a special visual background object. The demonstration does **not** claim autonomous discovery, autonomous control, autonomous foreground/background inference, or truth-free stereo confidence.
+It is **not** a controller-generalization experiment.
 
-## Scene binding
+The live preflight exposed a real repository seam: the FSG6f local controller belongs to the procedural/rectified lineage, whereas Classroom uses the established foveated-warp `.blend` lineage. Rather than redesign a controller inside a demo, Classroom attention is therefore explicitly oracle-driven.
 
-The intended live scene is `scenes/classroom/classroom_eye.blend`. The demo must first preflight the actual repository and record the scene hash, metric units, the `EYE`/head camera convention, pose, renderability, and the object/group structure used for reference instance masks. If that binding cannot be established without modifying established source, stop and report a blocker rather than silently switching scenes.
+The demo claim is:
 
-## The hard boundary
+> Blender guides where to look and validates measurements; stereo plus persistent fusion builds metric foreground geometry.
 
-Foreground metric geometry must still originate from foveated stereo:
+## Attention contract
 
-`Classroom foveated binocular acquisition -> established stereo -> oracle validity gate -> established 12 mm fusion -> persistent foreground geometry`
+Every Classroom fixation is selected from Blender reference support.
 
-Reference depth may reject a foreground stereo sample. It may not replace the stereo xyz/depth.
+- first fixation for an object: deterministic visible/deep-interior reference support;
+- later fixations: deterministic deep/interior **uncovered** reference support after projecting the accumulated stereo map to the reference sphere;
+- candidates that violate the established renderer's occupancy/precondition are skipped deterministically;
+- no FSG6f action, cyclopean1a probe, or per-object belief.Policy action is used as the Classroom attention controller.
 
-The default demo validation gate remains:
+The run and report must say this plainly. `autonomous_controller_tested=false` and `fsg6f_generalization_tested=false` are required.
 
-`abs(z_stereo - z_reference) <= max(0.10 m, 0.05 * z_reference)`
+This choice does not weaken Demo-Tabletop-1, which already demonstrated established local FSG control. The two demos intentionally emphasize different things:
 
-This is an engineering safety net for the concept demo, not a scientific confidence model.
+- **Tabletop:** active local control plus reconstruction;
+- **Classroom:** realistic-scale foveated perception plus reconstruction.
 
-## Foreground / background
+## Hard geometry boundary
 
-The Classroom is the first demo where the foreground/background idea is used in a scene-adaptive form.
+Reference truth may:
 
-The preferred decomposition is based on the occupied reference-depth distribution. Let `d_near = q70` and `d_far = q90`; pixels transition softly from foreground-like to background-like across that range. Object/group support and angular extent then decide which sufficiently visible nearer groups are reconstructed as stereo foreground. Distant/background-like support is aggregated into **one special background object**.
+- define object/group masks;
+- choose gaze targets;
+- reject stereo samples whose depth is implausible;
+- define the background scaffold and final evaluation products.
 
-That special object has deliberately asymmetric responsibilities:
+Reference truth may **not** insert xyz/depth into metric foreground maps.
 
-- trivial spherical/shell geometry;
-- rich reference RGB texture;
-- scene-dependent soft-depth statistics/range;
-- no contribution to foreground surfel counts, purity, or stereo depth-error claims.
+Accepted foreground points must be literal rows from the established Classroom stereo output after target-instance and depth-validation filtering. The demo gate remains
 
-If the live Blender organization requires an equivalent deterministic decomposition, record the exact rule. Do not hand-pick individual Classroom object names just to make the demo work.
+`abs(z_stereo - z_ref) <= max(0.10 m, 0.05*z_ref)`.
 
-## Attention and control
+The 12 mm surface association/fusion rule remains unchanged.
 
-Use the established local FSG controller when it has an action. When it stalls while Blender reference support says a foreground target remains under-covered, Demo Mode may issue a bounded oracle redirect. This is supervisory scaffolding, not a new general controller.
+## Scene binding already established by preflight
 
-Engineering guardrails are 24 fixations per foreground object, 6 oracle redirects per object, and 256 total fixations. They are not completeness definitions.
+The live preflight reported:
 
-## Deliverables
+- `scenes/classroom/classroom_eye.blend`;
+- metric scene, 178 renderable meshes;
+- fixed `EYE` camera at the manifest pose;
+- established `fixation_pairs.PairRenderer` opens/renders the blend;
+- established `stereo_field.field_of_pair` produces usable stereo rows;
+- stereo xyz conversion to head coordinates is known;
+- reference equirectangular RGB/depth/position is viable in the same head convention;
+- parent-root hierarchy is a deterministic partition: 178 meshes -> 98 structural entities, 86 reference-visible.
 
-The run should produce:
+The adapter should re-verify these facts at execution time rather than treating this document as authoritative runtime state.
 
-- `scene_preflight.json` and `scene_plan.json`;
-- stereo-derived foreground point clouds and spherical depth/instance/valid products;
-- per-object foreground maps;
-- a single adaptive background mask/RGB/soft-depth/shell object;
-- a provenance-preserving composite RGB-D scene;
-- Blender reference RGB/depth/instance panoramas;
-- fixation history, timeline frames, and `demo.mp4` when ffmpeg is available;
-- a report that clearly distinguishes foreground reconstruction, background scaffold, reference truth, and the demo composite.
+## Foreground/background decomposition
 
-The intended visual story remains:
+Use the scene-adaptive rule rather than named Classroom exceptions.
 
-**look -> stereo -> validate -> fuse -> remember -> redirect attention -> build the room**.
+Preferred rule:
+
+1. build the reference panorama and valid occupied depth distribution;
+2. compute `d_near = q70` and `d_far = q90`;
+3. define a smooth far/background weight over `[d_near,d_far]`;
+4. compute each structural entity's visible support and depth/background statistics;
+5. explicit foreground entities must have at least `MIN_FOREGROUND_SUPPORT_FRACTION` of occupied reference support and be sufficiently foreground-like under the single deterministic rule;
+6. aggregate far/contextual support and visible support not assigned to explicit foreground entities into exactly one `__BACKGROUND__` object.
+
+The ungrouped/non-mesh reference support noted by preflight must not disappear; assign it explicitly to the background aggregate unless a simpler truthful structural treatment is found.
+
+The background may use reference RGB and soft reference-depth statistics plus trivial shell geometry. It is never counted as stereo-reconstructed foreground.
+
+## Foreground object loop
+
+For each planned foreground entity, in deterministic id order:
+
+1. oracle chooses a visible seed gaze;
+2. established Classroom foveated binocular pair is rendered;
+3. established stereo runs;
+4. reference instance/depth filters the target stereo samples;
+5. accepted stereo xyz initializes/fuses through the existing 12 mm map;
+6. oracle measures remaining target reference support and chooses the next uncovered gaze;
+7. repeat until demo target coverage (0.85), no useful oracle support, 24 object fixations, or 256 total fixations.
+
+Use the completed Tabletop demo's inherited empty-look floor, render precondition lesson, fixation ledger, point provenance checks, exports, report, and movie grammar where applicable.
+
+## Required presentation
+
+Keep four products visually and numerically distinct:
+
+A. **STEREO FOREGROUND** — metric observer geometry from accepted stereo only;
+
+B. **BACKGROUND SCAFFOLD** — one oracle/context object with rich texture and soft depth;
+
+C. **REFERENCE TRUTH** — Blender evaluation/guidance products;
+
+D. **DEMO COMPOSITE** — explicitly labelled oracle-assisted, not autonomous.
+
+The timeline/movie should make the story visible:
+
+`oracle gaze -> foveated binocular observation -> stereo -> validation -> fusion -> persistent scene accumulation`.
+
+## What the demo may establish
+
+- the realistic Classroom `.blend` can feed the foveated binocular/stereo pipeline;
+- multiple dynamically grouped room entities can be reconstructed into persistent stereo-derived 3-D foreground maps;
+- foreground/background layers can coexist with explicit provenance;
+- a room-scale composite RGB-D representation and visual acquisition story can be generated.
+
+## What it does not establish
+
+- autonomous discovery;
+- autonomous Classroom attention;
+- FSG6f generalization to `.blend` mesh scenes;
+- truth-free measurement validation;
+- autonomous foreground/background decomposition;
+- controller optimality;
+- complete reconstruction of every mesh component.
+
+The missing generic `.blend` -> FSG-controller bridge remains a real architectural capability gap to address later, not inside this demonstration.
