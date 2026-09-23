@@ -62,8 +62,12 @@ COVERED_DILATION_CELLS = 3
 DEMO_COVERAGE_TARGET = 0.90
 # A redirect is only worth a fixation if the largest uncovered blob is this big.
 MIN_REDIRECT_COMPONENT_CELLS = 50
-# The frozen FSG3 initialize() itself refuses fewer than 100 points.
+# The frozen FSG3 initialize() AND fuse() both refuse fewer than 100 points.
+# This is also the inherited Reality-2b empty-look limit used by every prior
+# increment: fewer than 100 target points is valid negative evidence - record
+# the observation, fuse nothing, continue. No new threshold is introduced.
 MIN_MAP_INIT_POINTS = 100
+EMPTY_LOOK_LIMIT = 100
 # The established renderer refuses a fixation whose frame is mostly empty: its
 # own check_geometry() samples 121 pixels per eye (242 rays) and requires >=100
 # hits, i.e. >= 0.413 scene occupancy. The demo therefore declines to PROPOSE a
@@ -416,11 +420,15 @@ class RepositoryAdapter:
         maps.mkdir(parents=True, exist_ok=True)
         live = self._live[oid]
 
+        # Inherited empty-look semantics, applied identically on both paths
+        # because frozen initialize() and fuse() share the same 100-point floor.
+        if len(patch.xyz_h) < EMPTY_LOOK_LIMIT:
+            return {"map_path": (str(existing_map) if existing_map else None), "fused": False,
+                    "empty_look": True,
+                    "reason": (f"accepted {len(patch.xyz_h)} < inherited empty-look limit "
+                               f"{EMPTY_LOOK_LIMIT}; observation retained, nothing fused"),
+                    "new": 0, "matched": 0}
         if existing_map is None:
-            if len(patch.xyz_h) < MIN_MAP_INIT_POINTS:
-                return {"map_path": None, "fused": False,
-                        "reason": f"accepted {len(patch.xyz_h)} < frozen initialize() minimum {MIN_MAP_INIT_POINTS}",
-                        "new": 0, "matched": 0}
             sm = initialize(patch, oid)
             assoc = {"matched": 0, "new": int(len(sm.xyz_h))}
             idem = True
