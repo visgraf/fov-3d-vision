@@ -9842,3 +9842,112 @@ optimality** (the table hit an engineering guardrail at 74.9%); **background
 geometry was not inferred** - `rc1_wall` is declared, and inferring that
 decomposition with its soft-depth regime is the future research problem; and
 **the composite is not a fully autonomous reconstruction**. Stopped.
+
+### 2026-09-23 - Demo-Classroom-1 (O3 oracle attention): the measurement half of the architecture runs in a real room
+
+Second concept demonstration, on branch `demo-classroom-1` only. Record
+`previews/demo-classroom1/full-seed2111`, seed 2111, profile `full`, OPTIX,
+227 Blender launches, 661 s in Blender.
+`DEMO_CLASSROOM1_COMPLETE foreground=10/10 fixations=225 attention=oracle
+global_guard=False`; comparator `structural_fails: []` exit 0.
+
+**Per the O3 ruling, attention is entirely oracle scaffolding**: 10
+`ORACLE_SEED` + 215 `ORACLE_UNCOVERED_SUPPORT` = **225 of 225**, and
+**`local_fsg_attention_actions: 0`**. The blocker from the stopped run is
+preserved, not solved: no `.blend` -> FSG6f bridge was built, the cyclopean
+clamp was not relaxed, and `belief.Policy` was not repurposed.
+
+Preflight revalidated live: blend sha256 `dca66a3257b909ae...`, `_mainScene`
+CYCLES metric unit scale **1.0**, EYE at **[-0.6,-1.0,1.2]** matching the
+manifest and resolved by `find_eye` even though `renderCam` is the active
+camera, 178 renderable meshes. The established `fixation_pairs.PairRenderer`
+(foveated warp, raster 253, 50,269 samples/fixation, 256 spp) and
+`stereo_field.field_of_pair` were both exercised before the run; stereo rows
+convert to head xyz as **`eye_offset_L + dir*(1/rho)`** since rho is inverse
+distance from the left eye centre, and the established 12 mm surface map fuses
+them unchanged. The reference panorama is read back through its **world
+Position pass** and re-binned on the demo's own grid, so no equirect
+convention is assumed; that reproduces the manifest's own checks - nadir
+**1.2000 m** against eye height 1.2, zenith **1.6965 m** against 1.69665,
+`|Zpass - ||head xyz||` median **1e-07 m**.
+
+Grouping, decided from the live hierarchy: `pass_index` **unusable** (162 of
+178 are 0), custom properties unusable, collections **overlap** (171/171/143/
+32/2/1 over 178) so they are not a partition, **parent roots are**. Rule:
+**parent-root partition, ids 1..N over sorted root names**; no Classroom
+object name appears in any Demo source. **178 components -> 98 entities, 87
+visible**, occupied **2,069,089 of 2,097,152 cells (98.66%)**. Visible support
+with no grouped mesh id is aggregated into the background rather than dropped.
+
+Decomposition measured over occupied reference depth: median **1.888 m**,
+**d_near=q70=2.374 m**, **d_far=q90=4.041 m**, smoothstep band weight;
+**87 groups -> 10 foreground, 77 background**. A real property of the rule at
+room scale: from an eye inside the room the large near solid angles are the
+**architecture** (beams 31.9%, floor 28.3%, walls, corkboard), while each desk
+or chair is individually too small to clear the 0.0025 support fraction and
+lands in the aggregate. The rule was **not** retuned to move furniture forward.
+
+Objects: `pipe` alone reached the demo coverage condition (**0.9048 in 9
+fixations**); eight hit the 24-fixation guardrail (`corkboard` 0.7583,
+`ceilingAirVent.002` 0.6977, `woodBaseboard` 0.6101, `wall` 0.2254,
+`ceilingAirVent.001` 0.2512, `woodBase` 0.2077, `sol` 0.1893). **`beams` and
+`plank` produced ZERO surfels despite 24 fixations each** - they accepted
+1,427 and 1,065 points in total, but *every individual look* fell below the
+inherited 100-point fusion floor, so nothing ever fused. Thin structures seen
+edge-on yield validated stereo, just never enough in one look. Reported, not
+weakened.
+
+Measurement over 225 fixations: **587,483 raw valid stereo, 118,433 accepted
+(20.16%), 469,050 oracle-rejected (79.84%)** - 370,290 wrong instance
+(63.03%), 98,718 depth gate (16.80%), 42 no reference. Depth error **median
+218.34 -> 43.62 mm**, **p95 1664.48 -> 101.10 mm**. The gate does far more
+work than on the Tabletop, where it rejected 4.88%: a real room with
+occlusion, thin structure and long range is a much harder scene, and the demo
+shows that plainly. 50 of 225 looks were empty under the inherited floor.
+
+Hard boundary verified per fixation, not asserted: accepted set is a **bitwise
+row-subset of the stereo array 225/225**, a pure boolean filter 225/225,
+**0** fixations where reference depth supplied a foreground value, and
+**118,433 of 118,433 accepted rows (100.00%)** differ bitwise from the
+reference-derived position - which is computed only to record it was not
+adopted.
+
+Layers: **A** stereo foreground **45,130 surfels / 34,695 px**; **B**
+background scaffold 465,837 px over 77 groups, soft-depth median **2.002 m**,
+42,349 shell points, **0 counted as foreground**; **C** reference truth;
+**D** composite with per-pixel provenance,
+`composite_is_autonomous_reconstruction false` and
+`attention_is_oracle_scaffolding true`. Comparing `foreground_rgb_mosaic.png`
+with `demo_rgb.png` makes the split inspectable: layer A is sparse dotted
+geometry on beams, vents, corkboard, walls and floor, while every desk, chair,
+window and the blackboard come from layer B. Story: 225 timeline frames and
+**demo.mp4** (3084x1024, 225 frames, 112.5 s).
+
+Integrity: py_compile clean on six modules, `[demo-classroom1-check]
+passed=13 failed=0`, **all ten mutations exit 1** and unknown exits 2,
+comparator exit 0, Demo-Tabletop checker 9/9 and its comparator still exit 0,
+**57/57 suites green with 331/331 prior negatives firing**, **353 tracked
+pre-Classroom sources at `cafad30` byte-identical** (branch purely additive),
+and `main` `15eedee`, `demo-tabletop-1` `cafad30`, `fullscene-real-1`
+`0e09f5b`, `fullscene-calibration-1` `651a6cb` all unmoved.
+
+What this establishes: the **acquisition/measurement half of the architecture
+runs end to end in a real cluttered room** - oracle gaze, established foveated
+binocular render, established stereo, validation, 12 mm fusion, persistent
+per-entity geometry; **metric foreground geometry is stereo-derived
+throughout**, verified per fixation; a **scene-adaptive foreground/background
+split** is computable from depth quantiles without naming an object; the
+**structural grouping problem has a clean deterministic answer** here; and the
+inherited empty-look and gate preconditions **transfer unchanged** to a scene
+the FSG lineage was never built for. What it does **not** establish: **no
+autonomous discovery or segmentation**; **no autonomous gaze policy** - all
+225 fixations were oracle-chosen and this demo tests nothing about attention;
+**no generalization of FSG6f to .blend scenes** - the bridge was not built and
+FSG6f was never invoked, so the blocker stands; **no truth-free validation** -
+the gate *is* the reference and it rejected 79.84%; **no controller
+optimality** - eight of ten objects hit a guardrail; **no autonomous
+foreground/background decomposition**; **background geometry was not
+inferred**; **no complete reconstruction** - 45,130 surfels over 10 of 98
+entities, two of them zero, is a demonstration, not a room. **Next: Chat's
+call** - the generic `.blend` -> rectified-pair bridge remains the real
+architecture gap, and the Classroom shows why it matters. Stopped.
