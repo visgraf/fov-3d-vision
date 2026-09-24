@@ -10474,3 +10474,65 @@ the handoff, and the choice changes what the smoke test certifies. That is a dec
 prompt did not delegate, so execution **stopped** and the 25-instance full run was not
 launched. Nothing cherry-picked, no gaze forced, no policy constant touched, no object
 dropped. **CLASSROOM_ORACLE1_STOPPED. Next: Luiz/Chat's decision.**
+
+## 2026-09-24 - Classroom-Oracle-1 complete: with perfect measurement the controller covers 94% of the interior and stalls at its own domain edge
+
+Branch `classroom-oracle-1`. Smoke-gate repair `ee578d5` (gate only); the four mechanical
+repairs from the stopped run `f850946` survive it - Chat renamed the local `pid` to
+`patch_id`, which is still bound in the table and first in the positional fallback.
+`[classroom-oracle1-check] SUMMARY passed=12 failed=0`, py_compile clean, diff --check clean.
+**No further repair was needed this session.**
+
+Repaired smoke (`previews/classroom-oracle-1-smoke-2`):
+`PASS_CONTROLLER_TRANSITION_EXERCISED`. Primaries [107, 108] retained and legally terminated
+at their seed; the probe continued deterministically to 109 and 110. Instance **110 `beams`**
+exercised the first controller-selected second look - `action_source=fsg6f`,
+(-22.00, 20.00) -> (-17.00, 15.00), 251 points fused as 114 matched + 137 new, map
+4,868 -> 5,005. 4 objects, 5 fixations, `all_post_seed_looks_controller_selected` true,
+dense truth never opened.
+
+Full run (`previews/classroom-oracle-1-full`, profile `full`): **25 visible, 25 attempted,
+104 fixations, and every single object terminated `attention_complete`.** Zero
+seed_uninitializable, zero runtime failures, and the 24-look watchdog **never fired** - no
+termination was an engineering cutoff. Action sources over all 104 looks: 25 `oracle_seed`,
+53 `fsg6f`, 26 `cyclopean_epistemic`; **all 79 post-seed looks controller-selected, zero
+from Blender**. The Cyclopean handoff is load-bearing, firing 26 times across 8 objects.
+4 of 79 controller looks added no surfels, so 94.9% were productive. 34 distinct instances
+were seen incidentally, 9.7 per object, recorded but never exploited.
+
+Oracle measurement is what the experiment wanted: valid core fraction **0.810-0.910** against
+the **0.128** median the same instrument gave under SGBM in Classroom-FSG-1, with
+`sgbm_called` and `depth_search_bound_applied` both false. At profile `full` instance 107
+`Text` initializes where it could not at `small` - the 256 core clears the inherited
+100-point floor, a profile consequence, not a policy change.
+
+Coverage, on the declared scope (0.25 deg cyclopean first-hit samples inside the frozen
++-25/+-20 domain, within 12 mm of a final surfel): **micro 0.8747** (25,618 / 29,288), macro
+0.7889, median per-object **0.9729**, and **10 of 25 objects at exactly 100%**. I recomputed
+it independently from the retained maps and reproduced the evaluator exactly.
+
+The deficit has a shape. Every systematic miss hugs a domain edge: `sol` uncovered across the
+full yaw at pitch [-20, -14]; `woodBaseboard` full yaw at [-15.5, -12.5]; `ceilingMoulding`
+full yaw at [18.25, 20]; `lettersPlank`, `boardFrame`, `plank` at the yaw limits. Binned by
+distance to the nearest domain edge the uncovered rate runs **26.1% / 20.4% / 20.1% / 19.0%
+/ 9.0% / 3.1%** for 0-1 / 1-2 / 2-4 / 4-6 / 6-10 / >10 deg. **Interior coverage (>6 deg from
+an edge) is 0.9437; within 6 deg it is 0.7906.** 75.3% of uncovered samples sit within 6 deg
+of an edge against 45.1% of all samples.
+
+The `sol` trajectory shows the mechanism and shows the architecture working: seed at pitch
+-18, four FSG6f looks growing 41,246 -> 68,209 surfels, then FSG6f returns **0 candidates**,
+the Cyclopean audit takes over with 37 eligible NEVER_OBSERVED+EXTERIOR shoreline cells and
+fires an epistemic fixation at pitch **-19.20** - the domain floor - gaining 14,263 more
+surfels, after which FSG6f again returns 0 candidates and the shoreline audit finds **0**
+eligible cells and stops. It pushed to its own boundary and halted when both of its tests
+were empty.
+
+Answer to the question: **yes, largely.** Given essentially perfect local stereo the control
+architecture does know where to look - it drove all 25 objects to its own completion in 104
+fixations with no watchdog rescue, no forced gaze and 94.9% productive looks, reaching 94.4%
+of reachable surface where it has room to manoeuvre. What remains is not scattered failure
+but a boundary effect: five extended surfaces run out of the +-25/+-20 domain and each
+declares completion with a band at the edge unseen. Whether that is the domain, the
+frontier-eligibility rule at the boundary, or the shoreline test is the open question handed
+back. Nothing was retuned, no object dropped, no threshold invented.
+**CLASSROOM_ORACLE1_COMPLETE. Next: Luiz/Chat's decision.**

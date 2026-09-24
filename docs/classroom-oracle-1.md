@@ -197,3 +197,217 @@ Nothing was cherry-picked, no gaze forced, no policy constant touched, no object
 
 **CLASSROOM_ORACLE1_STOPPED — smoke harness contract unreachable on the first two visible
 instances. Awaiting Luiz/Chat.**
+
+## Result — 2026-09-24, repaired smoke gate and full run
+
+The execution notes above are preserved as the historical record of the stopped first attempt
+(`f850946`). The smoke-gate repair is `ee578d5`; it changed only the integration gate. The
+four mechanical repairs from `f850946` survive it unchanged — Chat renamed the local `pid`
+to `patch_id`, but `patch_id` remains bound in the binding table and first in the positional
+fallback. `[classroom-oracle1-check] SUMMARY passed=12 failed=0`, `py_compile` clean,
+`git diff --check` clean. **No further repair was needed in this session.**
+
+### Repaired smoke test — `previews/classroom-oracle-1-smoke-2`
+
+```text
+[classroom-oracle1] COMPLETE {"fixations": 5, "objects": 4, "smoke": true,
+  "terminations": {"attention_complete": 2, "seed_uninitializable": 1, "smoke_budget": 1}}
+```
+
+`smoke_gate` is internally consistent and reports the preferred status:
+
+| field | value |
+|---|---|
+| status | **PASS_CONTROLLER_TRANSITION_EXERCISED** |
+| primary_instance_ids | [107, 108] (retained, as required) |
+| objects_examined | 4 (probe continued deterministically to 109, 110) |
+| controller_transition_exercised | true |
+| all_post_seed_looks_controller_selected | true |
+| exhausted_visible_set | false |
+| dense_evaluation_truth_opened_during_control | **false** |
+
+Instance **110 `beams`** first exercised a controller-selected second look:
+`action_source=fsg6f`, gaze (-22.00, 20.00) -> (-17.00, 15.00), fusing 251 input points as
+114 matched + 137 new and growing the map 4,868 -> 5,005 surfels. Instances 107 and 108
+terminated legally at their seed (`seed_uninitializable`, `attention_complete`), which the
+repaired gate now accepts. Oracle valid core fraction ran 0.810-0.910 over the four objects.
+Raw EXR pairs, benchmark PNG pairs, oracle patches and map snapshots were retained per look.
+
+### Full experiment — `previews/classroom-oracle-1-full`, profile `full`
+
+```text
+[classroom-oracle1] COMPLETE {"fixations": 104, "objects": 25, "smoke": false,
+  "terminations": {"attention_complete": 25}}
+[classroom-oracle1-eval] COMPLETE {"coverage": 0.8746927069106801, "fixations": 104,
+  "instances": 25, "terminations": {"attention_complete": 25}}
+```
+
+| quantity | value |
+|---|---|
+| oracle-visible instances | **25** |
+| attempted instances | **25** (none dropped; `unexpected_attempted_instance_ids` empty) |
+| total fixations | **104** |
+| termination histogram | **`attention_complete`: 25** — and nothing else |
+| seed_uninitializable / runtime-failed / watchdog hits | **0 / 0 / 0** |
+| `control_complete` | true |
+| `dense_evaluation_truth_opened_during_control` | **false** |
+| foreground/background decomposition | false |
+
+**Action sources across all 104 looks: 25 `oracle_seed`, 53 `fsg6f`, 26
+`cyclopean_epistemic`.** All 79 post-seed looks were controller-selected and **zero** gazes
+after a seed came from Blender. The Cyclopean epistemic handoff is not vestigial: it fired
+26 times across 8 of the 25 objects (111, 115, 178, 201, 202, 210, 224, 234).
+
+At profile `full` no object was `seed_uninitializable`. Instance 107 `Text`, which was
+uninitializable at `small`, initialized here: the larger core (256 vs 128) clears the
+inherited 100-point floor. That is a profile consequence, not a policy change.
+
+### Coverage
+
+Scope is the declared one: dense 0.25-degree Cyclopean first-hit samples inside the frozen
+fixed-head controller domain (yaw +-25 deg, pitch +-20 deg), covered iff within 12 mm of a
+final surfel. It is **not** coverage of hidden or back-facing global surface.
+
+| aggregate | value |
+|---|---|
+| reachable samples | 29,288 |
+| covered samples | 25,618 |
+| **micro coverage** | **0.8747** |
+| macro (unweighted mean over 25 objects) | 0.7889 |
+| median per-object coverage | 0.9729 |
+| objects at exactly 100% | **10 / 25** |
+| zero-new-surfel looks | **4** of 79 post-seed looks (94.9% of controller looks added geometry) |
+
+I recomputed coverage independently from the retained maps and the dense reference and
+reproduced the evaluator exactly: 25,618 / 29,288.
+
+Per object, sorted by reachable surface:
+
+| id | name | fix | surfels | reachable | coverage | uncovered |
+|---|---|---:|---:|---:|---:|---:|
+| 224 | woodBase | 19 | 230,021 | 6,614 | **99.95%** | 3 |
+| 210 | wall.008 | 19 | 170,083 | 5,892 | **93.14%** | 404 |
+| 111 | blackBoard | 12 | 159,935 | 4,623 | **100.00%** | 0 |
+| 234 | worldMap | 7 | 79,351 | 2,645 | **100.00%** | 0 |
+| 178 | sol | 6 | 82,472 | 2,587 | **59.68%** | 1,043 |
+| 166 | lettersPlank | 4 | 22,082 | 1,226 | 68.84% | 382 |
+| 225 | woodBaseboard | 2 | 10,781 | 1,040 | 39.04% | 634 |
+| 202 | wall | 5 | 67,335 | 1,007 | **99.30%** | 7 |
+| 115 | boardFrame | 3 | 12,056 | 770 | 55.58% | 342 |
+| 201 | verticalPipe | 6 | 17,930 | 627 | **97.29%** | 17 |
+| 174 | plank | 2 | 8,871 | 599 | 56.76% | 259 |
+| 140 | coat 1 | 2 | 12,489 | 405 | 87.65% | 50 |
+| 123 | ceilingMoulding | 1 | 5,647 | 369 | 17.07% | 306 |
+| 112 | blackBoardLamp | 3 | 5,860 | 265 | 76.98% | 61 |
+| 167 | lettersPlank.001 | 1 | 5,071 | 177 | 100.00% | 0 |
+| 113 | blackBoard_upPart | 1 | 1,820 | 142 | 46.48% | 76 |
+| 109 | alphabet | 1 | 822 | 82 | 32.93% | 55 |
+| 114 | blackboardLamp | 1 | 661 | 53 | 41.51% | 31 |
+| 168 | lettersPlank.002 | 1 | 5,601 | 43 | 100.00% | 0 |
+| 216 | wallPlug.001 | 1 | 1,110 | 37 | 100.00% | 0 |
+| 116 | ceiling | 1 | 1,783 | 34 | 100.00% | 0 |
+| 172 | pipe | 1 | 6,094 | 24 | 100.00% | 0 |
+| 107 | Text | 1 | 403 | 19 | 100.00% | 0 |
+| 108 | Text.001 | 1 | 485 | 5 | 100.00% | 0 |
+| 110 | beams | 3 | 36,317 | 3 | 100.00% | 0 |
+
+A caution on the last rows: objects such as `beams` (36,317 surfels, 3 reachable samples)
+and `pipe` have tiny reachable counts because most of their surface lies **outside** the
++-25/+-20 controller domain. Their 100% is real but nearly vacuous; the informative rows are
+the ones with large reachable counts.
+
+### The deficit is at the controller's own domain boundary
+
+Every systematic miss has its uncovered territory pressed against a domain edge:
+
+| object | uncovered yaw span | uncovered pitch span |
+|---|---|---|
+| sol | [-25.00, 25.00] (full width) | [-20.00, -14.00] (bottom edge) |
+| woodBaseboard | [-25.00, 25.00] (full width) | [-15.50, -12.50] |
+| ceilingMoulding | [-24.50, 25.00] (full width) | [18.25, 20.00] (top edge) |
+| lettersPlank | [14.25, 25.00] (right edge) | [11.50, 14.50] |
+| boardFrame | [9.75, 25.00] (right edge) | [-6.50, 9.75] |
+| plank | [-25.00, 4.25] (left edge) | [-1.50, -0.25] |
+
+Measured against distance to the nearest domain edge:
+
+| distance to edge | samples | uncovered | uncovered rate |
+|---|---:|---:|---:|
+| 0-1 deg | 2,510 | 655 | **26.1%** |
+| 1-2 deg | 2,378 | 486 | 20.4% |
+| 2-4 deg | 4,216 | 846 | 20.1% |
+| 4-6 deg | 4,097 | 777 | 19.0% |
+| 6-10 deg | 6,898 | 618 | 9.0% |
+| >10 deg | 9,189 | 288 | **3.1%** |
+
+**Coverage in the domain interior (>6 deg from any edge) is 0.9437; within 6 deg of an edge
+it is 0.7906.** 75.3% of all uncovered samples lie within 6 deg of an edge, against 45.1% of
+all samples — so the residual is concentrated at the boundary, not spread through the scene.
+
+The `sol` trajectory shows the mechanism with no ambiguity, and shows the architecture
+working rather than failing: seed at pitch -18, then four FSG6f looks growing the map
+41,246 -> 68,209 surfels; at look 4 FSG6f returned **0 candidates**, the Cyclopean audit
+took over with 37 eligible `NEVER_OBSERVED + EXTERIOR` shoreline cells and fired an
+`epistemic_fixation` to pitch **-19.20**, essentially the domain floor, gaining a further
+14,263 surfels; then FSG6f again returned 0 candidates and the shoreline audit found **0**
+eligible cells, so it stopped. The controller pushed to its own boundary and halted when its
+own frontier and shoreline tests were both empty.
+
+### Incidental observation
+
+34 distinct instances were seen incidentally, a mean of 9.7 per object — the fixed-head
+tangent core routinely contains many entities besides the target. The most frequently
+incidental were 210 `wall.008` (21 objects), 109 `alphabet` and 166 `lettersPlank` (16 each).
+This is recorded, not exploited: no cross-object fusion or role assignment was used.
+
+### Retained benchmark
+
+Every look retained its left/right raw multilayer EXR, rectified tangent PNG pair, oracle
+metric patch, map snapshot, calibration, acquisition record, gaze and action source. The
+104-fixation trajectory is the fixed open-loop benchmark for later SGBM / RAFT-Stereo /
+IGEV / CREStereo comparison on exactly these gazes and images.
+
+```text
+previews/classroom-oracle-1-full/manifest.json
+previews/classroom-oracle-1-full/evaluation.json
+previews/classroom-oracle-1-full/bootstrap/seeds.json
+previews/classroom-oracle-1-full/bootstrap/evaluation_only/reachable_samples.npz   (eval only)
+previews/classroom-oracle-1-full/objects/instance_XXXX/result.json                 (trajectory)
+previews/classroom-oracle-1-full/objects/instance_XXXX/benchmark/fix_NN_{L,R}.png
+previews/classroom-oracle-1-full/objects/instance_XXXX/acquisitions/fix_NN/raw_{L,R}.exr
+previews/classroom-oracle-1-full/objects/instance_XXXX/acquisitions/fix_NN/oracle_observation.npz
+previews/classroom-oracle-1-full/objects/instance_XXXX/patches/fix_NN.npz
+previews/classroom-oracle-1-full/objects/instance_XXXX/maps/fix_NN.npz
+previews/classroom-oracle-1-smoke/    (stopped first attempt, preserved as evidence)
+previews/classroom-oracle-1-smoke-2/  (repaired gate)
+```
+
+### What this establishes
+
+**Oracle measurement behaviour.** Essentially perfect, as intended: valid core fraction
+0.810-0.910, against the 0.128 median the same instrument produced under SGBM in
+Classroom-FSG-1. `sgbm_called` false and `depth_search_bound_applied` false throughout, so
+no 0.75-4.5 m bound was imposed. Half-occlusions were preserved by the same-instance
+right-eye reprojection rule.
+
+**Autonomous control behaviour.** The controller owned the eyes after every seed: 79 of 79
+post-seed looks were `fsg6f` or `cyclopean_epistemic`, none from Blender. All 25 objects
+terminated by the controller's own `attention_complete`; the 24-look watchdog never fired,
+so no termination was an engineering cutoff. 94.9% of controller-selected looks added new
+geometry. The FSG6f -> Cyclopean handoff is genuinely load-bearing, firing on 8 objects.
+
+**Scene coverage.** 87.47% of reachable surface overall, 94.37% in the domain interior,
+10 of 25 objects complete, median per-object coverage 97.29%.
+
+**Engineering failures.** None in this session. No repair was required; no object was
+dropped, renamed, or substituted; no controller constant was touched.
+
+**Scientific observation that survives correct implementation.** The residual 12.5% is not
+random: it is pressed against the edges of the controller's own angular domain, where the
+uncovered rate rises from 3.1% deep in the interior to 26.1% in the last degree. Five
+substantial objects — `sol`, `woodBaseboard`, `boardFrame`, `plank`, `lettersPlank` — are
+extended surfaces that run out of the +-25/+-20 domain, and each declares
+`attention_complete` with a boundary-hugging band unseen. Whether that is a domain choice,
+a frontier-eligibility rule at the boundary, or a real limit of the shoreline test is the
+open question this experiment hands back; it is not resolvable without changing something,
+and nothing was changed.
