@@ -10358,3 +10358,69 @@ synthetic surfaces are MORE self-similar than the Classroom floor (2nd-peak rati
 So: slant tested and insufficient; texture untested; weak match strength is now the largest
 measured remaining difference and the obvious next manipulation. Nothing tuned, no threshold
 relaxed, no repair attempted. **BRIDGE5_NO_CAPTURE. Next: Luiz/Chat's decision.**
+
+## 2026-09-24 - Classroom-FSG-1: the architecture builds a room, the matcher fills it with rays
+
+Controlled replay of the sealed Demo-Classroom-1 oracle attention sequence through the
+completed generic tangent bridge, on branch `classroom-fsg-1` (package `53965b0`, ancestor
+`605fdfc`). Checks `[classroom-fsg1] self-test PASS` and
+`[classroom-fsg1-check] SUMMARY passed=12 failed=0`. The five established sources stayed
+byte-identical to `605fdfc` before, during and after. No foreground/background split, no
+panorama, no shell, no role assignment - every positive instance id an ordinary entity.
+
+Attention: **225/225** sealed gazes replayed, history sha256 `0ba7a0543b948f36...`,
+manifest `62c2472c7b3d15cc...`, `attention_replayed_not_reselected: true`. The source
+carries `oracle_attention_for_all_fixations: true` and `local_fsg_attention_actions: 0`.
+No controller ran, no gaze was reselected. 4748.55 s, ~21.1 s per gaze, Blender-bound.
+
+The smoke test established all seven criteria independently, including that guarded is a
+strict boolean **row** subset with byte-identical xyz, and that fusion is deterministic and
+**idempotent** (re-fusing a patch adds 0 surfels, flagged `duplicate_patch`). No defect, no
+repair. Caveat measured on the way: Blender acquisition is **not** bit-reproducible
+(1735 vs 1740 on the same gaze, <0.1%) - a Cycles/OPTIX property, not a fusion one.
+
+Totals: native **942,402** points, guarded **666,999**, gate rejecting **29.22%**. Native
+depth error median-of-medians **164.6 mm** with median-of-P95 **1176.5 mm**; guarded
+**44.6 mm** and **94.0 mm**. But the point count understates it: **52% of fixations lose
+their entire yield**, 14 produced no native geometry at all, and per-fixation rejection has
+median 0.607 with P90 1.000.
+
+The range story is the clearest thing in the run. Inside 1.5 m the unchanged instrument is
+already right - 0.3% rejected, **22.7 mm**, reproducing the sealed Bridge-1R number exactly.
+Then 28.1% rejected at 1.5-2.0 m, 48.7% at 2.0-2.5, 74-80% out to 6 m, and **100% beyond
+6 m**, where 33,136 native points carry a 4.84 m median error. The frozen depth bound is
+`z_rect [0.75, 4.5] m`, so those ranges cannot be represented at all - and the native stream
+emits them anyway. The extremes agree: the five best fixations (validity 0.82, 22-23 mm) all
+look straight **down** at close carpet; the five worst produce **zero** valid pixels looking
+**up** at the ceiling; the worst error, 32.3 m, is a horizontal gaze into room depth whose
+rectified image is a featureless brown gradient. This is Bridge-5's weak-match-strength
+diagnosis appearing in the real scene.
+
+Scene: 16 instance ids seen of 206 available (the sealed sequence concentrates on a few),
+14 instantiated native / 12 guarded, **355,830** native surfels against **171,361** guarded,
+85 and 67 packets. Max **17** packets per object against a 57 ceiling - no limit hit.
+`Plane.004` (8 pts) and `ceiling_pipeHang.002` (26/18) fell below the inherited 100-point
+floor and were reported, not force-fused.
+
+Strongest: floor `sol` 1.3% rejected, and `pipe` 10.3% - both close and textured; the thin
+pipe survives precisely because it is near. The guarded floor is genuinely flat, 0.2 m of Y
+across 4.3 m. Weakest: **`plank` and `Box280.002` are entirely spurious** - 26,010 and 217
+native surfels, none surviving; the native plank spans 14.3 m and reaches 20.2 m of range.
+`wall` keeps 11%, `corkboard` 17%. Three entities carry 62.5% of all rejection.
+
+Visually the two streams are not the same kind of object. Native (max range **35.42 m**,
+X extent -35.1..2.6) is a **radial starburst** of spikes from the head origin - disparity
+error sliding points along their own rays - with the correct geometry buried in the core.
+Guarded (max **5.20 m**, X -1.9..2.6) is discrete **planar slabs** at coherent positions,
+no radial structure; the guarded `wall` is 0.1 m thick where its native twin smears 1.3 to
+7.6 m. A coherent room-scale **partial** scene: locally clean, metrically plausible, and
+visibly incomplete.
+
+So: the architecture is not the problem. The bridge produced valid pairs for all 225 gazes
+including yaw 118-129 deg that Bridge-1 could not rectify before the Bridge-1R fix; fusion
+ran clean and idempotent with zero limit hits; dropping the foreground/background
+decomposition cost nothing. The matcher is the problem, and it fails by range and texture.
+The guarded stream is **not** an estimator result - it uses truth to reject, so its 44.6 mm
+is an upper bound on what a better matcher could give on this sequence, not a capability.
+**CLASSROOM_FSG1_GUARDED_GOOD. Next: Luiz/Chat's decision - the indicated move is to swap
+the stereo matcher, not to change the architecture.**
