@@ -10536,3 +10536,69 @@ declares completion with a band at the edge unseen. Whether that is the domain, 
 frontier-eligibility rule at the boundary, or the shoreline test is the open question handed
 back. Nothing was retuned, no object dropped, no threshold invented.
 **CLASSROOM_ORACLE1_COMPLETE. Next: Luiz/Chat's decision.**
+
+## 2026-09-24 - Classroom-Oracle-2: widening the domain does not recover the old holes
+
+Boundary ablation on branch `classroom-oracle-2`, package `f303f24`, parent `f9fb196`.
+`[classroom-oracle2-check] SUMMARY passed=15 failed=0`, all six modules compile,
+`git diff --check` clean. **No repair was needed this session.** One scientific variable
+changed: controller domain yaw +-25 -> +-35, pitch +-20 -> +-30. Same scene, same fixed
+head, same 25 target IDs, same seed gazes (verified value-for-value against Oracle-1 with
+zero differences), same profile, same FSG6f, Cyclopean rule, 12 mm fusion and 24-look
+watchdog.
+
+The one thing that could have silently broken it: several inherited `*_public.py` modules
+take an import-time copy of `SURFACE_FRONTIER`, `multiobject2c_public` among them and on the
+live path. I checked empirically rather than by reasoning - `apply_wide_domain()` mutates
+`fsg6f_public.SURFACE_FRONTIER` in place before `classroom_oracle1_run` triggers that
+import, so the copy reads -35/+35, -30/+30 too. The override's audit reports `changed_keys`
+equal to exactly the four bounds and `only_domain_extent_changed: true`.
+
+Smoke: `PASS_CONTROLLER_TRANSITION_EXERCISED`, 4 objects, 5 fixations, instance 110 `beams`
+exercising an `fsg6f` second look; all seven conditions verified independently of the
+manifest flags.
+
+Full run: 25 attempted, **159 fixations** against the baseline's 104, action sources 25
+seed / 94 fsg6f / 40 cyclopean, **52 looks outside the old domain**, terminations 22
+`attention_complete` and **3 `watchdog_24`** where Oracle-1 had none.
+
+**Scope A, the controlled comparison on the identical +-25/+-20 samples: 0.874693 ->
+0.875239.** Of 3,670 Oracle-1 misses, **61 were recovered (1.66%)** while 45 baseline hits
+regressed - a net of +16 samples out of 29,288. The uncovered-by-edge-distance profile is
+essentially unchanged: 0.2610 -> 0.2685 in the first degree, and the 6-10 deg and >10 deg
+bins identical at 0.0896 and 0.0313. The band within one degree of the old edge is now a
+full ten degrees interior and is still 26.9% uncovered.
+
+The decisive observation is per object. **Nine objects have byte-identical trajectories** -
+same gazes, same action sources, same termination - including **five of the six principal
+deficit objects**: `woodBaseboard`, `ceilingMoulding`, `lettersPlank`, `boardFrame`,
+`plank`. They took **zero** looks outside the old domain. Given ten more degrees in every
+direction the controller did not want them; its frontier and shoreline tests were already
+empty inside the old domain. `sol` alone behaved differently: identical for six looks, then
+out past the boundary - (-0.1,-24.2), (-5.1,-29.2) ... (-25.1,-29.2) - marching the new
+pitch floor for 18 extra looks to the watchdog, more than doubling its map (82,472 ->
+195,218 surfels) and recovering only 61 of 1,043 old-domain misses. The budget went into new
+territory, not into the interior holes. `woodBase` regressed 99.95% -> 99.27%, the whole
+regression count.
+
+Scope B, widened samples: coverage 0.7156, interior 0.8110, within 6 deg of the new edge
+0.4820, with a fresh and steeper gradient - 0.52 uncovered in the first degree against 0.125
+beyond ten. So a generic finite-domain boundary effect is real, but it is an additional
+phenomenon and not an explanation, because the original region did not improve when it
+stopped being a boundary.
+
+Conclusion: the Oracle-1 boundary correlation was largely **coincidental**. The surfaces
+that ran out of the domain are the same extended, thin, grazing surfaces on which the
+frontier and shoreline tests go empty early. The limiter is the eligibility rule, not the
+angular extent. A quieter second result: more domain is not free - effort rose 53%, three
+objects converted from self-termination to watchdog exhaustion, and one regressed.
+
+Demo produced post hoc: 159 frames, 25 instance PLYs, a 1,340,050-point scene cloud, and a
+1280x754 MP4 (encoding was available). Panel 1 uses a real `preview360.py` Blender panorama
+at the fixed head, whose log independently reconfirmed the Oracle-1 seed diagnosis
+(`removed fcurve on cycles.seed in action 'SceneAction'`).
+
+Next probe, not taken here because it changes a decision rule: why FSG6f reports zero open
+frontier cells and the Cyclopean audit zero eligible NEVER_OBSERVED+EXTERIOR shoreline cells
+while substantial contiguous target surface remains unobserved on those extended surfaces.
+**CLASSROOM_ORACLE2_COMPLETE. Next: Luiz/Chat's decision.**
