@@ -10033,3 +10033,94 @@ decision** on the forward-hemisphere seam, which is a frozen-source question:
 either `make_calibration` should refuse or re-parameterize rear-hemisphere
 gazes, or `fsg_stereo` should accept an inverted L-R order. Stopped after one
 fixation.
+
+### 2026-09-24 - FSG Blend Bridge-1R: the Classroom measured on the native FSG instrument, 22.7 mm median
+
+One fixation, branch `fsg-blend-bridge-1` only. Verdict **BRIDGE1R_COMPLETE**.
+**No source changed during this run**: `tools/` is byte-identical to the
+Bridge-1R commit `4c24789`, and `tools/fsg_stereo.py` byte-identical to
+`ae8c876`.
+
+Preflight green: `[fsg-geometry] self-test PASS`,
+`[fsg-tangent-frame] SUMMARY checked=92 failed=0 selected=(179.912109375,
+-89.912109375)`, `[fsg-blend-bridge-check] SUMMARY passed=13 failed=0`.
+Host-side, at the identical gaze, `legacy_upright` gives P2[0,3] **+38.36192**
+(rejected) and `baseline_projected` gives **-38.36192** (accepted) - the repair
+flips exactly the sign that stopped Bridge-1, with camera +X becoming the
+projected physical baseline.
+
+Acquisition at the unchanged gaze **yaw 179.912109375, pitch -89.912109375**
+(Classroom oracle seed, object 52 `sol`, step 129): Blender 5.2.1 LTS / OPTIX,
+small / 64 spp / seed 2111, raster 320x320, 206 groups, hit fraction 1.0000
+both eyes, 19.7 s.
+
+Rectification: **P2[0,3] = -38.36192, P2[1,3] = 0.0**, horizontal with positive
+L-R disparity, rectified core **128x128** from crop [96,96,128,128], focal
+608.919 px. The floor sits at a median **31.9 px** disparity inside the [0,64)
+window; the declared depth bounds map to 8.5-51.1 px, so nothing clips.
+
+**SGBM ran unchanged**: `valid=13216/16384 fraction=0.8066 ndisp=64
+seconds=0.0623`. The 19.34% rejected are **left-right consistency, not
+texture** - invalid pixels carry lr_error median **1.504** against the 1.0 px
+tolerance while valid ones sit at **0.283**, and left_gray_std is essentially
+identical on both (13.22 vs 13.06, floor 0.5). The carpet is richly but
+quasi-repetitively textured, which breaks LR consistency rather than the gate.
+
+Accuracy against quarantined Blender truth, all 13,216 points compared:
+absolute **P50 22.673 mm**, P75 30.285, P90 37.853, **P95 50.605**, P99 65.821,
+max 336.205; relative P50 1.884%, P95 4.208%. Within 10/25/50/100 mm:
+23.43% / 54.27% / **94.59%** / 99.89%. Signed bias negligible at median
+**+2.49 mm**. wrong_instance **0**, purity 1.000000 - trivially, since the
+whole core is group 159 `sol`.
+
+**The result is disparity-quantisation-limited, not broken.** At this range
+1 px of disparity is **37.97 mm**, so the median error is **0.60 px**, P90
+**1.00 px**, P95 **1.33 px** - ordinary sub-pixel SGBM behaviour.
+
+Spatially uniform: median absolute error by radius from the core centre is
+22.69 / 22.63 / 22.66 / 23.45 / 21.63 mm from 0-16 out to 64-91 px, so the
+tangent core is as good at the edge as at the centre. Only **14 points
+(0.106%)** exceed 100 mm. There is nothing for errors to cluster at: truth
+across the entire core spans **1.2000-1.2131 m**, a 13 mm range - this fixation
+looks straight down at one flat floor. A plane fit gives residual **rms 27.66
+mm**, i.e. the patch IS a plane and the residual is the stereo noise itself.
+
+Correspondence is ordinary horizontal stereo, verified numerically: NCC between
+the rectified pair peaks sharply at **32 px (+0.6714)**, matching SGBM's 31.9
+px, and the vertical residual **at that disparity** peaks exactly at **dv = 0**,
+falling symmetrically. Visually the pair is dark fine-grained carpet with a
+lighter region and a soft near-vertical shadow edge displaced horizontally and
+not vertically; disparity is near-uniform mid-grey with black dropouts;
+validity is mostly white with speckle denser toward the lower-left; the PLY is
+a flat slab at Y -1.534..-0.919 m below the head.
+
+Provenance verified: `observation.npz` holds exactly the four contract arrays
+and its on-disk sha256 matches what the estimator recorded; Blender range/XYZ
+live only under `evaluation_only/` and were read only after stereo; and
+`z_rect_m` reproduces `f*B/disparity` to **5.96e-08 m** over every accepted
+pixel, so the geometry is triangulated rather than copied.
+
+Comparison at the SAME fixation against the Classroom O3 `stereo_field` record
+(step 129): foveated warp gave 3,948 raw rows with median **67.617 mm** and P95
+**748.545 mm**, improving to 27.220 / 88.371 mm only after an oracle depth gate
+discarded 51% of them. The tangent path gives **13,216 points at median 22.673
+mm and P95 50.605 mm with no truth gate at all** - better on both statistics
+before any rejection, and still better than the gated foveated numbers. This is
+**not** a like-for-like coverage comparison: FSG samples a 12 deg fovea at ~92
+points/deg2 while stereo_field samples out to 45 deg with cells widening by two
+per level. The comparable quantity is the error distribution against the same
+truth at the same look direction, and there the tangent instrument is markedly
+tighter, especially in the tail.
+
+What this establishes: **real .blend -> tangent pair -> FSG rectification ->
+unchanged SGBM -> non-trivial metric 3-D patch**, sub-pixel in disparity,
+spatially uniform, essentially unbiased, entirely estimator-derived. What it
+does **not**: one fixation, one gaze, one object, one profile, on a core that
+happened to contain a single flat floor at near-constant range - so nothing
+about occlusion boundaries, thin geometry, depth discontinuities, low-texture
+surfaces or longer range; no Classroom reconstruction, no fusion, no
+controller, no FSG6f, no attention claim; and the stereo_field comparison is
+descriptive at one look direction, not a general ranking. No accuracy threshold
+was declared and nothing was tuned. **Next: Luiz/Chat's decision** on whether a
+small multi-fixation FSG Classroom probe is authorized. Stopped after one
+fixation.
