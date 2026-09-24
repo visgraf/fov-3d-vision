@@ -39,7 +39,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bl_common import ensure_cycles, find_eye, pin_seed, rigid, setup_device
 from fsg_geometry import (
     CV_TO_BLENDER,
-    gaze_direction,
     head_to_world,
     json_write,
     make_calibration,
@@ -47,9 +46,6 @@ from fsg_geometry import (
     rays_h,
     world_to_head,
 )
-import rig
-
-
 SOURCE = "blender_scene_tangent_perspective"
 SCHEMA = "FSG-BLEND-BRIDGE1-acquisition-v1"
 
@@ -71,7 +67,6 @@ def root_name(obj: bpy.types.Object) -> str:
 
 def instance_table(scene: bpy.types.Scene) -> tuple[dict[str, int], dict]:
     """Deterministic parent-root grouping; zero is reserved for no mesh hit.
-
     The population is the EVALUATED depsgraph, not scene.objects.  This scene
     links eleven asset libraries as collection instances, so most of its
     geometry (chairs, lamps, books) never appears in scene.objects: that view
@@ -139,27 +134,22 @@ def configure_scene(scene: bpy.types.Scene, c: dict, spp: int, prefer_device: st
 
 
 def create_cameras(scene: bpy.types.Scene, c: dict) -> list[bpy.types.Object]:
-    """Create temporary Blender perspective cameras exactly from FSG calibration."""
+    """Create temporary Blender perspective cameras exactly from FSG calibration.
+
+    Bridge-1R deliberately uses the calibration rotation itself rather than the
+    repository rig's legacy zero-torsion camera convention.  The latter is not
+    globally compatible with horizontal positive-disparity stereo.
+    """
     head_r = np.asarray(c["head_R_wh"], float)
-    head_o = np.asarray(c["head_origin_w_m"], float)
-    target_h = gaze_direction(*c["gaze_yaw_pitch_deg"]) * c["prescribed_vergence_distance_m"]
-    pair = rig.pair_for_point(head_to_world(c, target_h), head_o, head_r, c["ipd_m"])
     out = []
     w, _ = c["image_size_wh"]
-    for k, eye in enumerate(c["eyes"]):
-        g = pair["eyes"][k]
-        pos_w, rb = rig.camera_pose(
-            head_o,
-            head_r,
-            rig.eye_offsets_local(c["ipd_m"])[k],
-            g["yaw"],
-            g["pitch"],
-        )
-        actual_r_hc = head_r.T @ rb @ CV_TO_BLENDER
-        if not np.allclose(actual_r_hc, np.asarray(eye["R_hc"]), atol=1e-9):
-            raise RuntimeError("repository rig and FSG calibration disagree")
-        if not np.allclose(world_to_head(c, pos_w), np.asarray(eye["centre_h_m"]), atol=1e-9):
-            raise RuntimeError("repository rig and FSG eye centres disagree")
+    for eye in c["eyes"]:
+        centre_h = np.asarray(eye["centre_h_m"], float)
+        r_hc = np.asarray(eye["R_hc"], float)
+        pos_w = head_to_world(c, centre_h)
+        rb = head_r @ r_hc @ CV_TO_BLENDER
+        if not np.allclose(world_to_head(c, pos_w), centre_h, atol=1e-9):
+            raise RuntimeError("FSG eye centre world/head round-trip failed")
 
         data = bpy.data.cameras.new("FSG_BRIDGE_" + eye["name"])
         data.type = "PERSP"
@@ -274,16 +264,12 @@ def raycast_ids_and_truth(scene: bpy.types.Scene, c: dict, eye: dict, group_ids:
 
 def orthonormalize(r: np.ndarray, tol: float = 1e-5) -> tuple[np.ndarray, float]:
     """Nearest rotation to `r` in float64, by polar decomposition.
-
     mathutils matrices are single precision, so a Blender EYE pose reaches us
     with ~1e-7 non-orthonormality.  make_calibration builds R_hc entirely in the
-    head frame, while rig.camera_pose routes the same pose through head_R_wh, so
-    the two agree only when head_R_wh is orthonormal to float64.  At 1e-7 the
-    residual is ~4e-6 and the existing 1e-9 rig cross-check rightly rejects it.
-
-    FSG1 never met this because its head_R_wh is an exact float64 constant.  The
-    correction is bounded so a genuinely non-rigid or mis-scaled EYE still fails
-    loudly instead of being silently absorbed.
+    head frame, while the Blender world transform uses head_R_wh, so the two
+    agree only when that matrix is orthonormal to float64.  The correction is
+    bounded so a genuinely non-rigid or mis-scaled EYE still fails loudly
+    instead of being silently absorbed.
     """
     r = np.asarray(r, dtype=np.float64)
     u, _s, vt = np.linalg.svd(r)
@@ -313,6 +299,7 @@ def build_calibration(scene: bpy.types.Scene, profile: str, yaw: float, pitch: f
         ipd=ipd,
         head_r_wh=head_r,
         head_origin_w=head_o,
+        tangent_frame="baseline_projected",
     )
     c["scene_eye_source"] = source
     pose = {
@@ -395,6 +382,7 @@ def acquire(args: argparse.Namespace) -> dict:
         "instance_grouping": grouping,
         "geometry_checks": geometry_checks,
         "eye_pose_conditioning": eye_pose,
+        "tangent_frame_mode": c.get("tangent_frame", "legacy_upright"),
         "sensor_contract": "local padded perspective pair; FSG1 tangent-plane acquisition",
         "stereo_contract": "host tools/fsg_stereo.py unchanged",
         "truth_in_observation": False,
