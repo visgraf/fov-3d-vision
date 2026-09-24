@@ -70,15 +70,39 @@ def root_name(obj: bpy.types.Object) -> str:
 
 
 def instance_table(scene: bpy.types.Scene) -> tuple[dict[str, int], dict]:
-    """Deterministic parent-root grouping; zero is reserved for no mesh hit."""
-    mesh_objects = [o for o in scene.objects if o.type == "MESH" and not o.hide_render]
-    roots = sorted({root_name(o) for o in mesh_objects})
-    mapping = {name: i + 1 for i, name in enumerate(roots)}
+    """Deterministic parent-root grouping; zero is reserved for no mesh hit.
+
+    The population is the EVALUATED depsgraph, not scene.objects.  This scene
+    links eleven asset libraries as collection instances, so most of its
+    geometry (chairs, lamps, books) never appears in scene.objects: that view
+    sees 178 meshes over 98 roots, while the depsgraph carries 854 mesh
+    instances over 206 roots.  scene.ray_cast returns those evaluated objects,
+    whose library-internal roots are absent from the scene-level table, so a
+    scene-level table cannot resolve every hit.  The rule itself is unchanged;
+    only the set of renderable mesh objects it ranges over is the evaluated one.
+    """
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    roots: set[str] = set()
+    instances = 0
+    for inst in dg.object_instances:
+        ob = inst.object
+        if ob is None or ob.type != "MESH":
+            continue
+        instances += 1
+        roots.add(root_name(ob))
+    scene_meshes = [o for o in scene.objects if o.type == "MESH" and not o.hide_render]
+    roots |= {root_name(o) for o in scene_meshes}
+    ordered = sorted(roots)
+    mapping = {name: i + 1 for i, name in enumerate(ordered)}
     return mapping, {
         "rule": "topmost parent root over renderable mesh objects; sorted root names; ids 1..N",
-        "mesh_object_count": len(mesh_objects),
+        "population": "evaluated depsgraph object_instances, union scene.objects meshes",
+        "mesh_instance_count": instances,
+        "scene_object_mesh_count": len(scene_meshes),
+        "mesh_object_count": len(scene_meshes),
         "group_count": len(mapping),
-        "groups": [{"id": mapping[name], "root": name} for name in roots],
+        "groups": [{"id": mapping[name], "root": name} for name in ordered],
     }
 
 
@@ -248,10 +272,38 @@ def raycast_ids_and_truth(scene: bpy.types.Scene, c: dict, eye: dict, group_ids:
     return ids.reshape(h, w), ranges.reshape(h, w), xyz_h.reshape(h, w, 3), time.perf_counter() - t0
 
 
-def build_calibration(scene: bpy.types.Scene, profile: str, yaw: float, pitch: float, vergence: float, ipd: float) -> tuple[dict, str]:
+def orthonormalize(r: np.ndarray, tol: float = 1e-5) -> tuple[np.ndarray, float]:
+    """Nearest rotation to `r` in float64, by polar decomposition.
+
+    mathutils matrices are single precision, so a Blender EYE pose reaches us
+    with ~1e-7 non-orthonormality.  make_calibration builds R_hc entirely in the
+    head frame, while rig.camera_pose routes the same pose through head_R_wh, so
+    the two agree only when head_R_wh is orthonormal to float64.  At 1e-7 the
+    residual is ~4e-6 and the existing 1e-9 rig cross-check rightly rejects it.
+
+    FSG1 never met this because its head_R_wh is an exact float64 constant.  The
+    correction is bounded so a genuinely non-rigid or mis-scaled EYE still fails
+    loudly instead of being silently absorbed.
+    """
+    r = np.asarray(r, dtype=np.float64)
+    u, _s, vt = np.linalg.svd(r)
+    q = u @ vt
+    if np.linalg.det(q) < 0:
+        u[:, -1] *= -1.0
+        q = u @ vt
+    delta = float(np.abs(q - r).max())
+    if delta > tol:
+        raise RuntimeError(
+            f"EYE rotation is not rigid within {tol:g}: nearest rotation differs by {delta:.6g}"
+        )
+    return q, delta
+
+
+def build_calibration(scene: bpy.types.Scene, profile: str, yaw: float, pitch: float, vergence: float, ipd: float) -> tuple[dict, str, dict]:
     eye, source = find_eye(scene)
     m = rigid(eye.matrix_world)
-    head_r = np.asarray(m.to_3x3(), float)
+    raw_r = np.asarray(m.to_3x3(), float)
+    head_r, delta = orthonormalize(raw_r)
     head_o = np.asarray(m.translation, float)
     c = make_calibration(
         profile,
@@ -263,7 +315,14 @@ def build_calibration(scene: bpy.types.Scene, profile: str, yaw: float, pitch: f
         head_origin_w=head_o,
     )
     c["scene_eye_source"] = source
-    return c, source
+    pose = {
+        "eye_rotation_orthonormality_error_in": float(np.abs(raw_r.T @ raw_r - np.eye(3)).max()),
+        "eye_rotation_determinant_error_in": float(np.linalg.det(raw_r) - 1.0),
+        "eye_rotation_polar_correction_max": delta,
+        "eye_rotation_orthonormality_error_out": float(np.abs(head_r.T @ head_r - np.eye(3)).max()),
+        "note": "mathutils is single precision; head_R_wh is orthonormalized in float64 before use",
+    }
+    return c, source, pose
 
 
 def acquire(args: argparse.Namespace) -> dict:
@@ -278,7 +337,7 @@ def acquire(args: argparse.Namespace) -> dict:
     blend = Path(bpy.data.filepath).resolve() if bpy.data.filepath else None
     if blend is None or not blend.is_file():
         raise RuntimeError("bridge requires a saved .blend opened by Blender")
-    c, eye_source = build_calibration(scene, args.profile, args.yaw_deg, args.pitch_deg, args.vergence_m, args.ipd_m)
+    c, eye_source, eye_pose = build_calibration(scene, args.profile, args.yaw_deg, args.pitch_deg, args.vergence_m, args.ipd_m)
     spp = args.spp
     if spp is None:
         from bl_common import PROFILES
@@ -335,6 +394,7 @@ def acquire(args: argparse.Namespace) -> dict:
         "truth_summary": truth_summary,
         "instance_grouping": grouping,
         "geometry_checks": geometry_checks,
+        "eye_pose_conditioning": eye_pose,
         "sensor_contract": "local padded perspective pair; FSG1 tangent-plane acquisition",
         "stereo_contract": "host tools/fsg_stereo.py unchanged",
         "truth_in_observation": False,

@@ -9951,3 +9951,85 @@ inferred**; **no complete reconstruction** - 45,130 surfels over 10 of 98
 entities, two of them zero, is a demonstration, not a room. **Next: Chat's
 call** - the generic `.blend` -> rectified-pair bridge remains the real
 architecture gap, and the Classroom shows why it matters. Stopped.
+
+### 2026-09-24 - FSG Blend Bridge 1: the .blend reaches FSG1 geometry exactly, then meets a forward-hemisphere seam
+
+One-fixation integration probe on branch `fsg-blend-bridge-1` only, from the
+completed Classroom result `d15642f`. Verdict **BRIDGE1_STOPPED**. No frozen
+file was modified; **359 tracked pre-bridge sources are byte-identical**.
+
+Pure checks first: `[fsg-geometry] self-test PASS`, `[rig] self-test ok`,
+`[fsg-blend-bridge-check] SUMMARY passed=13 failed=0`, and all five deliberate
+negatives exit 1 with named FAIL lines (`warp`->`forbidden warp_import`,
+`truthfill`->`forbidden truth_in_observation_key`, `nonperspective`->`missing
+perspective_camera`, `nostereo_contract`->`missing no_field_flag`,
+`nogrouping`->`missing parent_root`).
+
+Seed chosen by the declared deterministic rule over the completed O3 artifact
+(largest accepted stereo count among `ORACLE_SEED`, ties by ascending object
+id): **object 52 `sol`**, the floor, **yaw 179.912109375, pitch -89.912109375**,
+1,931 accepted at global step 129.
+
+**Acquisition worked.** The bridge opened the real
+`scenes/classroom/classroom_eye.blend` (`dca66a3257b909ae...`), took the head
+frame from the scene's own EYE, built local PERSP cameras from the frozen
+`make_calibration`, and rendered the padded FSG1 tangent pair: Blender 5.2.1
+LTS / OPTIX, `small` / 64 spp / seed 2111, raster **320x320** (core 128 + 2x96,
+raw FOV 29.445 deg), **206 instance groups**, **L/R hit fraction 1.0000/1.0000**,
+render **0.840/0.747 s**, ray-cast **8.666/8.705 s**, and an independent
+Blender-vs-FSG **projection error of 6.227e-05 px** against a 0.002 tolerance.
+`observation.npz` carries exactly `rgb_L, rgb_R, instance_L, instance_R`;
+evaluator range/XYZ lives only under `evaluation_only/`; `foveated_warp_used`
+and `stereo_field_used` are both false.
+
+**Then the unchanged `tools/fsg_stereo.py` refused it**:
+`ValueError: expected horizontal rectification with positive L-R disparity`.
+`fsg_stereo.rectification` requires `P2[0,3] < 0`; here it is **+38.3619**.
+
+The seam is razor sharp and lies purely in **yaw**, not pitch: yaw 0/30/60/85/
+89/**90.0** accepted, yaw **90.1**/95/120/179.9 rejected, and symmetrically at
+-90.0/-90.1; pitch is irrelevant, with **-89.99** and **+89.9** both accepted.
+Mechanism: `camera_rotation_h` builds `x = unit(cross(z, up))`, so once
+`|yaw| > 90` the gaze enters the rear hemisphere (head-frame z turns positive,
+forward being -Z), the derived camera x-axis flips against the baseline, and
+the rectified L-R disparity sign inverts. **Two frozen sources disagree** -
+`make_calibration` accepts any yaw and passes its own `validate_calibration`,
+while `fsg_stereo` rejects everything outside the forward hemisphere. The FSG
+lineage never met this because every earlier FSG gaze sat inside roughly
++/-25 deg on the procedural tabletop.
+
+The selected seed compounds it: at pitch -89.91 the gaze is essentially
+straight down, only **0.1758 deg** from the same pitch at yaw 0, so its nominal
+yaw of 179.91 is a pole artifact of the Classroom panorama and lands 0.176 deg
+on the far side of the boundary. Both facts are reported and the seed was
+**not** re-chosen after seeing the result.
+
+Two code changes, both confined to the new bridge file. (1) `orthonormalize()`:
+mathutils is single precision, so the live EYE rotation arrived with
+orthonormality error **1.192e-07**; because `make_calibration` builds `R_hc` in
+the head frame while `rig.camera_pose` routes the same pose through
+`head_R_wh`, the identity only cancels when that matrix is orthonormal to
+float64, and the residual was **3.95e-06** against the existing 1e-9 rig
+cross-check. A float64 polar decomposition (correction 5.96e-08, bounded at
+1e-5 so a genuinely non-rigid EYE still fails loudly) brings it to **5.2e-15**.
+FSG1 never met this because its `head_R_wh` is an exact float64 constant.
+(2) `instance_table()` now ranges over the **evaluated depsgraph**: the
+Classroom links eleven asset libraries as collection instances, so
+`scene.objects` sees 178 meshes over 98 roots while the depsgraph carries **854
+mesh instances over 206 roots, 41 outside `scene.objects`**; `scene.ray_cast`
+returns those evaluated objects and the scene-level table aborted on
+`Box295.002`, `Cylinder813.003`, `Line122.002`. A 5,536-ray sample across the
+full padded raster now resolves every hit with zero unresolved roots. The
+declared rule text is unchanged; only its population is the evaluated one.
+
+What this establishes: **a real `.blend` can supply a geometrically exact FSG1
+tangent observation**, verified independently to **6.2e-05 px**, with the
+frozen observation contract intact and truth quarantined. What it does **not**
+establish: nothing at all about FSG stereo on the Classroom - no accepted point
+count, no range error, no wrong-ID rate, no disparity quality, no comparison
+with `stereo_field` - because the estimator never ran; and no Classroom
+reconstruction, controller, FSG6 or attention claim. **Next: Luiz/Chat's
+decision** on the forward-hemisphere seam, which is a frozen-source question:
+either `make_calibration` should refuse or re-parameterize rear-hemisphere
+gazes, or `fsg_stereo` should accept an inverted L-R order. Stopped after one
+fixation.
