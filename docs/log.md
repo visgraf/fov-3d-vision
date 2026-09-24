@@ -10264,3 +10264,48 @@ epipolar band, support disjoint from the boundary, beginning at 4 px and reachin
 30.** A fixed-width silhouette erosion is structurally mismatched to it. One fixation, one
 gaze, one profile - nothing universal is claimed. Nothing was tuned, no threshold relaxed,
 no second fixation run. **BRIDGE3_COMPLETE. Next: Luiz/Chat's decision.**
+
+## 2026-09-24 - FSG Blend Bridge-4: gap alone does not fatten; the half-occlusion band does
+
+First causal controlled probe of the Bridge-3 structure, on branch `fsg-blend-bridge-4`
+(ancestor `fd14943`). Ten preflight checks green; `git diff fd14943` empty across
+`fsg_geometry.py`, `fsg_stereo.py`, `fsg_blend_bridge.py`, `fsg_bridge2_select.py`,
+`fsg_bridge2_analyze.py`, `fsg_bridge3_fattening.py`. No Blender, no Classroom fixation.
+
+21 analytic two-plane conditions: near rectangle fixed at 1.40 m, far plane swept
+1.60/1.80/2.00/2.20/2.40/2.80/3.20 m, three texture seeds each. Controls verified
+independently of the generator: **one** distinct L instance-mask sha256 and one distinct R
+across all 21, one near geometry, one observation key set, and **one** matcher config in
+all 21 summaries (block 5, LR 1.0, guard 3, SGBM_3WAY, ndisp 64). Gray std 15.68-15.70 at
+every depth, so contrast is controlled alongside the mask. No `stereo/` existed before
+Phase B; the analyzer's earliest product postdates the last stereo file by 12.77 s and
+6/6 recorded sha256 are identical before and after.
+
+**Capture is exactly zero in 21/21 conditions**, over gaps 3.425 to 15.413 px - a range
+that brackets the Classroom's 12.2 px on both sides. Far acceptance is 0.855-0.923. I
+recomputed alpha independently with the Bridge-3 machinery: median -0.003 to 0.000,
+P95 0.002-0.024, maximum anywhere 0.302. The far plane is not partly captured, it is
+correct; range error is 1.3-12.2 mm median against the Classroom's 27 mm and 1,015 mm P95.
+`n_depth_conditions: 0` in the reach fit is the analyzer correctly refusing to fit an
+empty set, not a defect.
+
+What scales with the gap is the **rejection** band, not capture. Rejected-far-band P90
+versus gap: slope **+0.9436 px/px, intercept +2.99 px, R^2 0.9776** over 21 points - one
+pixel of rejected band per pixel of disparity separation, which is exactly the
+half-occlusion width. The capture maps show it: white rectangle, black band, solid green,
+**no red anywhere**, the band thin on three edges and widening to the left as the gap
+grows. Attached and horizontal - the opposite of Bridge-3's detached band.
+
+Why the synthetic scene did not reproduce the Classroom, measured on sealed data from both
+at matched gap: the Classroom foreground carried **twice** the local texture of its
+background (7.97 vs 4.02 u8, ratio 1.98) and that background was a **slanted** floor whose
+true disparity varied 5.4 px across the core (0.0478 px/px vertical). The synthetic pair is
+balanced (ratio 0.93) and exactly fronto-parallel (0.0000 px/px). Two candidate drivers,
+neither manipulated here, neither adjudicated.
+
+So the simple depth-gap scaling hypothesis is **rejected for this regime**. The honest
+limitation is sharper than that: with capture identically zero, the same-row and
+no-near-row controls are degenerate (0.0000 vs 0.0000), so **Bridge-4 does not test
+Bridge-3's epipolar claim at all** - it was not exercised, neither confirmed nor
+contradicted. Nothing was tuned, no threshold relaxed, no repair attempted.
+**BRIDGE4_NO_CAPTURE. Next: Luiz/Chat's decision.**
