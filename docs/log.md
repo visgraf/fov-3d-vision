@@ -10309,3 +10309,52 @@ no-near-row controls are degenerate (0.0000 vs 0.0000), so **Bridge-4 does not t
 Bridge-3's epipolar claim at all** - it was not exercised, neither confirmed nor
 contradicted. Nothing was tuned, no threshold relaxed, no repair attempted.
 **BRIDGE4_NO_CAPTURE. Next: Luiz/Chat's decision.**
+
+## 2026-09-24 - FSG Blend Bridge-5: slant is real and insufficient; the texture factor was a no-op
+
+2x2 factorial (background slant x foreground/background texture asymmetry) x 3 seeds on
+branch `fsg-blend-bridge-5` (ancestor `d09e054`). Thirteen preflight checks green;
+`git diff d09e054` empty across all eight established measurement and Bridge-1R/2/3/4
+sources. No Blender, no Classroom fixation, matcher frozen.
+
+Controls, verified independently of the generator: **one** distinct L instance-mask sha256
+and one distinct R across all 12 - and the L hash `abf973db590f3314...` is **byte-identical
+to Bridge-4's**, so the foreground is literally the same silhouette. One geometry, one
+observation key set, one matcher config in all 12 summaries, 12/12 input hashes verified,
+no `stereo/` before Phase B, 8/8 recorded sha256 unchanged after analysis. Near mean RGB
+identical to four decimals across cells and far mean RGB unchanged by the texture gain, so
+the texture manipulation carried no brightness confound. Unplanned bonus: **cell A
+reproduces Bridge-4's 2.40 m condition bit-exactly** (13927/14091/14060).
+
+Both manipulations hit their targets - slant 0.0472 px/px against the Classroom's 0.0478,
+near/far texture ratio 1.97-2.26 against 1.98, gap 11.417 px against 12.2.
+
+**Capture is exactly zero in all 12 conditions and all four cells.** Every factorial
+contrast - B-A, C-A, D-C, D-B and the interaction - is exactly 0.0. Far acceptance does not
+move either (0.876-0.878 in all cells). Recomputed independently with the Bridge-3
+machinery: alpha median -0.001, maximum anywhere **0.112**, which is 4.5x short of the 0.5
+threshold and 22x short of the Classroom's alpha P75 of 1.13. Morphology is identical in
+every cell and unambiguously Bridge-4 attached half-occlusion rejection - band starting at
+1.00 px with 238 pixels 8-adjacent to the near rectangle and P90 row reach ~14 px, matching
+Bridge-4's 1:1 law at this gap - against Bridge-3's detached band starting at 4.197 px with
+zero adjacent. Zero red pixels in all twelve maps.
+
+Since capture is degenerate I ran the factorial on continuous outcomes. **Slant is real and
+almost perfectly additive**: alpha P95 x7.3 (0.0025 -> 0.0182), far median error x3.5
+(2.58 -> 8.80 mm), far P95 error x5.1 (8.94 -> 45.02 mm), with contrast C-A = +0.01541 and
+D-B = +0.01542. **Texture asymmetry is a null on every measure**, three to four orders of
+magnitude smaller, interaction on alpha P95 exactly +0.00000.
+
+Why texture was a null, measured rather than guessed: the 2.3x contrast reduction
+(far std 6.01 -> 2.62 u8) changed the far-surface NCC peak by **0.4%** (0.9515 -> 0.9478).
+Normalized correlation is invariant to a uniform contrast scale and these images have no
+noise floor, so the declared 2:1 std ratio was achieved while the matcher's evidence was
+untouched. **Cells B and D do not test the texture hypothesis** - reading them as a
+refutation would be wrong. The same measurement also kills the ambiguity hypothesis: the
+synthetic surfaces are MORE self-similar than the Classroom floor (2nd-peak ratio 0.963 vs
+0.891). What actually separates the Classroom is absolute match strength - NCC peak median
+**0.5444, P10 0.3613** against **0.95-0.97, P10 0.81-0.85** here.
+
+So: slant tested and insufficient; texture untested; weak match strength is now the largest
+measured remaining difference and the obvious next manipulation. Nothing tuned, no threshold
+relaxed, no repair attempted. **BRIDGE5_NO_CAPTURE. Next: Luiz/Chat's decision.**
