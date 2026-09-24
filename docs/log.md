@@ -10213,3 +10213,54 @@ wrong in general, only that here the fattening reaches beyond the guard. No
 fusion, no controller, no FSG6f, no attention, no Classroom reconstruction.
 Nothing was tuned and no threshold relaxed. **Next: Luiz/Chat's decision.**
 Stopped after one fixation.
+
+## 2026-09-24 - FSG Blend Bridge-3: the fattening is a detached, scanline-directed band
+
+Analysis-only audit of the sealed Bridge-2 fixation on branch `fsg-blend-bridge-3`
+(ancestor `8c73c9b`). No Blender, no stereo rerun, no estimator output touched. The four
+sealed files - `observation.npz`, `stereo/result.npz`, `stereo/summary.json`,
+`evaluation_only/truth_L.npz` - carry identical sha256 before and after the run. Seven
+preflight checks green; `git diff 8c73c9b` empty across `fsg_geometry.py`, `fsg_stereo.py`,
+`fsg_blend_bridge.py`, `fsg_bridge2_select.py`, `fsg_bridge2_analyze.py`.
+
+The analyzer picked the dominant pair itself, by core support and median range: near **7
+`Box297.002`** (seat, 1.4232 m, 30.724 px) and far **159 `sol`** (floor, 2.2792 m,
+18.517 px). Its accepted counts, 4,698 and 950, reproduce Bridge-2's per-instance split
+exactly, so this is the same pair without a hard-coded ID.
+
+Of 5,755 far truth pixels, **950 (16.51%) were accepted and 446 (46.95%) captured** at
+`alpha >= 0.5`. Capture is real plateau capture: captured pixels sit at 32.562 px of
+estimated disparity, **0.69 px from the seat's own 31.875 px** and 14.2 px from their own
+truth, while non-captured far pixels sit within 0.94 px of theirs.
+
+The central result is the reach. **Every captured pixel lies beyond 3 px** of the near
+surface; the nearest is at 4.197 px and none is 8-adjacent. Median 10.98, P75 17.19,
+P90 22.28, P95 25.73, max 34.95 px; beyond 6/12/24 px, 88.3% / 43.7% / 8.1%. The 0-3 px
+band holds 667 far pixels and zero accepted. The distance profile is a plateau rather than
+a decay: 61-97% capture from 3 px to 24 px, peaking at **12-16 px (97.1%)**, then 21.8% at
+24-32, 4.4% at 32-48, 0% at 48-96, where validity recovers to 50.4% and error to 1.2 px.
+
+The apparent disparity-gap effect (capture 6.3 -> 25.7 -> 87.3 -> 68.5% across gap
+quartiles) is confounded: distance falls 46 -> 34 -> 15 -> 7 px across the same quartiles,
+because the floor beside the seat is the deeper floor behind it. The interaction table
+separates them and distance dominates - within 3-24 px capture is high in every gap
+quartile, beyond 24 px low in every one. The residual ordering at 24+ px (0.000, 0.140,
+0.265) is a reason for a controlled depth sweep, not a law.
+
+Direction is the sharpest finding. Matched on euclidean distance both groups share a
+row/column ratio near 0.55, which is the seat's own wide footprint. Conditioning on row
+distance instead: capture is **1.000 within 16 px along the scanline** (239/239), 0.854 at
+16-32, 0.113 at 32-64, 0.005 beyond. Holding euclidean distance at 4-12 px, pixels with the
+seat on their row within 24 px are captured **224/224**, those without only 0.243. Capture
+follows the matcher's search direction, reaching about 32 px along the row.
+
+The map agrees: 42 components, 66.1% of captured pixels in blobs of 20+ px, largest 141 px
+at 27x14, one 38-px island sitting entirely at 19-27 px, only 11.2% speckle - a broad
+horizontally-elongated band standing **off** the silhouette behind a black band of rejected
+floor, with correct green pixels only farther out.
+
+So the shape of the failure, before any attempt to fix it: **not a rim but a detached
+epipolar band, support disjoint from the boundary, beginning at 4 px and reaching past
+30.** A fixed-width silhouette erosion is structurally mismatched to it. One fixation, one
+gaze, one profile - nothing universal is claimed. Nothing was tuned, no threshold relaxed,
+no second fixation run. **BRIDGE3_COMPLETE. Next: Luiz/Chat's decision.**
