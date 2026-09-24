@@ -89,7 +89,11 @@ def _construct_patch(rec: dict[str, Any], fixation_id: int):
     instance id, and fixation identity.
     """
     P = surface_map.Patch
+    # fsg3 Patch.patch_id is a string: it keys duplicate detection and the 63-bit
+    # provenance mask, so it must be unique per look within an object's map.
+    pid = f"fix_{int(fixation_id):02d}"
     values = {
+        "patch_id": pid, "id": pid,
         "xyz_h": rec["xyz_h"], "xyz": rec["xyz_h"], "X": rec["xyz_h"],
         "rgb": rec["rgb_left"], "colour": rec["rgb_left"], "color": rec["rgb_left"], "c": rec["rgb_left"],
         "instance_id": rec["instance_id"], "instance": rec["instance_id"], "ids": rec["instance_id"],
@@ -114,6 +118,7 @@ def _construct_patch(rec: dict[str, Any], fixation_id: int):
         pass
     # Recovered FSG3 lineage used this compact ordering.
     attempts = [
+        (pid, rec["xyz_h"], rec["rgb_left"], rec["instance_id"]),
         (rec["xyz_h"], rec["rgb_left"], rec["instance_id"], int(fixation_id)),
         (rec["xyz_h"], rec["rgb_left"], rec["instance_id"]),
     ]

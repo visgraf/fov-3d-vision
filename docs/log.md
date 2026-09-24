@@ -10424,3 +10424,53 @@ The guarded stream is **not** an estimator result - it uses truth to reject, so 
 is an upper bound on what a better matcher could give on this sequence, not a capability.
 **CLASSROOM_FSG1_GUARDED_GOOD. Next: Luiz/Chat's decision - the indicated move is to swap
 the stereo matcher, not to change the architecture.**
+
+## 2026-09-24 - Classroom-Oracle-1: oracle measurement works, smoke harness contract unreachable
+
+Branch `classroom-oracle-1`, package `72d1222`, ancestor `2897d31`.
+`[classroom-oracle1-check] SUMMARY passed=12 failed=0` on the first attempt.
+
+Four mechanical defects surfaced during the smoke test and were repaired, the 12-check suite
+rerun green after each. None touched the scientific contract, FSG6f/Cyclopean rules, the
+12 mm fusion rule, the 24-look watchdog, oracle visibility semantics, or the object set:
+(1) `__json_write` defined with two underscores against five `_json_write` call sites;
+(2) missing `bl_common.pin_seed(scene)` - the Classroom `.blend` **keyframes `cycles.seed`
+at frame 1**, so frame evaluation reverts any script-set seed to 1, which I reproduced
+directly and confirmed by running a real `fsg_blend_bridge.py` fixation whose identical
+assert passes because it does call `pin_seed`; (3) `IndexOB.X` instead of the scene's actual
+`interior.Object Index.X`, matching the existing `demo_classroom1_*` convention;
+(4) `fsg3_surface_map.Patch(patch_id, xyz_h, rgb, instance_id)` has `patch_id` **first** and
+it was absent from the runner's binding table, so the positional fallback shifted every
+argument - added a per-look `fix_NN` patch_id, which fsg3 needs for duplicate detection and
+its 63-bit provenance mask.
+
+With those fixed the smoke test runs end to end and the integration is verified.
+**Oracle measurement is essentially perfect: valid core fraction 0.8099 and 0.8475**
+(13,269 and 13,886 of 16,384 points), against the **0.128** median the same instrument gave
+under SGBM in Classroom-FSG-1. `sgbm_called` false, `depth_search_bound_applied` false,
+`dense_evaluation_truth_opened_during_control` **false**, no foreground/background
+decomposition, and every benchmark artifact written (raw EXR pair, rectified PNG pair,
+oracle patch, map snapshot, calibration, acquisition).
+
+The seed scan found **25 oracle-visible instances** in the frozen domain (yaw +-25, pitch
++-20, 0.25 deg). Both smoke objects reached legitimate documented terminations after their
+seed: `107 Text` is `seed_uninitializable` (under the inherited 100 target-point floor,
+preserved not dropped), and `108 Text.001` is `attention_complete` with 116 surfels - FSG6f
+found 37 frontier cells, 35 boundary-resolved and 2 map-resolved, **0 open**, returning no
+candidates, after which the Cyclopean audit found **0** eligible `NEVER_OBSERVED + EXTERIOR`
+shoreline cells. The control architecture behaved exactly as specified.
+
+But the smoke harness asserts four looks and got two, and that is **not** an implementation
+defect. The harness takes the first two visible instances by id; 107/108 are the two
+smallest objects in a set that also holds `beams`, `blackBoard`, `ceiling`, `sol`, `wall`,
+`woodBase` and `worldMap`. The benchmark pair shows `Text.001` is the digits "678910" on a
+blackboard, ~116 of 13,886 valid core points, the rest across eight incidental instances.
+More fundamentally a `seed_uninitializable` object **can never** get a controller-selected
+second look, since no map exists for FSG6f to grow from - so "exactly two observations per
+object" contradicts the experiment's own preserved Reality-Check-2b semantics.
+
+Making it pass needs either different objects or a relaxed assertion; both are excluded by
+the handoff, and the choice changes what the smoke test certifies. That is a decision the
+prompt did not delegate, so execution **stopped** and the 25-instance full run was not
+launched. Nothing cherry-picked, no gaze forced, no policy constant touched, no object
+dropped. **CLASSROOM_ORACLE1_STOPPED. Next: Luiz/Chat's decision.**

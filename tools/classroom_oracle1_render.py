@@ -38,7 +38,7 @@ def _script_args() -> list[str]:
     return sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
 
-def __json_write(path: Path, data) -> None:
+def _json_write(path: Path, data) -> None:
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
 
 
@@ -211,7 +211,7 @@ def _extract_exr(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     rgb = np.stack([_channel(ch, f"Combined.{c}") for c in "RGB"], axis=-1).astype(np.float32)
     pos = np.stack([_channel(ch, f"Position.{c}") for c in "XYZ"], axis=-1).astype(np.float32)
     # Blender writes the scalar Object Index pass as X in a multilayer EXR.
-    idx = np.rint(_channel(ch, "IndexOB.X")).astype(np.int32)
+    idx = np.rint(_channel(ch, "Object Index.X")).astype(np.int32)
     idx[idx < 0] = 0
     return rgb, idx, pos
 
@@ -219,13 +219,17 @@ def _extract_exr(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 def _prepare_perspective_pair(c: dict, device: str, spp: int):
     import bpy
     from mathutils import Matrix
-    from bl_common import configure_multilayer_exr, ensure_cycles, setup_device
+    from bl_common import configure_multilayer_exr, ensure_cycles, pin_seed, setup_device
 
     scene = bpy.context.scene
     ensure_cycles(scene)
     backend = setup_device(scene, device)
     if backend == "CPU" and device != "CPU":
         raise RuntimeError("requested GPU backend unavailable; pass --device CPU only deliberately")
+    # The Classroom .blend keyframes cycles.seed at frame 1, so every render evaluates the
+    # frame and overwrites a script-set seed.  Same inherited bl_common repair the FSG blend
+    # bridge already uses; the seed affects render noise only, never geometry or selection.
+    pin_seed(scene)
 
     w, h = c["image_size_wh"]
     scene.render.resolution_x = int(w)
