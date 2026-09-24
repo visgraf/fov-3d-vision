@@ -10124,3 +10124,92 @@ descriptive at one look direction, not a general ranking. No accuracy threshold
 was declared and nothing was tuned. **Next: Luiz/Chat's decision** on whether a
 small multi-fixation FSG Classroom probe is authorized. Stopped after one
 fixation.
+
+### 2026-09-24 - FSG Blend Bridge-2: structure breaks the tail, and the break is foreground fattening
+
+One fixation, branch `fsg-blend-bridge-2` only. Verdict **BRIDGE2_COMPLETE**.
+**No tool was modified during the experiment**: `tools/` byte-identical to the
+package commit `fee9775`, and `fsg_geometry.py` / `fsg_stereo.py` byte-identical
+to `7d53b5a`. Five preflight checks green.
+
+Phase A selected the gaze **before** any SGBM ran. All 30 fixed-grid candidates
+acquired at 16 spp (0 failures, no `stereo/` anywhere), then one selector pass:
+`candidates=30 eligible=8 winner=(30.000,-30.000) second=0.439 span=1.464m
+jump50=0.892m graystd=31.09`. No threshold was relaxed. The winner led the
+first ranking key outright (second-instance fraction 0.4389 vs 0.3935 next).
+It sees a wooden chair seat `Box297.002` at ~1.37 m (43.89% of core) over
+carpet `sol` at ~2.22 m (49.04%), plus thin chrome legs and a slung cable -
+occlusion, thin geometry and a 0.892 m median boundary jump together.
+
+Phase B reacquired that exact gaze at the Bridge-1R control setting of 64 spp
+into a fresh directory (the 16-spp candidate was not reused), projection error
+**7.086e-05 px**. Rectification is unchanged in form: **P2[0,3] = -38.36192,
+P2[1,3] = 0.0**, horizontal, 128x128 core, focal 608.919 px, accepted disparity
+8.71-50.12 px with median 31.56.
+
+The unchanged SGBM gave `valid=5687/16384 fraction=0.3471` against the control's
+0.8066. Rejections are **76.21% left-right consistency and 0.00% texture** -
+invalid pixels have lr_error median **18.52 px** against a 1.0 tolerance while
+being slightly *more* textured than valid ones (gray_std 9.87 vs 7.85).
+
+Overall accuracy: **median 27.258 mm** (control 22.673), P75 56.782,
+P90 645.124, **P95 1014.652 mm** (control 50.605). Within 25/50/100 mm:
+46.54 / 72.67 / 80.36%. The median barely moves; **the tail grows 20x**.
+
+**The tail is NOT at the instance boundary.** `instance_boundary_3x3_band.count
+= 0` - the 3-px instance guard plus LR consistency removed the entire boundary
+band, so every accepted point is single-instance interior and the interior
+split equals the overall one. The error appears anyway, several pixels away.
+
+It is a **depth** split, not an image-position split. Per instance: the near
+seat (4,698 pts, ref 1.368 m) gives median **22.636 mm** with 91.93% within
+100 mm - control-grade; the far floor (950 pts, ref 2.221 m) gives median
+**807.593 mm** with only 22.32% within 100 mm. By reference-depth quartile the
+medians run 18.096 / 19.144 / 26.522 / **436.178 mm**, with within-100mm
+100.00 / 99.01 / 93.25 / **29.18%**. Below ~1.5 m the instrument matches the
+control exactly; above it, it collapses.
+
+**Mechanism measured: foreground fattening.** The floor error is bimodal
+(signed P25 -1016 mm, P50 -137, P75 +115), so its 807 mm absolute median hides
+two populations - **48.00%** of floor points sit more than 500 mm too near,
+22.32% are correct. Isolating those 521 bad points: true range median
+**2.2985 m**, estimated **1.3363 m**, against the seat's true **1.3683 m** -
+a gap of **0.0320 m** - and their disparity median **31.69 px** against the
+seat's **31.88 px**. They were matched at the seat's disparity. The strongly
+textured near surface captures correspondence far beyond the 3-px guard and the
+far surface inherits its disparity. Note `wrong_instance = 0` does not
+contradict this: it compares the left-eye oracle label with left-eye truth, so
+a floor pixel keeps its id even when the right-eye correspondence landed on the
+seat. It certifies labelling, not matching.
+
+Visually: the rectified pair shows the seat as a bright angled quadrilateral
+over dark carpet, displaced horizontally and not vertically; NCC peaks at
+**32 px** with the vertical residual peaking **exactly at dv = 0**. Validity is
+a dense bright wedge on the seat with the carpet largely black - invalids
+concentrate on the far surface, legs and cable. The point cloud is **genuinely
+bimodal, not a smeared bridge**: a dominant lobe at 1.18-1.52 m (seat truth
+1.42 m), a distinct lobe at 1.96-2.40 m (floor truth 2.26 m) and a deep trough
+between (45 points in 1.61-1.88 m) - the surfaces separate, but the far lobe is
+under-populated because half its points were pulled into the near one.
+
+Provenance verified as before: observation holds exactly the four contract
+arrays with a matching sha256, Blender truth read only after stereo, and
+`z_rect_m` reproduces `f*B/disparity` to **2.29e-07 m**.
+
+Against the sealed Bridge-1R control (not rerun, not a target to beat):
+accepted 80.66% -> 34.71%, median 22.673 -> 27.258 mm, P95 50.605 -> 1014.652
+mm, wrong ID 0 both. The informative pattern is that the median is nearly
+preserved while acceptance halves and the tail explodes - the instrument does
+not degrade uniformly, it stays control-grade near and fails far.
+
+What this establishes: the unchanged instrument runs on real local depth
+structure and returns a non-trivial bimodal metric patch, with rectification
+horizontal, the LR test removing most bad matches, the boundary band fully
+cleared, and the near surface at control accuracy. What it does **not**: one
+fixation, one gaze, one profile; the failure mode is identified but not
+characterised across scenes, baselines, vergences or textures; nothing says the
+3-px guard, the 1.0-px LR tolerance or the [0.75, 4.5] m band are right or
+wrong in general, only that here the fattening reaches beyond the guard. No
+fusion, no controller, no FSG6f, no attention, no Classroom reconstruction.
+Nothing was tuned and no threshold relaxed. **Next: Luiz/Chat's decision.**
+Stopped after one fixation.
